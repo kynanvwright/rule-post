@@ -42,11 +42,15 @@ class _Logo extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        FlutterLogo(size: isSmallScreen ? 100 : 200),
+        // Replace FlutterLogo with your custom image
+        Image.asset(
+          'assets/images/cup_logo2.jpg', // <-- put your image in assets
+          width: isSmallScreen ? 100 : 200,
+        ),
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: Text(
-            "Welcome to Flutter!",
+            "Welcome to RulePost!", // <-- your new title
             textAlign: TextAlign.center,
             style: isSmallScreen
                 ? Theme.of(context).textTheme.titleMedium
@@ -57,6 +61,7 @@ class _Logo extends StatelessWidget {
     );
   }
 }
+
 
 class _FormContent extends StatefulWidget {
   const _FormContent();
@@ -176,7 +181,7 @@ class __FormContentState extends State<_FormContent> {
                 ),
                 onPressed: () async {
                   if (_formKey.currentState?.validate() ?? false) {
-                    
+
                     // 👇 Only matters on web
                     if (kIsWeb) {
                       await FirebaseAuth.instance.setPersistence(
