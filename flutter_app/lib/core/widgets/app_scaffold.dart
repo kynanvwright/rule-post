@@ -149,6 +149,13 @@ class _DefaultBanner extends StatelessWidget {
               switch (value) {
                 case _ProfileAction.profile:
                   // TODO: Navigator.pushNamed(context, '/profile');
+                  // Not wired up yet
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Sorry, this feature isn’t available yet.'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
                   break;
                 case _ProfileAction.logout:
                   await _authService.signOut();
