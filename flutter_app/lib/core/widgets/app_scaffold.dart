@@ -1,6 +1,8 @@
 // app_scaffold.dart
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
 import '../../auth/widgets/auth_service.dart';
 enum _ProfileAction { profile, logout }
 
@@ -160,10 +162,7 @@ class _DefaultBanner extends StatelessWidget {
                 case _ProfileAction.logout:
                   await _authService.signOut();
                   if (context.mounted) {
-                    Navigator.of(context).pushNamedAndRemoveUntil(
-                      '/login',
-                      (route) => false,
-                    );
+                    context.go('/login');
                   }
                   break;
               }
