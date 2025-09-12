@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/core/widgets/app_scaffold.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/widgets/post_scaffold.dart';
@@ -36,27 +37,30 @@ class HomeScreen extends StatelessWidget {
       ),
     );
 
-    return PostScaffold(
+    return AppScaffold(
       title: 'Rule Enquiries',
-      leftPane: CategorySidebar(
-        categories: categories,
-        selectedKey: category,
-        onSelect: (c) {
-          context.go('/enquiries/$c'); // navigate on category change
-        },
-      ),
-      centerPane: EnquiryList(
-        header: const PaneHeader('Enquiries'),
-        items: items,
-        selectedId: enquiryId,
-        onSelect: (id) {
-          context.go('/enquiries/$category/$id'); // navigate on item select
-        },
-      ),
-      rightPane: enquiryId == null
-          ? null
-          : EnquiryDetailPanel(enquiryId: enquiryId!),
-    );
+      child: PostScaffold(
+        title: 'Rule Enquiries',
+        leftPane: CategorySidebar(
+          categories: categories,
+          selectedKey: category,
+          onSelect: (c) {
+            context.go('/enquiries/$c'); // navigate on category change
+          },
+        ),
+        centerPane: EnquiryList(
+          header: const PaneHeader('Enquiries'),
+          items: items,
+          selectedId: enquiryId,
+          onSelect: (id) {
+            context.go('/enquiries/$category/$id'); // navigate on item select
+          },
+        ),
+        rightPane: enquiryId == null
+            ? null
+            : EnquiryDetailPanel(enquiryId: enquiryId!),
+        ),
+      );
   }
 }
 
