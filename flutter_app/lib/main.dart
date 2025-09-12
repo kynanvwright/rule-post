@@ -36,3 +36,50 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+// // How to change app theme whenever I get to it
+// class RuleEnquiriesApp extends StatelessWidget {
+//   const RuleEnquiriesApp({super.key});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     // Pick your brand colour once
+//     const brandSeed = Color(0xFF003B75); // deep nautical blue
+
+//     final lightScheme = ColorScheme.fromSeed(
+//       seedColor: brandSeed,
+//       brightness: Brightness.light,
+//     );
+//     final darkScheme = ColorScheme.fromSeed(
+//       seedColor: brandSeed,
+//       brightness: Brightness.dark,
+//     );
+
+//     return MaterialApp(
+//       title: 'Rule Enquiries App',
+//       debugShowCheckedModeBanner: false,
+//       themeMode: ThemeMode.system, // or ThemeMode.light / dark
+//       theme: ThemeData(
+//         useMaterial3: true,
+//         colorScheme: lightScheme,
+//         // Optional fine-tuning
+//         dividerColor: lightScheme.outlineVariant,
+//         textTheme: const TextTheme().apply(
+//           bodyColor: lightScheme.onSurface,
+//           displayColor: lightScheme.onSurface,
+//         ),
+//         iconButtonTheme: IconButtonThemeData(
+//           style: ButtonStyle(
+//             foregroundColor: WidgetStatePropertyAll(lightScheme.onPrimary),
+//           ),
+//         ),
+//       ),
+//       darkTheme: ThemeData(
+//         useMaterial3: true,
+//         colorScheme: darkScheme,
+//         dividerColor: darkScheme.outlineVariant,
+//       ),
+//       // routes: {...}
+//     );
+//   }
+// }

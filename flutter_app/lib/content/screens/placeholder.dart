@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import '../../core/widgets/app_scaffold.dart';
 
 class NewsFeedPage2 extends StatelessWidget {
   const NewsFeedPage2({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
+    return AppScaffold(
+      title: 'Placeholder', // optional
+      // tileAsset: 'assets/images/cup_logo2.jpg', // optional override
+      // actions: [IconButton(onPressed: () {}, icon: const Icon(Icons.search))],
+      child: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 400),
           child: ListView.builder(
@@ -15,10 +19,7 @@ class NewsFeedPage2 extends StatelessWidget {
               final item = _articles[index];
               return Container(
                 height: 136,
-                margin: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8.0,
-                ),
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8.0),
                 decoration: BoxDecoration(
                   border: Border.all(color: const Color(0xFFE0E0E0)),
                   borderRadius: BorderRadius.circular(8.0),
