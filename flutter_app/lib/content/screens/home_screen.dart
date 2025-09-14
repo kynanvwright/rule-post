@@ -45,7 +45,7 @@ class HomeScreen extends StatelessWidget {
           categories: categories,
           selectedKey: category,
           onSelect: (c) {
-            context.go('/enquiries/$c'); // navigate on category change
+            context.replace('/enquiries/$c'); // navigate on category change
           },
         ),
         centerPane: EnquiryList(
