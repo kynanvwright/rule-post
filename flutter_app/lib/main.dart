@@ -13,6 +13,7 @@ import 'core/widgets/post_scaffold.dart';
 import 'core/widgets/category_sidebar.dart';
 import '../../core/widgets/post_list.dart';
 import '../../core/widgets/pane_header.dart';
+import '../../content/widgets/new_post_button.dart';
 
 
 Future<void> main() async {
@@ -79,7 +80,10 @@ class MyApp extends StatelessWidget {
                 },
               ),
               centerPane: EnquiryList(
-                header: const PaneHeader('Enquiries'),
+                header: PaneHeader(
+                  'Enquiries',
+                  trailing: NewEnquiryButton(currentCategory: category),
+                  ),
                 items: items,
                 selectedId: selectedId, // ✅ matches your constructor
                 onSelect: (id) {
