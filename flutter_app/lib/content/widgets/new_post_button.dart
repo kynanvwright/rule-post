@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import '../../api/post_api.dart';
+
+// Typed attachment model (adjust the path/name if yours differs)
+import '../../core/models/attachments.dart' show TempAttachment;
+
+// MVP temp-upload libs
+import 'package:file_picker/file_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class NewEnquiryButton extends StatelessWidget {
   const NewEnquiryButton({super.key, required this.currentCategory});
@@ -23,18 +30,19 @@ class NewEnquiryButton extends StatelessWidget {
         final api = PostApi();
 
         try {
-          final id = await api.createEnquiry(
+          await api.createEnquiry(  // could capture as "final id = await ..."
             titleText: payload.title,
             enquiryText: payload.text,
+            attachments: (payload.attachments == null ||
+                    payload.attachments!.isEmpty)
+                ? null
+                : payload.attachments, // typed list goes straight through
           );
-          // final id = await api.testPing();
           messenger.showSnackBar(
             const SnackBar(content: Text('Enquiry created')),
           );
-          if (context.mounted) {
-            // Open it in the right pane, keep current filter.
-            context.go('/enquiries/$id?cat=$currentCategory');
-          }
+          // If you want to navigate to the new enquiry page, uncomment:
+          // if (context.mounted) context.go('/enquiries/$id?cat=$currentCategory');
         } catch (e) {
           messenger.showSnackBar(
             SnackBar(content: Text('Failed to create enquiry: $e')),
@@ -56,7 +64,12 @@ class _NewEnquiryDialogState extends State<_NewEnquiryDialog> {
   final _form = GlobalKey<FormState>();
   final _title = TextEditingController();
   final _text = TextEditingController();
+
+  // Typed, not Map
+  final List<TempAttachment> _pending = [];
+
   bool _busy = false;
+  bool _uploading = false;
 
   @override
   void dispose() {
@@ -67,28 +80,73 @@ class _NewEnquiryDialogState extends State<_NewEnquiryDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final canSubmit = !_busy && !_uploading;
+
     return AlertDialog(
       title: const Text('New enquiry'),
       content: Form(
         key: _form,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _title,
-              decoration: const InputDecoration(labelText: 'Title'),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Required' : null,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 460),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: _title,
+                  decoration: const InputDecoration(labelText: 'Title'),
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Title is required' : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _text,
+                  decoration: const InputDecoration(labelText: 'Content'),
+                  maxLines: 5,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Content is required'
+                      : null,
+                ),
+                const SizedBox(height: 16),
+
+                // --- Add attachment button + spinner ---
+                Row(
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: _uploading ? null : _addAttachmentToTemp,
+                      icon: const Icon(Icons.attach_file),
+                      label: const Text('Add attachment'),
+                    ),
+                    const SizedBox(width: 12),
+                    if (_uploading)
+                      const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+
+                // Preview/removal (typed)
+                if (_pending.isNotEmpty)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _pending
+                          .map((a) => InputChip(
+                                label: Text(a.name),
+                                onDeleted: () =>
+                                    setState(() => _pending.remove(a)),
+                              ))
+                          .toList(),
+                    ),
+                  ),
+              ],
             ),
-            TextFormField(
-              controller: _text,
-              decoration: const InputDecoration(labelText: 'Content'),
-              minLines: 3,
-              maxLines: 6,
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Required' : null,
-            ),
-          ],
+          ),
         ),
       ),
       actions: [
@@ -96,30 +154,128 @@ class _NewEnquiryDialogState extends State<_NewEnquiryDialog> {
           onPressed: _busy ? null : () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
-        FilledButton(
-          onPressed: _busy
-              ? null
-              : () async {
+        ElevatedButton(
+          onPressed: canSubmit
+              ? () async {
                   if (!(_form.currentState?.validate() ?? false)) return;
                   setState(() => _busy = true);
-                  // Return payload to caller; CF call happens outside dialog.
-                  Navigator.pop(
-                    context,
-                    _NewEnquiryPayload(
-                      title: _title.text.trim(),
-                      text: _text.text.trim(),
-                    ),
-                  );
-                },
-          child: _busy ? const CircularProgressIndicator() : const Text('Create'),
+
+                  // Return form data + typed attachments to caller
+                  if (context.mounted) {
+                    Navigator.pop(
+                      context,
+                      _NewEnquiryPayload(
+                        title: _title.text.trim(),
+                        text: _text.text.trim(),
+                        attachments: _pending.toList(),
+                      ),
+                    );
+                  }
+                }
+              : null,
+          child: _busy
+              ? const CircularProgressIndicator()
+              : const Text('Create'),
         ),
       ],
     );
   }
+
+  // Pick a local file -> upload to enquiries_temp/{uid}/... -> queue typed metadata
+  Future<void> _addAttachmentToTemp() async {
+    try {
+      setState(() => _uploading = true);
+
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) {
+        _toast('You must be signed in to add attachments.');
+        setState(() => _uploading = false);
+        return;
+      }
+
+      final picked = await FilePicker.platform.pickFiles(withData: true);
+      if (picked == null || picked.files.isEmpty) {
+        setState(() => _uploading = false);
+        return;
+      }
+
+      final f = picked.files.single;
+      final bytes = f.bytes;
+      if (bytes == null) {
+        _toast('Could not read file bytes.');
+        setState(() => _uploading = false);
+        return;
+      }
+
+      final name = f.name;
+      final size = f.size;
+      final ext = (f.extension ?? '').toLowerCase();
+      final contentType = _guessContentType(ext) ?? 'application/octet-stream';
+
+      final ts = DateTime.now().millisecondsSinceEpoch;
+      final safeName = _sanitiseName(name);
+      final tempPath = 'enquiries_temp/$uid/$ts-$safeName';
+
+      final ref = FirebaseStorage.instance.ref(tempPath);
+      await ref.putData(
+        bytes,
+        SettableMetadata(contentType: contentType),
+      );
+
+      // Queue typed metadata (server will move & mint final URL)
+      _pending.add(TempAttachment(
+        name: name,
+        storagePath: tempPath,
+        size: size,
+        contentType: contentType,
+      ));
+
+      setState(() => _uploading = false);
+    } catch (e) {
+      setState(() => _uploading = false);
+      _toast('Attachment failed: $e');
+    }
+  }
+
+  void _toast(String msg) {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  String _sanitiseName(String name) =>
+      name.replaceAll(RegExp(r'[^\w.\-+]'), '_').substring(0, name.length.clamp(0, 200));
+
+  String? _guessContentType(String ext) {
+    switch (ext) {
+      case 'pdf':
+        return 'application/pdf';
+      case 'docx':
+        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      case 'doc':
+        return 'application/msword';
+      case 'png':
+        return 'image/png';
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'gif':
+        return 'image/gif';
+      case 'txt':
+        return 'text/plain';
+      default:
+        return null;
+    }
+  }
 }
 
 class _NewEnquiryPayload {
-  _NewEnquiryPayload({required this.title, required this.text});
+  _NewEnquiryPayload({
+    required this.title,
+    required this.text,
+    this.attachments,
+  });
+
   final String title;
   final String text;
+  final List<TempAttachment>? attachments;
 }

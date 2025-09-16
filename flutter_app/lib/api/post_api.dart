@@ -1,4 +1,5 @@
 import 'package:cloud_functions/cloud_functions.dart';
+import '../core/models/attachments.dart';
 
 class PostApi {
   PostApi({this.region = 'europe-west8'})
@@ -11,12 +12,15 @@ class PostApi {
   Future<String> createEnquiry({
     required String titleText,
     required String enquiryText,
+    List<TempAttachment>? attachments,
   }) async {
-    final callable = _functions.httpsCallable('createEnquiry');
-    final result = await callable.call({
+    final payload = {
       'titleText': titleText,
       'enquiryText': enquiryText,
-    });
+      if (attachments != null && attachments.isNotEmpty)
+        'attachments': attachments.map((a) => a.toMap()).toList(),
+    };
+    final result = await _functions.httpsCallable('createEnquiry').call(payload);
     final data = (result.data as Map).cast<String, dynamic>();
     return data['id'] as String;
   }
