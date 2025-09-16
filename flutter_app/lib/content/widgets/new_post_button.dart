@@ -193,7 +193,11 @@ class _NewEnquiryDialogState extends State<_NewEnquiryDialog> {
         return;
       }
 
-      final picked = await FilePicker.platform.pickFiles(withData: true);
+      final picked = await FilePicker.platform.pickFiles(
+        withData: true,
+        type: FileType.custom,  // comment out type and allowedExtensions to allow all
+        allowedExtensions: ['pdf','doc','docx'],
+        );
       if (picked == null || picked.files.isEmpty) {
         setState(() => _uploading = false);
         return;

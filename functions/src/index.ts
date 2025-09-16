@@ -28,7 +28,7 @@ export const blockAllSelfRegistration = beforeUserCreated(() => {
 
 const ALLOWED_TYPES = [
   "application/pdf",
-  "image/.+",
+  // "image/.+",
   "application/vnd.openxmlformats-officedocument." +
     "wordprocessingml.document",
   "application/msword",
