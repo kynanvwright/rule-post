@@ -95,15 +95,13 @@ class HomeScreen extends StatelessWidget {
             final liveItems = docs.map((d) {
               final data = d.data();
               final title = (data['titleText'] ?? '').toString();
-              final createdAt = data['createdAt'];
-              final createdAtStr = (createdAt is Timestamp)
-                  ? createdAt.toDate().toLocal().toString()
-                  : '';
+              final enquiryNumber = (data['enquiryNumber'] ?? 'Unnumbered').toString();
+              final enquiryNumberString = 'Rule Enquiry #$enquiryNumber';
 
               return EnquiryListEntry(
                 id: d.id,
                 title: title.isEmpty ? '(untitled)' : title,
-                subtitle: createdAtStr, // or 'Category: $category' if you prefer
+                subtitle: enquiryNumberString,
               );
             }).toList();
 

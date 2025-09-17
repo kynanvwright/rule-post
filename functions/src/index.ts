@@ -4,6 +4,7 @@ import {onCall, HttpsError, CallableRequest} from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import {randomUUID} from "node:crypto"; // no extra npm dep needed
 import {File} from "@google-cloud/storage";
+import {getFirestore} from "firebase-admin/firestore";
 
 
 /**
@@ -65,6 +66,35 @@ export async function deleteAndFail(
     // ignore deletion errors
   }
   throw new HttpsError("failed-precondition", message);
+}
+
+/**
+ * Returns the maximum numeric value of a given field in a Firestore collection.
+ * If the field is missing from all documents, returns the provided default.
+ *
+ * @param {string} collectionPath - Path to the Firestore collection
+ * @param {string} [field="value"] - Name of the field to search for max
+ * @param {number} [defaultIfMissingEverywhere=1] - Returned if no matches
+ * @return {Promise<number>} Resolves with the maximum value or the default
+ * @throws {Error} If the Firestore query fails
+ */
+export async function getMaxOrDefault(
+  collectionPath: string,
+  field = "value",
+  defaultIfMissingEverywhere = 0
+): Promise<number> {
+  const db = getFirestore();
+
+  const snap = await db
+    .collection(collectionPath)
+    .orderBy(field, "desc")
+    .limit(1)
+    .get();
+
+  if (snap.empty) return defaultIfMissingEverywhere;
+
+  const v = snap.docs[0].get(field);
+  return typeof v === "number" ? v : defaultIfMissingEverywhere;
 }
 
 // What the client will send for each temp attachment
@@ -178,11 +208,18 @@ export const createEnquiry = onCall<CreateEnquiryData>(
     const now = admin.firestore.FieldValue.serverTimestamp();
     const metaRef = db.collection("enquiries_meta").doc(enquiryId);
 
+    const maxEnquiryNumber = await getMaxOrDefault(
+      "enquiries", "enquiryNumber");
+    const enquiryNumber = maxEnquiryNumber + 1;
+    const isOpen = true; // future use
+
     const result = await db.runTransaction(async (tx) => {
       const publicDoc: Record<string, unknown> = {
         titleText,
         enquiryText,
-        createdAt: now,
+        enquiryNumber,
+        isOpen,
+        createdAt: now, // remove later
       };
       if (finalised.length > 0) {
         publicDoc.attachments = finalised;
@@ -193,17 +230,15 @@ export const createEnquiry = onCall<CreateEnquiryData>(
         throw new HttpsError("failed-precondition",
           "No matching user in the collection.");
       }
-      const authorEmail = userData.get("email") as string;
       const authorTeam = userData.get("team") as string;
+      const metaDoc: Record<string, unknown> = {
+        authorUid,
+        authorTeam,
+        createdAt: now, // remove later
+      };
 
       tx.set(docRef, publicDoc);
-      tx.set(metaRef, {
-        authorUid: authorUid,
-        authorEmail: authorEmail,
-        authorTeam: authorTeam,
-        createdAt: now,
-        // createdByProvider: null,
-      });
+      tx.set(metaRef, metaDoc);
 
       return {id: enquiryId};
     });
