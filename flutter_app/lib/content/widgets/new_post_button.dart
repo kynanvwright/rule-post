@@ -10,9 +10,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
 class NewEnquiryButton extends StatelessWidget {
-  const NewEnquiryButton({super.key, required this.currentCategory});
+  const NewEnquiryButton({super.key,
+  //  required this.currentCategory
+   });
 
-  final String currentCategory;
+  // final String currentCategory;
 
   @override
   Widget build(BuildContext context) {

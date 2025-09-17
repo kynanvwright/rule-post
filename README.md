@@ -38,7 +38,7 @@ A website for facilitating America's Cup Rule Enquiries.
   - need to create per-enquiry team IDs for this
 - Fix up homescreen
   - resize panes
-  - actually show enquiry details
+  - actually show enquiry details [done]
   - redo filters (Open, Closed, My Unpublished)
 - Allow multiple attachments to be uploaded without reselection
 - Add per-user limits on new enquiries and attachments per day

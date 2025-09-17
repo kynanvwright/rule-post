@@ -9,6 +9,7 @@ import '../../core/widgets/post_scaffold.dart';
 import '../../core/widgets/category_sidebar.dart';
 import '../../core/widgets/post_list.dart';
 import '../../core/widgets/pane_header.dart';
+import '../widgets/new_post_button.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({
@@ -107,7 +108,8 @@ class HomeScreen extends StatelessWidget {
             }).toList();
 
             return EnquiryList(
-              header: const PaneHeader('Enquiries 🔴 LIVE'),
+              header: const PaneHeader('Enquiries',
+              trailing: NewEnquiryButton()),
               items: liveItems,
               selectedId: enquiryId,
               onSelect: (id) => context.go('/enquiries/$category/$id'),
