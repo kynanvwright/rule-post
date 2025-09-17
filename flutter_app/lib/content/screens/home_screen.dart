@@ -78,9 +78,11 @@ class HomeScreen extends StatelessWidget {
         //   },
         // ),
         centerPane: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          key: ValueKey(listQuery.parameters),
           stream: listQuery.snapshots(),
           builder: (context, snap) {
             if (snap.hasError) {
+              debugPrint('Firestore stream error: ${snap.error}');
               return const Center(child: Text('Failed to load enquiries'));
             }
             if (!snap.hasData) {
