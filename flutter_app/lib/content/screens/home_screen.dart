@@ -172,7 +172,7 @@ class EnquiryDetailPanel extends StatelessWidget {
               if (createdAt != null) ...[
                 const SizedBox(height: 6),
                 Text(
-                  'Created ${_formatDate(createdAt!)}',
+                  'Created ${_formatDate(createdAt)}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
