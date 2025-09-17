@@ -35,7 +35,7 @@ class GoRouterRefreshStream extends ChangeNotifier {
 
 /// Global router with auth guard: unauthenticated users go to /login.
 final _router = GoRouter(
-  initialLocation: '/enquiries/all',
+  initialLocation: '/enquiries/open',
   refreshListenable:
       GoRouterRefreshStream(FirebaseAuth.instance.authStateChanges()),
   redirect: (context, state) {
@@ -46,7 +46,7 @@ final _router = GoRouter(
     if (!loggedIn) return loggingIn ? null : '/login';
 
     // Logged in but hitting /login? Kick to home.
-    if (loggingIn) return '/enquiries/all';
+    if (loggingIn) return '/enquiries/open';
 
     return null; // no redirect
   },
