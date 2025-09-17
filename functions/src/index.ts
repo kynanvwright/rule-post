@@ -188,18 +188,27 @@ export const createEnquiry = onCall<CreateEnquiryData>(
         publicDoc.attachments = finalised;
       }
 
+      const userData = await db.collection("user_data").doc(authorUid).get();
+      if (!userData.exists) {
+        throw new HttpsError("failed-precondition",
+          "No matching user in the collection.");
+      }
+      const authorEmail = userData.get("email") as string;
+      const authorTeam = userData.get("team") as string;
+
       tx.set(docRef, publicDoc);
       tx.set(metaRef, {
-        authorUid,
-        authorEmail: null,
+        authorUid: authorUid,
+        authorEmail: authorEmail,
+        authorTeam: authorTeam,
         createdAt: now,
-        createdByProvider: null,
+        // createdByProvider: null,
       });
 
       return {id: enquiryId};
     });
 
-    return result; // { id }
+    return result;
   }
 );
 

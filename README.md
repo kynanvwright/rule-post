@@ -48,6 +48,16 @@ A website for facilitating America's Cup Rule Enquiries.
   - try to read author IDs
   - try to edit published posts
   - try to read unpublished posts
+- Add custom claims to users, to set their roles based on the user_data collection
+  - this allows conditional formatting of pages based on roles, without exposing user data
+  - create a cloud function to update the custom claims whenever the user_data collection is changed in certain ways
+- Write data models in json, then run code to convert into dart and typescript (one source of truth)
+- Automated enquiry numbering
+
+## Fixes
+- Remove placeholder files
+- Consolidate data models for posts/enquiries
+- Rename variables that shouldn't have "enquiry" in them
 
 ## Other Notes
 
