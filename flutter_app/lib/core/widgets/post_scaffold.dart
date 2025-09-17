@@ -14,8 +14,8 @@ class PostScaffold extends StatelessWidget {
     required this.centerPane,
     required this.rightPane,
     this.minWidth = 1024,
-    this.leftWidth = 260,
-    this.centerWidth = 420,
+    this.leftWidth = 120,
+    this.centerWidth = 360,
   });
 
   final String title;
