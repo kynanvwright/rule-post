@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:go_router/go_router.dart';
+// import 'package:go_router/go_router.dart';
 
 import '../widgets/auth_service.dart';
 
@@ -169,8 +169,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
                             if (error == null) {
                               // ✅ Login successful → go to home
-                              if (!mounted) return;
-                              context.go('/home');
+                              // if (!mounted) return;
+                              // context.go('/enquiries/:category');
                             } else {
                               // ❌ Show error from Firebase
                               ScaffoldMessenger.of(context).showSnackBar(

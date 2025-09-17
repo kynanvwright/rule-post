@@ -19,11 +19,13 @@ A website for facilitating America's Cup Rule Enquiries.
 - Adaptive screen sizing
 - Database and storage writing implemented via backend functions, frontend write access blocked
   - as an exception, frontend can write to temporary file storage
+- Cloud Storage rule for clearing out temporary file storage (1+ days old)
 
 ## Future Features
+- Doublecheck that backend functions are ensuring user has correct permissions
 - Delay publishing to specific times
   - permit editing prior to submission
-- Cloud Function for clearing out temporary file storage
+  - make sure storage rules stop unpublished attachments from being read
 - Add layering of responses and comments underneath enquiries
 - Create enquiry phases and restrict user submissions accordingly
   - include limiting each team to one response per round
@@ -34,6 +36,18 @@ A website for facilitating America's Cup Rule Enquiries.
   - close enquiries
 - Add colour-coding of responses/comments
   - need to create per-enquiry team IDs for this
+- Fix up homescreen
+  - resize panes
+  - actually show enquiry details
+  - redo filters (Open, Closed, My Unpublished)
+- Allow multiple attachments to be uploaded without reselection
+- Add per-user limits on new enquiries and attachments per day
+- Add email alerts for when costs are spiking
+- Make testing pages for attempting to read/write from the frontend without proper permissions
+  - test as signed in vs signed out
+  - try to read author IDs
+  - try to edit published posts
+  - try to read unpublished posts
 
 ## Other Notes
 

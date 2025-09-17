@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_app/core/widgets/app_scaffold.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:url_launcher/url_launcher_string.dart';
+
 
 import '../../core/widgets/post_scaffold.dart';
 import '../../core/widgets/category_sidebar.dart';
@@ -22,20 +25,37 @@ class HomeScreen extends StatelessWidget {
     // Example categories
     final categories = [
       ('all', 'All Enquiries'),
-      ('mine', 'My Enquiries'),
       ('open', 'Open'),
       ('closed', 'Closed'),
     ];
 
-    // Dummy list of items — replace with Firestore query later
-    final items = List.generate(
-      6,
-      (i) => EnquiryListEntry(
-        id: '$i',
-        title: 'Enquiry $i',
-        subtitle: 'Category: $category',
-      ),
-    );
+    Query<Map<String, dynamic>> listQuery = FirebaseFirestore.instance
+        .collection('enquiries');
+
+    // Filter by category (only "all" works today unless you've denormalized fields)
+    switch (category) {
+      case 'all':
+        // no where-clause
+        break;
+
+      case 'open':
+        listQuery = listQuery.where('isOpen', isEqualTo: true);
+        break;
+
+      case 'closed':
+        listQuery = listQuery.where('isOpen', isEqualTo: false);
+        break;
+      
+      // case 'unpublished drafts':
+      //   // Example below, actually needs more filters
+      //   // Requires authorUid on each 'enquiries' doc (denormalize from enquiries_meta)
+      //   // final uid = FirebaseAuth.instance.currentUser?.uid;
+      //   // if (uid != null) listQuery = listQuery.where('authorUid', isEqualTo: uid);
+      //   break;
+    }
+
+    listQuery = listQuery.orderBy('createdAt', descending: true).limit(50);
+
 
     return AppScaffold(
       title: 'Rule Enquiries',
@@ -48,17 +68,56 @@ class HomeScreen extends StatelessWidget {
             context.replace('/enquiries/$c'); // navigate on category change
           },
         ),
-        centerPane: EnquiryList(
-          header: const PaneHeader('Enquiries'),
-          items: items,
-          selectedId: enquiryId,
-          onSelect: (id) {
-            context.go('/enquiries/$category/$id'); // navigate on item select
+        // centerPane: EnquiryList(
+        //   header: const PaneHeader('Enquiries'),
+        //   items: items,
+        //   selectedId: enquiryId,
+        //   onSelect: (id) {
+        //     context.go('/enquiries/$category/$id'); // navigate on item select
+        //   },
+        // ),
+        centerPane: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: listQuery.snapshots(),
+          builder: (context, snap) {
+            if (snap.hasError) {
+              return const Center(child: Text('Failed to load enquiries'));
+            }
+            if (!snap.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final docs = snap.data!.docs;
+            if (docs.isEmpty) {
+              return const Center(child: Text('No enquiries yet'));
+            }
+
+            // Map Firestore docs -> your list row model
+            final liveItems = docs.map((d) {
+              final data = d.data();
+              final title = (data['titleText'] ?? '').toString();
+              final createdAt = data['createdAt'];
+              final createdAtStr = (createdAt is Timestamp)
+                  ? createdAt.toDate().toLocal().toString()
+                  : '';
+
+              return EnquiryListEntry(
+                id: d.id,
+                title: title.isEmpty ? '(untitled)' : title,
+                subtitle: createdAtStr, // or 'Category: $category' if you prefer
+              );
+            }).toList();
+
+            return EnquiryList(
+              header: const PaneHeader('Enquiries 🔴 LIVE'),
+              items: liveItems,
+              selectedId: enquiryId,
+              onSelect: (id) => context.go('/enquiries/$category/$id'),
+            );
           },
         ),
         rightPane: enquiryId == null
             ? null
-            : EnquiryDetailPanel(enquiryId: enquiryId!),
+            : EnquiryDetailPanel(
+              enquiryId: enquiryId!),
         ),
       );
   }
@@ -71,20 +130,106 @@ class EnquiryDetailPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Enquiry $enquiryId',
-              style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 12),
-          const Text(
-            'This is where the enquiry content will go. '
-            'Later this can stream a Firestore doc.',
+    final docRef =
+        FirebaseFirestore.instance.collection('enquiries').doc(enquiryId);
+
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: docRef.snapshots(),
+      builder: (context, snap) {
+        if (snap.hasError) {
+          return const Center(child: Text('Failed to load enquiry'));
+        }
+        if (!snap.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final doc = snap.data!;
+        if (!doc.exists) {
+          return const Center(child: Text('Enquiry not found'));
+        }
+
+        final data = doc.data()!;
+        final title = (data['titleText'] ?? '').toString();
+        final body = (data['enquiryText'] ?? '').toString();
+
+        DateTime? createdAt;
+        final ts = data['createdAt'];
+        if (ts is Timestamp) createdAt = ts.toDate();
+
+        final attachments = (data['attachments'] is List)
+            ? List<Map<String, dynamic>>.from(data['attachments'] as List)
+            : const <Map<String, dynamic>>[];
+
+        return Padding(
+          padding: const EdgeInsets.all(24),
+          child: ListView(
+            children: [
+              Text(
+                title.isEmpty ? '(untitled)' : title,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              if (createdAt != null) ...[
+                const SizedBox(height: 6),
+                Text(
+                  'Created ${_formatDate(createdAt!)}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+              const SizedBox(height: 16),
+              SelectableText(body.isEmpty ? '(no content)' : body),
+
+              if (attachments.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                Text('Attachments',
+                    style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                ...attachments.map((a) {
+                  final name = (a['name'] ?? '').toString();
+                  final url = (a['url'] ?? '').toString();
+                  final size = a['size'];
+                  final sizeLabel = size is num ? _formatBytes(size.toInt()) : null;
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    leading: const Icon(Icons.attach_file),
+                    title: Text(name.isEmpty ? 'Attachment' : name),
+                    subtitle: sizeLabel == null ? null : Text(sizeLabel),
+                    onTap: url.isEmpty
+                        ? null
+                        : () => launchUrlString(
+                              url,
+                              mode: LaunchMode.externalApplication,
+                            ),
+                  );
+                }),
+              ],
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
+
+  static String _formatDate(DateTime dt) {
+    // Simple readable format; swap to intl if you want localization
+    final local = dt.toLocal();
+    final y = local.year.toString().padLeft(4, '0');
+    final m = local.month.toString().padLeft(2, '0');
+    final d = local.day.toString().padLeft(2, '0');
+    final hh = local.hour.toString().padLeft(2, '0');
+    final mm = local.minute.toString().padLeft(2, '0');
+    return '$y-$m-$d $hh:$mm';
+  }
+
+  static String _formatBytes(int bytes) {
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    var size = bytes.toDouble();
+    var unit = 0;
+    while (size >= 1024 && unit < units.length - 1) {
+      size /= 1024;
+      unit++;
+    }
+    final fixed = size >= 10 || unit == 0 ? 0 : 1;
+    return '${size.toStringAsFixed(fixed)} ${units[unit]}';
+  }
 }
+
