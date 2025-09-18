@@ -8,7 +8,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 // Screens
 import 'auth/screens/login_screen.dart';
-import 'content/screens/home_screen.dart';
+// import 'content/screens/home_screen.dart';
+import 'core/widgets/two_panel_shell.dart';
+import 'core/widgets/left_pane_switcher.dart';
+import 'core/widgets/breadcrumb_bar.dart';
+import 'content/screens/pages.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,46 +37,105 @@ class GoRouterRefreshStream extends ChangeNotifier {
   }
 }
 
-/// Global router with auth guard: unauthenticated users go to /login.
-final _router = GoRouter(
-  initialLocation: '/enquiries/open',
+final router = GoRouter(
+  initialLocation: '/enquiries?status=open',
   refreshListenable:
       GoRouterRefreshStream(FirebaseAuth.instance.authStateChanges()),
   redirect: (context, state) {
     final loggedIn = FirebaseAuth.instance.currentUser != null;
-    final loggingIn = state.matchedLocation == '/login';
+    final isLogin = state.matchedLocation == '/login';
+    final wantsAuth = state.matchedLocation.startsWith('/enquiries');
 
-    // Not logged in? Always go to /login (except if already there)
-    if (!loggedIn) return loggingIn ? null : '/login';
+    // If not logged in and trying to hit an authed route → go to login with return url
+    if (!loggedIn && wantsAuth) {
+      final from = Uri.encodeComponent(state.uri.toString()); // preserves query + path
+      return '/login?from=$from';
+    }
 
-    // Logged in but hitting /login? Kick to home.
-    if (loggingIn) return '/enquiries/open';
 
-    return null; // no redirect
+    // If logged in and on /login → bounce to intended page (or default)
+    if (loggedIn && isLogin) {
+      final from = state.uri.queryParameters['from'];
+      return from != null ? Uri.decodeComponent(from) : '/enquiries?status=open';
+    }
+
+    return null;
   },
   routes: [
+    // Public route
     GoRoute(
       path: '/login',
       builder: (context, state) => const LoginScreen(),
     ),
+
+    // Legacy compatibility: /enquiries/:category → /enquiries?status=<category>
     GoRoute(
       path: '/enquiries/:category',
-      builder: (context, state) => HomeScreen(
-        category: state.pathParameters['category']!,
-        enquiryId: null,
+      redirect: (context, state) {
+        final category = state.pathParameters['category']!;
+        return '/enquiries?status=$category';
+      },
+    ),
+
+    // Authenticated shell: two-pane layout
+    ShellRoute(
+      builder: (context, state, child) => TwoPaneShell(
+        leftPane: LeftPaneSwitcher(state: state),
+        breadcrumb: BreadcrumbBar(state: state),
+        child: child,
       ),
       routes: [
+        // Level 1: enquiries list + detail
         GoRoute(
-          path: ':id',
-          builder: (context, state) => HomeScreen(
-            category: state.pathParameters['category']!,
-            enquiryId: state.pathParameters['id']!,
-          ),
+          path: '/enquiries',
+          builder: (context, state) => const NoSelectionPage(), // optional
+          routes: [
+            GoRoute(
+              path: ':enquiryId',
+              builder: (context, state) => EnquiryDetailPage(
+                enquiryId: state.pathParameters['enquiryId']!,
+              ),
+              routes: [
+                // Level 2: responses
+                GoRoute(
+                  path: 'responses',
+                  builder: (context, state) => const NoSelectionPage(),
+                  routes: [
+                    GoRoute(
+                      path: ':responseId',
+                      builder: (context, state) => ResponseDetailPage(
+                        enquiryId: state.pathParameters['enquiryId']!,
+                        responseId: state.pathParameters['responseId']!,
+                      ),
+                      routes: [
+                        // Level 3: comments
+                        GoRoute(
+                          path: 'comments',
+                          builder: (context, state) => const NoSelectionPage(),
+                          routes: [
+                            GoRoute(
+                              path: ':commentId',
+                              builder: (context, state) => CommentDetailPage(
+                                enquiryId: state.pathParameters['enquiryId']!,
+                                responseId: state.pathParameters['responseId']!,
+                                commentId: state.pathParameters['commentId']!,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
         ),
       ],
     ),
   ],
 );
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -82,7 +145,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'Rule Enquiries App',
-      routerConfig: _router,
+      routerConfig: router,
     );
   }
 }
