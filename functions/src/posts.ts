@@ -269,6 +269,8 @@ export const createPost = onCall<CreatePostData>(
         publicDoc.isOpen = isOpen;
         publicDoc.enquiryNumber = enquiryNumber;
         publicDoc.roundNumber = 0;
+        publicDoc.teamsCanRespond = true; // updated on response publish
+        publicDoc.teamsCanComment = true; // updated on response publish
       } else if (postType === "response") {
         publicDoc.roundNumber = enquiryRoundNumber;
         publicDoc.responseNumber = enquiryResponseNumber; // set on publishing
