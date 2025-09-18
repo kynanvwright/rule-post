@@ -32,9 +32,10 @@ class NewEnquiryButton extends StatelessWidget {
         final api = PostApi();
 
         try {
-          await api.createEnquiry(  // could capture as "final id = await ..."
-            titleText: payload.title,
-            enquiryText: payload.text,
+          await api.createPost(  // could capture as "final id = await ..."
+            postType: 'enquiry',
+            title: payload.title,
+            postText: payload.text,
             attachments: (payload.attachments == null ||
                     payload.attachments!.isEmpty)
                 ? null

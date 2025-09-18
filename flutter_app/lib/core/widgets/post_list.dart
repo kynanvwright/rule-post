@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'post_list_item.dart';
-import 'pane_header.dart';
+// import 'pane_header.dart';
 
 class EnquiryList extends StatelessWidget {
   const EnquiryList({
@@ -8,21 +8,21 @@ class EnquiryList extends StatelessWidget {
     required this.items,
     required this.selectedId,
     required this.onSelect,
-    this.header = const PaneHeader('Enquiries'),
+    // this.header = const PaneHeader('Enquiries'),
     this.emptyMessage = 'No enquiries found',
   });
 
   final List<EnquiryListEntry> items;
   final String? selectedId;
   final ValueChanged<String> onSelect;
-  final Widget header;
+  // final Widget header;
   final String emptyMessage;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        header,
+        // header,
         const Divider(height: 1),
         Expanded(
           child: items.isEmpty

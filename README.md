@@ -16,6 +16,7 @@ A website for facilitating America's Cup Rule Enquiries.
 - New enquiry creation
   - storage of those enquiries
   - optional attachments for those enquiries
+  - automated enquiry numbering
 - Adaptive screen sizing
 - Database and storage writing implemented via backend functions, frontend write access blocked
   - as an exception, frontend can write to temporary file storage
@@ -52,7 +53,8 @@ A website for facilitating America's Cup Rule Enquiries.
   - this allows conditional formatting of pages based on roles/teams, without exposing user data
   - create a cloud function to update the custom claims whenever the user_data collection is changed in certain ways
 - Write data models in json, then run code to convert into dart and typescript (one source of truth)
-- Automated enquiry numbering
+- Update enquiry round when RC responses published
+- anonymity toggle (will be default on to start)
 
 ## Fixes
 - Remove placeholder files

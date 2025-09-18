@@ -37,14 +37,20 @@ class HomeScreen extends StatelessWidget {
     switch (category) {
       case 'all':
         // no where-clause
+        listQuery = listQuery
+        .where('isPublished', isEqualTo: true);
         break;
 
       case 'open':
-        listQuery = listQuery.where('isOpen', isEqualTo: true);
+        listQuery = listQuery
+        .where('isOpen', isEqualTo: true)
+        .where('isPublished', isEqualTo: true);
         break;
 
       case 'closed':
-        listQuery = listQuery.where('isOpen', isEqualTo: false);
+        listQuery = listQuery
+        .where('isOpen', isEqualTo: false)
+        .where('isPublished', isEqualTo: true);
         break;
       
       // case 'unpublished drafts':
@@ -55,7 +61,8 @@ class HomeScreen extends StatelessWidget {
       //   break;
     }
 
-    listQuery = listQuery.orderBy('createdAt', descending: true).limit(50);
+    // listQuery = listQuery.orderBy('createdAt', descending: true).limit(50);
+    listQuery = listQuery.orderBy('publishedAt', descending: true).limit(50);
 
 
     return AppScaffold(
@@ -69,53 +76,53 @@ class HomeScreen extends StatelessWidget {
             context.replace('/enquiries/$c'); // navigate on category change
           },
         ),
-        // centerPane: EnquiryList(
-        //   header: const PaneHeader('Enquiries'),
-        //   items: items,
-        //   selectedId: enquiryId,
-        //   onSelect: (id) {
-        //     context.go('/enquiries/$category/$id'); // navigate on item select
-        //   },
-        // ),
-        centerPane: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-          key: ValueKey(listQuery.parameters),
-          stream: listQuery.snapshots(),
-          builder: (context, snap) {
-            if (snap.hasError) {
-              debugPrint('Firestore stream error: ${snap.error}');
-              return const Center(child: Text('Failed to load enquiries'));
-            }
-            if (!snap.hasData) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            final docs = snap.data!.docs;
-            if (docs.isEmpty) {
-              return const Center(child: Text('No enquiries yet'));
-            }
+        centerPane: Column(
+          children: [
+            const PaneHeader(
+              'Enquiries',
+              trailing: NewEnquiryButton(),
+            ),
+            Expanded(
+              child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                key: ValueKey(listQuery.parameters),
+                stream: listQuery.snapshots(),
+                builder: (context, snap) {
+                  if (snap.hasError) {
+                    debugPrint('Firestore stream error: ${snap.error}');
+                    return const Center(child: Text('Failed to load enquiries'));
+                  }
+                  if (!snap.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-            // Map Firestore docs -> your list row model
-            final liveItems = docs.map((d) {
-              final data = d.data();
-              final title = (data['titleText'] ?? '').toString();
-              final enquiryNumber = (data['enquiryNumber'] ?? 'Unnumbered').toString();
-              final enquiryNumberString = 'Rule Enquiry #$enquiryNumber';
+                  final docs = snap.data!.docs;
+                  if (docs.isEmpty) {
+                    return const Center(child: Text('No enquiries yet'));
+                  }
 
-              return EnquiryListEntry(
-                id: d.id,
-                title: title.isEmpty ? '(untitled)' : title,
-                subtitle: enquiryNumberString,
-              );
-            }).toList();
+                  final items = docs.map((d) {
+                    final data = d.data();
+                    final title = (data['title'] ?? '').toString();
+                    final n = (data['enquiryNumber'] ?? 'Unnumbered').toString();
+                    return EnquiryListEntry(
+                      id: d.id,
+                      title: title.isEmpty ? '(untitled)' : title,
+                      subtitle: 'Rule Enquiry #$n',
+                    );
+                  }).toList();
 
-            return EnquiryList(
-              header: const PaneHeader('Enquiries',
-              trailing: NewEnquiryButton()),
-              items: liveItems,
-              selectedId: enquiryId,
-              onSelect: (id) => context.go('/enquiries/$category/$id'),
-            );
-          },
+                  return EnquiryList(
+                    // header removed here since it's now above
+                    items: items,
+                    selectedId: enquiryId,
+                    onSelect: (id) => context.go('/enquiries/$category/$id'),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
+
         rightPane: enquiryId == null
             ? null
             : EnquiryDetailPanel(
@@ -150,8 +157,8 @@ class EnquiryDetailPanel extends StatelessWidget {
         }
 
         final data = doc.data()!;
-        final title = (data['titleText'] ?? '').toString();
-        final body = (data['enquiryText'] ?? '').toString();
+        final title = (data['title'] ?? '').toString();
+        final body = (data['postText'] ?? '').toString();
 
         DateTime? createdAt;
         final ts = data['createdAt'];
