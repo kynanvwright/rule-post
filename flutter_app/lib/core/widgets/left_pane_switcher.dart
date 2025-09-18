@@ -28,7 +28,7 @@ class LeftPaneSwitcher extends StatelessWidget {
       return LeftPaneFrame(
         title: 'Enquiries',
         actions: [
-          NewEnquiryButton(),
+          NewPostButton(type: PostType.enquiry),
         ],
         child: EnquiriesList(filter: qp),
       );
@@ -38,7 +38,7 @@ class LeftPaneSwitcher extends StatelessWidget {
     return LeftPaneFrame(
       title: 'Enquiries',
       actions: [
-        NewEnquiryButton(),
+        NewPostButton(type: PostType.enquiry),
       ],
       child: EnquiriesList(filter: qp),
     );

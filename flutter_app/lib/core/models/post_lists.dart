@@ -65,7 +65,7 @@ class EnquiriesList extends StatelessWidget {
             return ListTile(
               dense: true,
               title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-              subtitle: Text('E-$numLabel • ${isOpen ? "Open" : "Closed"}'
+              subtitle: Text('RE-#$numLabel • ${isOpen ? "Open" : "Closed"}'
                   '${isPublished ? "" : " • Draft"}'),
               onTap: () {
                 context.go('/enquiries/${d.id}'); // detail in right pane

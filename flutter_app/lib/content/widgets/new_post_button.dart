@@ -1,30 +1,54 @@
 import 'package:flutter/material.dart';
 import '../../api/post_api.dart';
-
-// Typed attachment model (adjust the path/name if yours differs)
 import '../../core/models/attachments.dart' show TempAttachment;
-
-// MVP temp-upload libs
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
-class NewEnquiryButton extends StatelessWidget {
-  const NewEnquiryButton({super.key,
-  //  required this.currentCategory
-   });
+enum PostType { enquiry, response, comment }
 
-  // final String currentCategory;
+extension on PostType {
+  String get apiName => switch (this) {
+        PostType.enquiry => 'enquiry',
+        PostType.response => 'response',
+        PostType.comment => 'comment',
+      };
+  String get labelSingular => switch (this) {
+        PostType.enquiry => 'enquiry',
+        PostType.response => 'response',
+        PostType.comment => 'comment',
+      };
+  String get tempFolder => switch (this) {
+        PostType.enquiry => 'enquiries_temp',
+        PostType.response => 'responses_temp',
+        PostType.comment => 'comments_temp',
+      };
+}
+
+/// Use this one button for all three types.
+class NewPostButton extends StatelessWidget {
+  const NewPostButton({
+    super.key,
+    required this.type,
+    this.parentIds, // e.g. [enquiryId] for response, [enquiryId, responseId] for comment
+  });
+
+  final PostType type;
+  final List<String>? parentIds;
 
   @override
   Widget build(BuildContext context) {
+    final titleText = 'New ${type.labelSingular}';
     return FilledButton.icon(
       icon: const Icon(Icons.add),
-      label: const Text('New enquiry'),
+      label: Text(titleText),
       onPressed: () async {
-        final payload = await showDialog<_NewEnquiryPayload>(
+        final payload = await showDialog<_NewPostPayload>(
           context: context,
-          builder: (_) => const _NewEnquiryDialog(),
+          builder: (_) => _NewPostDialog(
+            dialogTitle: titleText,
+            tempFolder: type.tempFolder,
+          ),
         );
         if (payload == null) return;
 
@@ -32,45 +56,49 @@ class NewEnquiryButton extends StatelessWidget {
         final api = PostApi();
 
         try {
-          await api.createPost(  // could capture as "final id = await ..."
-            postType: 'enquiry',
+          await api.createPost(
+            postType: type.apiName,
             title: payload.title,
             postText: payload.text,
             attachments: (payload.attachments == null ||
                     payload.attachments!.isEmpty)
                 ? null
-                : payload.attachments, // typed list goes straight through
+                : payload.attachments,
+            parentIds: parentIds, // server side will validate/use this
           );
           messenger.showSnackBar(
-            const SnackBar(content: Text('Enquiry created')),
+            SnackBar(content: Text('${_cap(titleText)} created')),
           );
-          // If you want to navigate to the new enquiry page, uncomment:
-          // if (context.mounted) context.go('/enquiries/$id?cat=$currentCategory');
         } catch (e) {
           messenger.showSnackBar(
-            SnackBar(content: Text('Failed to create enquiry: $e')),
+            SnackBar(content: Text('Failed to create ${type.labelSingular}: $e')),
           );
         }
       },
     );
   }
+
+  String _cap(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 }
 
-class _NewEnquiryDialog extends StatefulWidget {
-  const _NewEnquiryDialog();
+class _NewPostDialog extends StatefulWidget {
+  const _NewPostDialog({
+    required this.dialogTitle,
+    required this.tempFolder,
+  });
+
+  final String dialogTitle;
+  final String tempFolder;
 
   @override
-  State<_NewEnquiryDialog> createState() => _NewEnquiryDialogState();
+  State<_NewPostDialog> createState() => _NewPostDialogState();
 }
 
-class _NewEnquiryDialogState extends State<_NewEnquiryDialog> {
+class _NewPostDialogState extends State<_NewPostDialog> {
   final _form = GlobalKey<FormState>();
   final _title = TextEditingController();
   final _text = TextEditingController();
-
-  // Typed, not Map
   final List<TempAttachment> _pending = [];
-
   bool _busy = false;
   bool _uploading = false;
 
@@ -86,7 +114,7 @@ class _NewEnquiryDialogState extends State<_NewEnquiryDialog> {
     final canSubmit = !_busy && !_uploading;
 
     return AlertDialog(
-      title: const Text('New enquiry'),
+      title: Text(widget.dialogTitle),
       content: Form(
         key: _form,
         child: ConstrainedBox(
@@ -106,13 +134,10 @@ class _NewEnquiryDialogState extends State<_NewEnquiryDialog> {
                   controller: _text,
                   decoration: const InputDecoration(labelText: 'Content'),
                   maxLines: 5,
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'Content is required'
-                      : null,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Content is required' : null,
                 ),
                 const SizedBox(height: 16),
-
-                // --- Add attachment button + spinner ---
                 Row(
                   children: [
                     ElevatedButton.icon(
@@ -130,8 +155,6 @@ class _NewEnquiryDialogState extends State<_NewEnquiryDialog> {
                   ],
                 ),
                 const SizedBox(height: 8),
-
-                // Preview/removal (typed)
                 if (_pending.isNotEmpty)
                   Align(
                     alignment: Alignment.centerLeft,
@@ -162,12 +185,10 @@ class _NewEnquiryDialogState extends State<_NewEnquiryDialog> {
               ? () async {
                   if (!(_form.currentState?.validate() ?? false)) return;
                   setState(() => _busy = true);
-
-                  // Return form data + typed attachments to caller
                   if (context.mounted) {
                     Navigator.pop(
                       context,
-                      _NewEnquiryPayload(
+                      _NewPostPayload(
                         title: _title.text.trim(),
                         text: _text.text.trim(),
                         attachments: _pending.toList(),
@@ -176,15 +197,12 @@ class _NewEnquiryDialogState extends State<_NewEnquiryDialog> {
                   }
                 }
               : null,
-          child: _busy
-              ? const CircularProgressIndicator()
-              : const Text('Create'),
+          child: _busy ? const CircularProgressIndicator() : const Text('Create'),
         ),
       ],
     );
   }
 
-  // Pick a local file -> upload to enquiries_temp/{uid}/... -> queue typed metadata
   Future<void> _addAttachmentToTemp() async {
     try {
       setState(() => _uploading = true);
@@ -198,9 +216,9 @@ class _NewEnquiryDialogState extends State<_NewEnquiryDialog> {
 
       final picked = await FilePicker.platform.pickFiles(
         withData: true,
-        type: FileType.custom,  // comment out type and allowedExtensions to allow all
-        allowedExtensions: ['pdf','doc','docx'],
-        );
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx'],
+      );
       if (picked == null || picked.files.isEmpty) {
         setState(() => _uploading = false);
         return;
@@ -221,15 +239,11 @@ class _NewEnquiryDialogState extends State<_NewEnquiryDialog> {
 
       final ts = DateTime.now().millisecondsSinceEpoch;
       final safeName = _sanitiseName(name);
-      final tempPath = 'enquiries_temp/$uid/$ts-$safeName';
+      final tempPath = '${widget.tempFolder}/$uid/$ts-$safeName';
 
       final ref = FirebaseStorage.instance.ref(tempPath);
-      await ref.putData(
-        bytes,
-        SettableMetadata(contentType: contentType),
-      );
+      await ref.putData(bytes, SettableMetadata(contentType: contentType));
 
-      // Queue typed metadata (server will move & mint final URL)
       _pending.add(TempAttachment(
         name: name,
         storagePath: tempPath,
@@ -244,10 +258,8 @@ class _NewEnquiryDialogState extends State<_NewEnquiryDialog> {
     }
   }
 
-  void _toast(String msg) {
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.showSnackBar(SnackBar(content: Text(msg)));
-  }
+  void _toast(String msg) =>
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
 
   String _sanitiseName(String name) =>
       name.replaceAll(RegExp(r'[^\w.\-+]'), '_').substring(0, name.length.clamp(0, 200));
@@ -275,8 +287,8 @@ class _NewEnquiryDialogState extends State<_NewEnquiryDialog> {
   }
 }
 
-class _NewEnquiryPayload {
-  _NewEnquiryPayload({
+class _NewPostPayload {
+  _NewPostPayload({
     required this.title,
     required this.text,
     this.attachments,

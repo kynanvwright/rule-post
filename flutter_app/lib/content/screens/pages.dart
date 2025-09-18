@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../widgets/new_post_button.dart';
+
 /// -------------------- NO SELECTION --------------------
 class NoSelectionPage extends StatelessWidget {
   const NoSelectionPage({super.key, this.message = 'Select an item to view details.'});
@@ -47,7 +49,7 @@ class EnquiryDetailPage extends StatelessWidget {
           return const Center(child: Text('Enquiry not found'));
         }
 
-        final title = (data['titleText'] ?? 'Untitled Enquiry').toString();
+        final title = (data['title'] ?? 'Untitled Enquiry').toString();
         final number = (data['enquiryNumber'] ?? '–').toString();
         final isOpen = data['isOpen'] == true;
         final isPublished = data['isPublished'] == true;
@@ -56,7 +58,7 @@ class EnquiryDetailPage extends StatelessWidget {
         final attachments = (data['attachments'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
 
         return _DetailScaffold(
-          header: 'E-$number: $title',
+          header: 'Rule Enquiry-$number: $title',
           meta: MetaChips(
             chips: [
               Chip(label: Text(isOpen ? 'Open' : 'Closed')),
@@ -68,6 +70,12 @@ class EnquiryDetailPage extends StatelessWidget {
               ? Text(postText)
               : const Text('No enquiry text.'),
           attachments: attachments.map((m) => AttachmentTile.fromMap(m)).toList(),
+          footer: Align(
+            alignment: Alignment.centerLeft,
+            child: NewPostButton(
+              type: PostType.response,
+              parentIds: [enquiryId]),
+            ),
           trailingActions: [
             FilledButton.icon(
               onPressed: () => context.go('/enquiries/$enquiryId/responses'),
@@ -218,6 +226,7 @@ class _DetailScaffold extends StatelessWidget {
     required this.body,
     this.attachments = const <Widget>[],
     this.trailingActions = const <Widget>[],
+    this.footer, // NEW
   });
 
   final String header;
@@ -225,6 +234,7 @@ class _DetailScaffold extends StatelessWidget {
   final Widget body;
   final List<Widget> attachments;
   final List<Widget> trailingActions;
+  final Widget? footer; // NEW
 
   @override
   Widget build(BuildContext context) {
@@ -232,43 +242,34 @@ class _DetailScaffold extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          // Header row
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(
-                  header,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: trailingActions,
-              ),
+              Expanded(child: Text(header, style: Theme.of(context).textTheme.titleLarge)),
+              Wrap(spacing: 8, runSpacing: 8, children: trailingActions),
             ],
           ),
           const SizedBox(height: 8),
           meta,
           const Divider(height: 24),
-
-          // Body
           body,
           const SizedBox(height: 16),
-
-          // Attachments
           if (attachments.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text('Attachments', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             ...attachments,
           ],
+          if (footer != null) ...[
+            const Divider(height: 32),
+            SafeArea(top: false, child: footer!), // keeps off nav bars
+          ],
         ],
       ),
     );
   }
 }
+
 
 /// -------------------- META CHIPS ROW --------------------
 class MetaChips extends StatelessWidget {

@@ -80,7 +80,7 @@ class HomeScreen extends StatelessWidget {
           children: [
             const PaneHeader(
               'Enquiries',
-              trailing: NewEnquiryButton(),
+              trailing: NewPostButton(type: PostType.enquiry),
             ),
             Expanded(
               child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(

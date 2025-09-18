@@ -230,7 +230,7 @@ export const createPost = onCall<CreatePostData>(
 
     let enquiryNumber: number;
     let enquiryRoundNumber: number;
-    let enquiryResponseNumber: number;
+    let enquiryResponseNumber: number | null;
     if (postType === "enquiry") {
       const maxEnquiryNumber = await getMaxOrDefault(
         "enquiries", "enquiryNumber");
@@ -250,6 +250,8 @@ export const createPost = onCall<CreatePostData>(
         // await db.collection("enquiries").doc(parentIds[0]).update({
         //     roundNumber: enquiryRoundNumber,
         // }); // update on publish not submission
+      } else {
+        enquiryResponseNumber = null;
       }
     }
     const isOpen = true; // future use
