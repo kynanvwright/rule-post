@@ -12,6 +12,7 @@ import 'auth/screens/login_screen.dart';
 import 'core/widgets/two_panel_shell.dart';
 import 'core/widgets/left_pane_switcher.dart';
 import 'core/widgets/breadcrumb_bar.dart';
+import 'core/widgets/app_scaffold.dart';
 import 'content/screens/pages.dart';
 
 Future<void> main() async {
@@ -71,11 +72,16 @@ final router = GoRouter(
 
     // Authenticated shell: two-pane layout
     ShellRoute(
-      builder: (context, state, child) => TwoPaneShell(
-        leftPane: LeftPaneSwitcher(state: state),
-        breadcrumb: BreadcrumbBar(state: state),
-        child: child,
-      ),
+      builder: (context, state, child) {
+        return AppScaffold(
+          title: 'Rule Enquiry App',
+          child: TwoPaneShell(
+            leftPane: LeftPaneSwitcher(state: state),
+            breadcrumb: BreadcrumbBar(state: state),
+            child: child,
+          ),
+        );
+      },
       routes: [
         // Level 1: enquiries list + detail
         GoRoute(

@@ -116,7 +116,7 @@ class ResponsesList extends StatelessWidget {
           itemBuilder: (context, i) {
             final d = docs[i];
             final data = d.data();
-            final title = (data['titleText'] ?? 'Response').toString();
+            final title = (data['title'] ?? 'Response').toString();
             final author = (data['authorName'] ?? 'Unknown').toString();
             final rNum = (data['responseNumber'] ?? (i + 1)).toString();
 

@@ -61,6 +61,7 @@ A website for facilitating America's Cup Rule Enquiries.
 - Consolidate data models for posts/enquiries
 - Rename variables that shouldn't have "enquiry" in them
 - Refactor code once it's all working, and format it as a series of widgets
+- New code doesn't automatically reshape when window sizes change
 
 ## Other Notes
 
