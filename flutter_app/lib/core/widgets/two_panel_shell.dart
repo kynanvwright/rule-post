@@ -15,7 +15,7 @@ class TwoPaneShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Rule Enquiries')),
+      // appBar: AppBar(title: const Text('Rule Enquiries')),
       body: Row(
         children: [
           SizedBox(

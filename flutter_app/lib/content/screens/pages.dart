@@ -58,7 +58,7 @@ class EnquiryDetailPage extends StatelessWidget {
         final attachments = (data['attachments'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
 
         return _DetailScaffold(
-          header: 'Rule Enquiry-$number: $title',
+          header: 'Rule Enquiry #$number: $title',
           meta: MetaChips(
             chips: [
               Chip(label: Text(isOpen ? 'Open' : 'Closed')),

@@ -17,7 +17,7 @@ class LeftPaneSwitcher extends StatelessWidget {
     if (loc.startsWith('/enquiries/') && loc.contains('/responses/')) {
       final enquiryId = p['enquiryId']!;
       return LeftPaneFrame(
-        title: 'Responses',
+        title: 'Files',
         actions: const [], // (optional) add "New Response" later
         child: ResponsesList(enquiryId: enquiryId),
       );
@@ -26,7 +26,7 @@ class LeftPaneSwitcher extends StatelessWidget {
     // Enquiry detail level → keep Enquiries list
     if (loc.startsWith('/enquiries/') && !loc.contains('/responses')) {
       return LeftPaneFrame(
-        title: 'Enquiries',
+        title: 'Files',
         actions: [
           NewPostButton(type: PostType.enquiry),
         ],
@@ -36,7 +36,7 @@ class LeftPaneSwitcher extends StatelessWidget {
 
     // Top level
     return LeftPaneFrame(
-      title: 'Enquiries',
+      title: 'Files',
       actions: [
         NewPostButton(type: PostType.enquiry),
       ],
@@ -80,3 +80,4 @@ class LeftPaneFrame extends StatelessWidget {
     );
   }
 }
+

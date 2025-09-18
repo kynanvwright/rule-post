@@ -62,6 +62,8 @@ A website for facilitating America's Cup Rule Enquiries.
 - Rename variables that shouldn't have "enquiry" in them
 - Refactor code once it's all working, and format it as a series of widgets
 - New code doesn't automatically reshape when window sizes change
+- I can't see response details in this branch
+- Try putting the new enquiry button under "Files" above the enquiry list to save space
 
 ## Other Notes
 

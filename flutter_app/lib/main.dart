@@ -10,10 +10,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'auth/screens/login_screen.dart';
 // import 'content/screens/home_screen.dart';
 import 'core/widgets/two_panel_shell.dart';
-import 'core/widgets/left_pane_switcher.dart';
+// import 'core/widgets/left_pane_switcher.dart';
 import 'core/widgets/breadcrumb_bar.dart';
 import 'core/widgets/app_scaffold.dart';
 import 'content/screens/pages.dart';
+import 'core/widgets/left_pane_nested.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -74,9 +75,10 @@ final router = GoRouter(
     ShellRoute(
       builder: (context, state, child) {
         return AppScaffold(
-          title: 'Rule Enquiry App',
+          title: 'RulePost',
           child: TwoPaneShell(
-            leftPane: LeftPaneSwitcher(state: state),
+            // leftPane: LeftPaneSwitcher(state: state),
+            leftPane: LeftPaneNested(state: state),
             breadcrumb: BreadcrumbBar(state: state),
             child: child,
           ),
