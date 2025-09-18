@@ -10,11 +10,13 @@ class EnquiriesList extends StatelessWidget {
   Query<Map<String, dynamic>> _buildQuery() {
     var q = FirebaseFirestore.instance
         .collection('enquiries')
-        .orderBy('createdAt', descending: true)
+        .where('isPublished', isEqualTo: true)
+        .orderBy('publishedAt', descending: true)
         .withConverter<Map<String, dynamic>>(
           fromFirestore: (s, _) => s.data() ?? {},
           toFirestore: (v, _) => v,
-        );
+        )
+        ;
 
     // Simple examples: status=open, team=ETNZ
     if (filter['status'] == 'open') {
@@ -22,12 +24,12 @@ class EnquiriesList extends StatelessWidget {
     } else if (filter['status'] == 'closed') {
       q = q.where('isOpen', isEqualTo: false);
     }
-    if (filter['published'] == 'true') {
-      q = q.where('isPublished', isEqualTo: true);
-    }
-    if (filter['team'] != null) {
-      q = q.where('team', isEqualTo: filter['team']);
-    }
+    // if (filter['published'] == 'true') {
+    //   q = q.where('isPublished', isEqualTo: true);
+    // }
+    // if (filter['team'] != null) {
+    //   q = q.where('team', isEqualTo: filter['team']);
+    // }
     return q;
   }
 
@@ -38,6 +40,7 @@ class EnquiriesList extends StatelessWidget {
       stream: query.snapshots(),
       builder: (context, snap) {
         if (snap.hasError) {
+          debugPrint('Firestore stream error: ${snap.error}');
           return const Center(child: Text('Failed to load enquiries'));
         }
         if (!snap.hasData) {
@@ -54,7 +57,7 @@ class EnquiriesList extends StatelessWidget {
           itemBuilder: (context, i) {
             final d = docs[i];
             final data = d.data();
-            final title = (data['titleText'] ?? 'Untitled').toString();
+            final title = (data['title'] ?? 'Untitled').toString();
             final numLabel = (data['enquiryNumber'] ?? '–').toString();
             final isOpen = data['isOpen'] == true;
             final isPublished = data['isPublished'] == true;
@@ -86,6 +89,7 @@ class ResponsesList extends StatelessWidget {
         .collection('enquiries')
         .doc(enquiryId)
         .collection('responses')
+        .where('isPublished', isEqualTo: true)
         .orderBy('createdAt', descending: false)
         .withConverter<Map<String, dynamic>>(
           fromFirestore: (s, _) => s.data() ?? {},
@@ -151,6 +155,7 @@ class CommentsList extends StatelessWidget {
         .collection('responses')
         .doc(responseId)
         .collection('comments')
+        .where('isPublished', isEqualTo: true)
         .orderBy('createdAt', descending: false)
         .withConverter<Map<String, dynamic>>(
           fromFirestore: (s, _) => s.data() ?? {},

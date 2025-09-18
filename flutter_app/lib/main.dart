@@ -37,6 +37,7 @@ class GoRouterRefreshStream extends ChangeNotifier {
   }
 }
 
+
 final router = GoRouter(
   initialLocation: '/enquiries?status=open',
   refreshListenable:
@@ -66,15 +67,6 @@ final router = GoRouter(
     GoRoute(
       path: '/login',
       builder: (context, state) => const LoginScreen(),
-    ),
-
-    // Legacy compatibility: /enquiries/:category → /enquiries?status=<category>
-    GoRoute(
-      path: '/enquiries/:category',
-      redirect: (context, state) {
-        final category = state.pathParameters['category']!;
-        return '/enquiries?status=$category';
-      },
     ),
 
     // Authenticated shell: two-pane layout
