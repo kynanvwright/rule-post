@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../content/widgets/new_post_button.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'left_pane_switcher.dart';
+import 'left_pane_frame.dart';
 
 class LeftPaneNested extends StatefulWidget {
   const LeftPaneNested({super.key, required this.state});

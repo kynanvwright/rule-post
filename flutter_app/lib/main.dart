@@ -77,7 +77,6 @@ final router = GoRouter(
         return AppScaffold(
           title: 'RulePost',
           child: TwoPaneShell(
-            // leftPane: LeftPaneSwitcher(state: state),
             leftPane: LeftPaneNested(state: state),
             breadcrumb: BreadcrumbBar(state: state),
             child: child,
