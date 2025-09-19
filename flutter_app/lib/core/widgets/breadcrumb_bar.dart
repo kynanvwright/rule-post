@@ -13,7 +13,7 @@ class BreadcrumbBar extends StatelessWidget {
       if (p['enquiryId'] != null)
         _Crumb('E-${p['enquiryId']}', '/enquiries/${p['enquiryId']}'),
       if (state.matchedLocation.contains('/responses'))
-        _Crumb('Responses', '/enquiries/${p['enquiryId']}/responses'),
+        _Crumb('Responses', '/enquiries/${p['enquiryId']}/responses', goParent: true, upLevels: 1), // go up one level, no page for responses
       if (p['responseId'] != null)
         _Crumb('R-${p['responseId']}', '/enquiries/${p['enquiryId']}/responses/${p['responseId']}'),
       if (state.matchedLocation.contains('/comments'))
@@ -30,7 +30,12 @@ class BreadcrumbBar extends StatelessWidget {
         children: [
           for (int i = 0; i < items.length; i++) ...[
             GestureDetector(
-              onTap: () => context.go(items[i].href),
+              onTap: () {
+                final target = items[i].goParent
+                    ? _parentOf(items[i].href, upLevels: items[i].upLevels)
+                    : items[i].href;
+                context.go(target);
+              },
               child: Text(items[i].label, style: const TextStyle(fontWeight: FontWeight.w600)),
             ),
             if (i < items.length - 1) const Padding(
@@ -47,5 +52,17 @@ class BreadcrumbBar extends StatelessWidget {
 class _Crumb {
   final String label;
   final String href;
-  _Crumb(this.label, this.href);
+  final bool goParent;      // <— when true, navigate one level up from href
+  final int upLevels;       // <— how many levels to go up (default 1)
+  _Crumb(this.label, this.href, {this.goParent = false, this.upLevels = 1});
+}
+
+String _parentOf(String href, {int upLevels = 1}) {
+  final u = Uri.parse(href);
+  final segs = List<String>.from(u.pathSegments);
+  if (segs.isEmpty) return href;
+  final cut = segs.length - upLevels.clamp(0, segs.length);
+  final parentPath = '/${segs.take(cut).join('/')}';
+  final qs = u.hasQuery ? '?${u.query}' : '';
+  return '$parentPath$qs';
 }
