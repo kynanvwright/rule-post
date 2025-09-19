@@ -25,9 +25,6 @@ class _LeftPaneNestedState extends State<LeftPaneNested> {
       title: 'Enquiries',
       actions: [
         NewPostButton(type: PostType.enquiry),
-        // if (_enquiryId == null) NewPostButton(type: PostType.enquiry),
-        // if (_enquiryId != null && _responseId == null) NewPostButton(type: PostType.response, parentIds: [_enquiryId!]),
-        // if (_responseId != null) NewPostButton(type: PostType.comment, parentIds: [_enquiryId!, _responseId!]),
       ],
       child: _EnquiriesTree(
         initiallyOpenEnquiryId: _enquiryId,
@@ -137,19 +134,11 @@ class _ResponsesBranch extends StatelessWidget {
               padding: const EdgeInsets.only(left: 12.0),
               child: ListTile(
                 key: PageStorageKey('resp_${enquiryId}_$id'),
-                // initiallyExpanded: isOpen,
                 title: _RowTile(
                   label: label,
                   selected: isOpen && initiallySelectedCommentId == null,
                   onTap: () => context.go('/enquiries/$enquiryId/responses/$id'),
                 ),
-                // children: [
-                //   _CommentsBranch(
-                //     enquiryId: enquiryId,
-                //     responseId: id,
-                //     initiallySelectedCommentId: initiallySelectedCommentId,
-                //   ),
-                // ],
               ),
             );
           }).toList(),
@@ -159,56 +148,6 @@ class _ResponsesBranch extends StatelessWidget {
   }
 }
 
-// class _CommentsBranch extends StatelessWidget {
-//   const _CommentsBranch({
-//     required this.enquiryId,
-//     required this.responseId,
-//     required this.initiallySelectedCommentId,
-//   });
-
-//   final String enquiryId;
-//   final String responseId;
-//   final String? initiallySelectedCommentId;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final q = FirebaseFirestore.instance
-//         .collection('enquiries').doc(enquiryId)
-//         .collection('responses').doc(responseId)
-//         .collection('comments')
-//         .where('isPublished', isEqualTo: true)
-//         .orderBy('publishedAt', descending: false);
-
-//     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-//       stream: q.snapshots(),
-//       builder: (context, snap) {
-//         if (snap.hasError) {debugPrint('Firestore stream error: ${snap.error}');}
-//         if (!snap.hasData) return const Padding(
-//           padding: EdgeInsets.only(left: 24, bottom: 8), child: CircularProgressIndicator());
-//         final docs = snap.data!.docs;
-//         if (docs.isEmpty) return const Padding(
-//           padding: EdgeInsets.only(left: 24, bottom: 8), child: Text('No comments', style: TextStyle(color: Colors.black54)));
-
-//         return Column(
-//           children: docs.map((d) {
-//             final id = d.id;
-//             final data = d.data();
-//             final label = (data['text'] ?? 'Comment').toString();
-//             final selected = id == initiallySelectedCommentId;
-//             return Padding(
-//               padding: const EdgeInsets.only(left: 24.0),
-//               child: _RowTile(
-//                 label: label,
-//                 selected: selected,
-//                 onTap: () => context.go('/enquiries/$enquiryId/responses/$responseId/comments/$id'),
-//               ),
-//             );
-//           }).toList(),
-//         );
-//       },
-//     );
-//   }
-// }
 
 class _RowTile extends StatelessWidget {
   const _RowTile({required this.label, this.selected = false, this.onTap});

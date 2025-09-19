@@ -68,7 +68,7 @@ class NewPostButton extends StatelessWidget {
             parentIds: parentIds, // server side will validate/use this
           );
           messenger.showSnackBar(
-            SnackBar(content: Text('${_cap(titleText)} created')),
+            SnackBar(content: Text('${_cap(titleText)} ${type.labelSingular} created')),
           );
         } catch (e) {
           messenger.showSnackBar(

@@ -143,6 +143,12 @@ class ResponseDetailPage extends StatelessWidget {
           ),
           body: text.isNotEmpty ? Text(text) : const Text('No response text.'),
           attachments: attachments.map((m) => AttachmentTile.fromMap(m)).toList(),
+          footer: Align(
+            alignment: Alignment.centerLeft,
+            child: NewPostButton(
+              type: PostType.comment,
+              parentIds: [enquiryId, responseId]),
+            ),
           trailingActions: [
             FilledButton.icon(
               onPressed: () => context.go('/enquiries/$enquiryId/responses/$responseId/comments'),
