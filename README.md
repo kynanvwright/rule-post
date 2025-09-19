@@ -21,13 +21,14 @@ A website for facilitating America's Cup Rule Enquiries.
 - Database and storage writing implemented via backend functions, frontend write access blocked
   - as an exception, frontend can write to temporary file storage
 - Cloud Storage rule for clearing out temporary file storage (1+ days old)
+- Nested structure of enquiries, responses and comments
+- Inline pdf and doc viewing
 
 ## Future Features
 - Doublecheck that backend functions are ensuring user has correct permissions
 - Delay publishing to specific times
   - permit editing prior to submission
   - make sure storage rules stop unpublished attachments from being read
-- Add layering of responses and comments underneath enquiries
 - Create enquiry phases and restrict user submissions accordingly
   - include limiting each team to one response per round
 - Allocate users to teams
@@ -58,13 +59,10 @@ A website for facilitating America's Cup Rule Enquiries.
 - Alias the documentIDs
 
 ## Fixes
-- Remove placeholder files
 - Consolidate data models for posts/enquiries
 - Rename variables that shouldn't have "enquiry" in them
 - Refactor code once it's all working, and format it as a series of widgets
-- New code doesn't automatically reshape when window sizes change
-- I can't see response details in this branch
-- Try putting the new enquiry button under "Files" above the enquiry list to save space
+- Check which widgets/screens are still in use
 
 ## Other Notes
 
