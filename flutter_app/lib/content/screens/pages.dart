@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher_string.dart';
+import 'package:flutter/foundation.dart';
 
 import '../widgets/new_post_button.dart';
 
@@ -582,45 +584,78 @@ class MetaChips extends StatelessWidget {
 }
 
 /// -------------------- ATTACHMENT TILE --------------------
+
 class AttachmentTile extends StatelessWidget {
   const AttachmentTile({
     super.key,
     required this.name,
-    required this.sizeBytes,
-    required this.downloadUrl,
+    this.url,
+    this.sizeBytes,
+    this.contentType,
   });
 
+  /// Normalises both old and new shapes:
+  /// name / fileName, url / downloadUrl, size / sizeBytes, contentType / mime
   factory AttachmentTile.fromMap(Map<String, dynamic> m) {
+    final dynamicSize = m['size'] ?? m['sizeBytes'];
     return AttachmentTile(
-      name: (m['name'] ?? 'file').toString(),
-      sizeBytes: (m['size'] ?? 0) is int ? m['size'] as int : 0,
-      downloadUrl: (m['url'] ?? '').toString(),
+      name: (m['name'] ?? m['fileName'] ?? 'file').toString(),
+      url: (m['url'] ?? m['downloadUrl'])?.toString(),
+      sizeBytes: dynamicSize is int ? dynamicSize : null,
+      contentType: (m['contentType'] ?? m['mime'])?.toString(),
     );
   }
 
   final String name;
-  final int sizeBytes;
-  final String downloadUrl;
+  final String? url;
+  final int? sizeBytes;
+  final String? contentType;
 
   @override
   Widget build(BuildContext context) {
+    final parts = <String>[];
+    if (contentType != null && contentType!.isNotEmpty) parts.add(contentType!);
+    if (sizeBytes != null) parts.add(_fmtSize(sizeBytes!));
+    final subtitle = parts.join(' • ');
+
     return ListTile(
-      leading: const Icon(Icons.attach_file),
-      title: Text(name),
-      subtitle: Text(_fmtSize(sizeBytes)),
+      leading: const Icon(Icons.attach_file), // keep the newer look
+      title: Text(name, overflow: TextOverflow.ellipsis),
+      subtitle: subtitle.isNotEmpty ? Text(subtitle) : null,
       trailing: IconButton(
         icon: const Icon(Icons.open_in_new),
-        onPressed: downloadUrl.isEmpty ? null : () => _open(downloadUrl),
         tooltip: 'Open',
+        onPressed: (url == null || url!.isEmpty) ? null : () => _openLink(context, url!),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8), // keep the newer padding
     );
   }
 
-  void _open(String url) {
-    // Intentionally minimal; let the platform/web pick this up.
-    // On Flutter Web, use `html.window.open(url, '_blank')` if desired.
+  Future<void> _openLink(BuildContext context, String link) async {
+    try {
+      final ok = await launchUrlString(link, mode: LaunchMode.externalApplication);
+      if (!ok) _toast(context, 'Couldn’t open link');
+    } catch (_) {
+      // Fallback UX identical to your old version
+      _toast(context, kIsWeb ? 'Open in new tab: $link' : 'Open: $link');
+    }
   }
+
+  void _toast(BuildContext context, String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+}
+
+/// Simple bytes → human string (e.g., 1.2 MB).
+String _fmtSize(int bytes) {
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  double v = bytes.toDouble();
+  int i = 0;
+  while (v >= 1024 && i < units.length - 1) {
+    v /= 1024;
+    i++;
+  }
+  return '${v.toStringAsFixed(v < 10 && i > 0 ? 1 : 0)} ${units[i]}';
 }
 
 /// -------------------- UTIL --------------------
@@ -636,17 +671,6 @@ String _fmtRelativeTime(DateTime dt) {
   if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
   if (diff.inHours < 24) return '${diff.inHours}h ago';
   return '${diff.inDays}d ago';
-}
-
-String _fmtSize(int bytes) {
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  var b = bytes.toDouble();
-  var i = 0;
-  while (b >= 1024 && i < units.length - 1) {
-    b /= 1024;
-    i++;
-  }
-  return '${b.toStringAsFixed(b < 10 && i > 0 ? 1 : 0)} ${units[i]}';
 }
 
 String _two(int n) => n.toString().padLeft(2, '0');
