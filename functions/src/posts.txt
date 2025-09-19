@@ -1,0 +1,20 @@
+Pseudo Code for figuring out when different permissions are allowed, prior to coding.
+
+Enquiries:
+- All teams and RC permitted to submit at any time
+- altered timeline option for RC only (future)
+
+Team responses:
+- When teamsCanRespond is true
+- When they have no other unpublished responses in that round
+    - option to relax this for overwrite
+- When they are responding to the correct round (block responses to old rounds)
+
+Team comments:
+- When teamsCanRespond is false, and teamsCanComment is true
+- When they are responding to comments in the correct round (block responses to old round responses)
+- No limit on frequency (yet)
+
+RC response:
+- When teamsCanRespond is false
+- When they are responding to the correct round

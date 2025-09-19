@@ -24,6 +24,13 @@ A website for facilitating America's Cup Rule Enquiries.
 - Nested structure of enquiries, responses and comments
 - Inline pdf and doc viewing
 
+## MVP
+- Each team has an account
+- Scheduled publishing
+- RC can skip scheduling as detailed in the rule
+- Basic email alerts
+- Colour-coding (optional but good)
+
 ## Future Features
 - Doublecheck that backend functions are ensuring user has correct permissions
 - Delay publishing to specific times
@@ -57,6 +64,11 @@ A website for facilitating America's Cup Rule Enquiries.
 - Update enquiry round when RC responses published
 - anonymity toggle (will be default on to start)
 - Alias the documentIDs
+- Set left pane to minimum of:
+  - current width
+  - smallest width where all title text shown
+- Add filters/search to left pane
+- Write working day funciton, and leave room for match date to be input
 
 ## Fixes
 - Consolidate data models for posts/enquiries
