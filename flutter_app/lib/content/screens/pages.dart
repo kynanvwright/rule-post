@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher_string.dart';
 import 'package:flutter/foundation.dart';
 
 import '../widgets/new_post_button.dart';
+import '../widgets/fancy_attachment_tile.dart';
 
 /// -------------------- NO SELECTION --------------------
 class NoSelectionPage extends StatelessWidget {
@@ -86,7 +87,8 @@ class EnquiryDetailPage extends StatelessWidget {
           commentary: postText.isEmpty ? null : SelectableText(postText),
 
           // ATTACHMENTS
-          attachments: attachments.map((m) => AttachmentTile.fromMap(m)).toList(),
+          // attachments: attachments.map((m) => AttachmentTile.fromMap(m)).toList(),
+          attachments: attachments.map((m) => FancyAttachmentTile.fromMap(m)).toList(),
 
           // CHILDREN: Responses list + New child
           footer: _ChildrenSection.responses(enquiryId: enquiryId),
