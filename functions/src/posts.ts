@@ -130,7 +130,9 @@ export const createPost = onCall<CreatePostData>(
       throw new HttpsError("invalid-argument",
         "Comment must contain two parentIds.");
     }
-    if (data.postType === "comment" && !data.attachments) {
+    if (data.postType === "comment" &&
+      Array.isArray(data.attachments) &&
+      data.attachments.length > 0) {
       throw new HttpsError("invalid-argument",
         "Comments must not have attachments.");
     }

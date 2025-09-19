@@ -48,13 +48,15 @@ class LeftPaneSwitcher extends StatelessWidget {
 class LeftPaneFrame extends StatelessWidget {
   const LeftPaneFrame({
     super.key,
-    required this.title,
-    required this.child,
+    this.title,
     this.actions = const <Widget>[],
+    this.header,
+    required this.child,
   });
 
-  final String title;
+  final String? title;
   final List<Widget> actions;
+  final Widget? header;
   final Widget child;
 
   @override
@@ -65,13 +67,16 @@ class LeftPaneFrame extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
-            child: Row(
-              children: [
-                Text(title, style: Theme.of(context).textTheme.titleMedium),
-                const Spacer(),
-                ...actions,
-              ],
-            ),
+            child: header ??
+                Row(
+                  children: [
+                    if (title != null)
+                      Text(title!,
+                          style: Theme.of(context).textTheme.titleMedium),
+                    const Spacer(),
+                    ...actions,
+                  ],
+                ),
           ),
           const Divider(height: 1),
           Expanded(child: child),
@@ -80,4 +85,5 @@ class LeftPaneFrame extends StatelessWidget {
     );
   }
 }
+
 

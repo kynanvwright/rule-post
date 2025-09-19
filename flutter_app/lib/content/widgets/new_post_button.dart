@@ -38,7 +38,8 @@ class NewPostButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final titleText = 'New ${type.labelSingular}';
+    // final titleText = 'New ${type.labelSingular}';
+    final titleText = 'New';
     return FilledButton.icon(
       icon: const Icon(Icons.add),
       label: Text(titleText),
