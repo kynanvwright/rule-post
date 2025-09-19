@@ -165,13 +165,18 @@ export const createPost = onCall<CreatePostData>(
     const incoming = Array.isArray(data.attachments) ? data.attachments : [];
     const finalised: FinalisedAttachment[] = [];
 
+    const tempRoot =
+      postType === "enquiry" ? "enquiries_temp" :
+        postType === "response" ? "responses_temp" :
+          "comments_temp";
+
     for (const a of incoming) {
       const name = String(a?.name ?? "").trim();
       const tmpPath = String(a?.storagePath ?? "").trim();
       if (!name || !tmpPath) continue;
 
       // Enforce that the temp object belongs to the caller
-      const expectedPrefix = `enquiries_temp/${authorUid}/`;
+      const expectedPrefix = `${tempRoot}/${authorUid}/`;
       if (!tmpPath.startsWith(expectedPrefix)) {
         throw new HttpsError("permission-denied", "Invalid attachment path.");
       }
