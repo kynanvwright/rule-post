@@ -88,7 +88,10 @@ class EnquiryDetailPage extends StatelessWidget {
 
           // ATTACHMENTS
           // attachments: attachments.map((m) => AttachmentTile.fromMap(m)).toList(),
-          attachments: attachments.map((m) => FancyAttachmentTile.fromMap(m)).toList(),
+          attachments: attachments.map((m) => FancyAttachmentTile.fromMap(
+            m,
+            previewHeight: MediaQuery.of(context).size.height * 0.6,
+            )).toList(), // consider making platform dependent
 
           // CHILDREN: Responses list + New child
           footer: _ChildrenSection.responses(enquiryId: enquiryId),
@@ -167,7 +170,11 @@ class ResponseDetailPage extends StatelessWidget {
           ),
 
           commentary: text.isEmpty ? null : SelectableText(text),
-          attachments: attachments.map((m) => AttachmentTile.fromMap(m)).toList(),
+          // attachments: attachments.map((m) => AttachmentTile.fromMap(m)).toList(),
+          attachments: attachments.map((m) => FancyAttachmentTile.fromMap(
+            m,
+            previewHeight: MediaQuery.of(context).size.height * 0.6,
+            )).toList(), // consider making platform dependent
 
           // CHILDREN: Comments list + New child
           footer: _ChildrenSection.comments(enquiryId: enquiryId, responseId: responseId),
@@ -223,7 +230,7 @@ class CommentDetailPage extends StatelessWidget {
         final publishedAt = (data['publishedAt'] as Timestamp?)?.toDate();
         // final author = (data['author'] ?? 'Unknown').toString();
         final number = (data['commentNumber'] ?? '—').toString();
-        final attachments = (data['attachments'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
+        // final attachments = (data['attachments'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
 
         return _DetailScaffold(
           headerLines: [
@@ -239,7 +246,7 @@ class CommentDetailPage extends StatelessWidget {
           ),
 
           commentary: text.isEmpty ? null : SelectableText(text),
-          attachments: attachments.map((m) => AttachmentTile.fromMap(m)).toList(),
+          // attachments: attachments.map((m) => AttachmentTile.fromMap(m)).toList(),
 
           // Comments have no children section
           footer: null,

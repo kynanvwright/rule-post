@@ -55,6 +55,7 @@ A website for facilitating America's Cup Rule Enquiries.
 - Write data models in json, then run code to convert into dart and typescript (one source of truth)
 - Update enquiry round when RC responses published
 - anonymity toggle (will be default on to start)
+- Alias the documentIDs
 
 ## Fixes
 - Remove placeholder files
