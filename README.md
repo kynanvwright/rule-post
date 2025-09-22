@@ -23,10 +23,13 @@ A website for facilitating America's Cup Rule Enquiries.
 - Cloud Storage rule for clearing out temporary file storage (1+ days old)
 - Nested structure of enquiries, responses and comments
 - Inline pdf and doc viewing
+- Delayed publishing with cloud functions
+- Automated locking/unlocking of submission permissions with cloud functions
+
 
 ## MVP
 - Each team has an account
-- Scheduled publishing (deployed but not tested)
+- Scheduled publishing (deployed but all phases not tested)
 - RC can skip scheduling as detailed in the rule
 - Basic email alerts
 - Colour-coding (optional but good)
