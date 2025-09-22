@@ -5,6 +5,7 @@ import {
   getFirestore,
   FieldValue,
   DocumentSnapshot,
+  DocumentReference,
 } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import {
@@ -334,6 +335,11 @@ export const createPost = onCall<CreatePostData>(
             "No matching enquiry for this response.",
           );
         } else {
+          const isOpen = enquiryDoc.get("isOpen");
+          if (isOpen !== true) {
+            throw new HttpsError("failed-precondition", "Enquiry is closed.");
+          }
+          // Locks duplicate submissions. Relax later to allow edits
           const teamsCanRespond = enquiryDoc.get("teamsCanRespond");
           if (fromRC !== true && teamsCanRespond !== true) {
             throw new HttpsError(
@@ -341,8 +347,32 @@ export const createPost = onCall<CreatePostData>(
               "Competitors not permitted to respond at this time.",
             );
           }
+          const respSnap = await db
+            .collection("enquiries")
+            .doc(parentIds[0])
+            .collection("responses")
+            .where("isPublished", "==", false)
+            .get();
+          if (!respSnap.empty) {
+            const metaRefs: DocumentReference[] = respSnap.docs.map((d) =>
+              d.ref.collection("meta").doc("data"),
+            );
+
+            const metaDocs = await db.getAll(...metaRefs);
+
+            for (const m of metaDocs) {
+              if (!m.exists) continue;
+              const team = m.get("authorTeam") as string | undefined;
+              if (team === authorTeam) {
+                throw new HttpsError(
+                  "failed-precondition",
+                  "Only one response allowed per team per round.",
+                );
+              }
+            }
+          }
         }
-        publicDoc.roundNumber = enquiryRoundNumber; // +1 if RC response
+        publicDoc.roundNumber = enquiryRoundNumber;
         publicDoc.responseNumber = enquiryResponseNumber; // set on publishing
       } else {
         if (!enquiryDoc) {
@@ -351,6 +381,10 @@ export const createPost = onCall<CreatePostData>(
             "No matching enquiry for this comment.",
           );
         } else {
+          const isOpen = enquiryDoc.get("isOpen");
+          if (isOpen !== true) {
+            throw new HttpsError("failed-precondition", "Enquiry is closed.");
+          }
           const teamsCanComment = enquiryDoc.get("teamsCanComment");
           if (fromRC !== true && teamsCanComment !== true) {
             throw new HttpsError(
@@ -358,10 +392,22 @@ export const createPost = onCall<CreatePostData>(
               "Competitors not permitted to comment at this time.",
             );
           }
+          const responseDoc = await db
+            .collection("enquiries")
+            .doc(parentIds[1])
+            .get();
+          const responseRound = responseDoc.get("roundNumber");
+          const enquiryRound = enquiryDoc.get("roundNumber");
+          if (responseRound !== enquiryRound) {
+            throw new HttpsError(
+              "failed-precondition",
+              "Comments can only be made on the latest round of responses.",
+            );
+          }
+          // consider blocking comments on RC responses
         }
       }
 
-      // later add more checks here, e.g. has team responded?
       const metaDoc: Record<string, unknown> = {
         authorUid,
         authorTeam,
