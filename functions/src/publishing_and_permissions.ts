@@ -1,10 +1,12 @@
-import {onSchedule} from "firebase-functions/v2/scheduler";
-import * as admin from "firebase-admin";
-import {DateTime} from "luxon";
-import {isWorkingDay} from "./working_day";
-import {ROME_TZ} from "./config";
+// import * as admin from "firebase-admin";
+import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
+import { onSchedule } from "firebase-functions/v2/scheduler";
+import { DateTime } from "luxon";
 
-const db = admin.firestore();
+import { ROME_TZ } from "./config";
+import { isWorkingDay } from "./working_day";
+
+const db = getFirestore();
 
 type TargetTime = {
   hour: number;
@@ -33,7 +35,7 @@ function computeStageEnds(
   let added = 0;
 
   while (added < workDaysAhead) {
-    d = d.plus({days: 1});
+    d = d.plus({ days: 1 });
     if (isWorkingDay(d)) {
       added += 1;
     }
@@ -65,7 +67,7 @@ function computeStageEnds(
  * - Sets stageEnds = target time (default 19:55) in 3 working days
  */
 export const enquiryPublisher = onSchedule(
-  {region: "europe-west6", schedule: "0 0,12 * * *", timeZone: ROME_TZ},
+  { region: "europe-west6", schedule: "0 0,12 * * *", timeZone: ROME_TZ },
   async (): Promise<void> => {
     const nowRome = DateTime.now().setZone(ROME_TZ);
 
@@ -76,13 +78,13 @@ export const enquiryPublisher = onSchedule(
       return;
     }
 
-    const stageEndsDate = computeStageEnds(
-      nowRome,
-      3,
-      {hour: 19, minute: 55, second: 0},
-    );
+    const stageEndsDate = computeStageEnds(nowRome, 3, {
+      hour: 19,
+      minute: 55,
+      second: 0,
+    });
 
-    const publishedAt = admin.firestore.FieldValue.serverTimestamp();
+    const publishedAt = FieldValue.serverTimestamp();
 
     const q = db.collection("enquiries").where("isPublished", "==", false);
     const snap = await q.get();
@@ -99,7 +101,7 @@ export const enquiryPublisher = onSchedule(
       writer.update(doc.ref, {
         isPublished: true,
         publishedAt,
-        stageEnds: admin.firestore.Timestamp.fromDate(stageEndsDate),
+        stageEnds: Timestamp.fromDate(stageEndsDate),
       });
       updated += 1;
     });
@@ -114,7 +116,7 @@ export const enquiryPublisher = onSchedule(
 );
 
 export const teamResponsePublisher = onSchedule(
-  {region: "europe-west6", schedule: "0 20 * * *", timeZone: ROME_TZ},
+  { region: "europe-west6", schedule: "0 20 * * *", timeZone: ROME_TZ },
   async (): Promise<void> => {
     const nowRome = DateTime.now().setZone(ROME_TZ);
 
@@ -126,7 +128,7 @@ export const teamResponsePublisher = onSchedule(
       return;
     }
 
-    const nowTs = admin.firestore.Timestamp.now();
+    const nowTs = Timestamp.now();
     const q = db
       .collection("enquiries")
       .where("isPublished", "==", true)
@@ -164,16 +166,15 @@ export const teamResponsePublisher = onSchedule(
       }
 
       if (unpublishedSnap.empty) {
-        const newStageEnds = computeStageEnds(
-          nowRome,
-          4,
-          {hour: 11, minute: 55},
-        );
+        const newStageEnds = computeStageEnds(nowRome, 4, {
+          hour: 11,
+          minute: 55,
+        });
 
         writer.update(enquiryRef, {
           teamsCanRespond: false,
           teamsCanComment: true,
-          stageEnds: admin.firestore.Timestamp.fromDate(newStageEnds),
+          stageEnds: Timestamp.fromDate(newStageEnds),
         });
 
         processedEnquiries += 1;
@@ -190,16 +191,15 @@ export const teamResponsePublisher = onSchedule(
         totalResponsesPublished += 1;
       }
 
-      const newStageEnds = computeStageEnds(
-        nowRome,
-        4,
-        {hour: 11, minute: 55},
-      );
+      const newStageEnds = computeStageEnds(nowRome, 4, {
+        hour: 11,
+        minute: 55,
+      });
 
       writer.update(enquiryRef, {
         teamsCanRespond: false,
         teamsCanComment: true,
-        stageEnds: admin.firestore.Timestamp.fromDate(newStageEnds),
+        stageEnds: Timestamp.fromDate(newStageEnds),
       });
 
       processedEnquiries += 1;
@@ -215,7 +215,7 @@ export const teamResponsePublisher = onSchedule(
 );
 
 export const commentPublisher = onSchedule(
-  {region: "europe-west6", schedule: "0 0,12 * * *", timeZone: ROME_TZ},
+  { region: "europe-west6", schedule: "0 0,12 * * *", timeZone: ROME_TZ },
   async (): Promise<void> => {
     const nowRome = DateTime.now().setZone(ROME_TZ);
 
@@ -273,7 +273,7 @@ export const commentPublisher = onSchedule(
         }
 
         unpublishedCommentsSnap.docs.forEach((c) => {
-          writer.update(c.ref, {isPublished: true});
+          writer.update(c.ref, { isPublished: true });
           totalCommentsPublished += 1;
         });
       }
@@ -282,18 +282,18 @@ export const commentPublisher = onSchedule(
         | FirebaseFirestore.Timestamp
         | undefined;
 
-      const nowTs = admin.firestore.Timestamp.now();
+      const nowTs = Timestamp.now();
 
       if (stageEnds && stageEnds.toMillis() < nowTs.toMillis()) {
-        const newStageEndsDate = computeStageEnds(
-          nowRome,
-          0,
-          {hour: 23, minute: 55, second: 0},
-        );
+        const newStageEndsDate = computeStageEnds(nowRome, 0, {
+          hour: 23,
+          minute: 55,
+          second: 0,
+        });
 
         writer.update(enquiryRef, {
           teamsCanComment: false,
-          stageEnds: admin.firestore.Timestamp.fromDate(newStageEndsDate),
+          stageEnds: Timestamp.fromDate(newStageEndsDate),
         });
       }
 
@@ -310,7 +310,7 @@ export const commentPublisher = onSchedule(
 );
 
 export const committeeResponsePublisher = onSchedule(
-  {region: "europe-west6", schedule: "0 0 * * *", timeZone: ROME_TZ},
+  { region: "europe-west6", schedule: "0 0 * * *", timeZone: ROME_TZ },
   async (): Promise<void> => {
     const nowRome = DateTime.now().setZone(ROME_TZ);
 
@@ -322,7 +322,7 @@ export const committeeResponsePublisher = onSchedule(
       return;
     }
 
-    const nowTs = admin.firestore.Timestamp.now();
+    const nowTs = Timestamp.now();
 
     const enquiriesSnap = await db
       .collection("enquiries")
@@ -364,9 +364,9 @@ export const committeeResponsePublisher = onSchedule(
             e.isPublished === true &&
             e.teamsCanRespond === false &&
             e.teamsCanComment === false &&
-            (e.stageEnds instanceof admin.firestore.Timestamp ?
-              e.stageEnds.toMillis() < Date.now() :
-              false);
+            (e.stageEnds instanceof Timestamp
+              ? e.stageEnds.toMillis() < Date.now()
+              : false);
 
           if (!stillOpen) {
             return;
@@ -392,16 +392,15 @@ export const committeeResponsePublisher = onSchedule(
             responseNumber: 0,
           });
 
-          const nextStageEnds = computeStageEnds(
-            nowRome,
-            3,
-            {hour: 19, minute: 55},
-          );
+          const nextStageEnds = computeStageEnds(nowRome, 3, {
+            hour: 19,
+            minute: 55,
+          });
 
           tx.update(enquiryRef, {
-            roundNumber: admin.firestore.FieldValue.increment(1),
+            roundNumber: FieldValue.increment(1),
             teamsCanRespond: true,
-            stageEnds: admin.firestore.Timestamp.fromDate(nextStageEnds),
+            stageEnds: Timestamp.fromDate(nextStageEnds),
           });
 
           published += 1;

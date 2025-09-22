@@ -1,7 +1,7 @@
-import {setGlobalOptions} from "firebase-functions/v2";
-import {beforeUserCreated} from "firebase-functions/v2/identity";
-import {HttpsError} from "firebase-functions/v2/https";
-import * as admin from "firebase-admin";
+import { getApps, initializeApp } from "firebase-admin/app";
+import { setGlobalOptions } from "firebase-functions/v2";
+import { HttpsError } from "firebase-functions/v2/https";
+import { beforeUserCreated } from "firebase-functions/v2/identity";
 
 /**
  * Global options for all functions.
@@ -11,22 +11,17 @@ setGlobalOptions({
   maxInstances: 10,
 });
 
-if (!admin.apps.length) {
-  admin.initializeApp();
+if (!getApps().length) {
+  initializeApp();
 }
 
 /** Block all self-registration */
 export const blockAllSelfRegistration = beforeUserCreated(() => {
-  throw new HttpsError(
-    "permission-denied",
-    "Self-registration is disabled.",
-  );
+  throw new HttpsError("permission-denied", "Self-registration is disabled.");
 });
 
-
-import {createPost} from "./posts";
-// Re-export the Cloud Functions
-export {createPost};
+import { createPost } from "./posts";
+export { createPost };
 
 import {
   enquiryPublisher,
@@ -35,7 +30,7 @@ import {
   committeeResponsePublisher,
 } from "./publishing_and_permissions";
 
-exports.enquiryPublisher=enquiryPublisher;
-exports.teamResponsePublisher=teamResponsePublisher;
-exports.commentPublisher=commentPublisher;
-exports.committeeResponsePublisher=committeeResponsePublisher;
+exports.enquiryPublisher = enquiryPublisher;
+exports.teamResponsePublisher = teamResponsePublisher;
+exports.commentPublisher = commentPublisher;
+exports.committeeResponsePublisher = committeeResponsePublisher;
