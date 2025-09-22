@@ -77,6 +77,17 @@ A website for facilitating America's Cup Rule Enquiries.
 - Refactor code once it's all working, and format it as a series of widgets
 - Check which widgets/screens are still in use
 
+
 ## Other Notes
 
 - Check how it looks on various devices
+
+### Useful commands to remember (Powershell)
+- firebase firestore:indexes --project rule-post > firestore.indexes.json (download indexes from console)
+- npx ts-node makeAdmin.ts (run local script to assign custom role attributes)
+- firebase deploy --only functions:createPost (update/create one function)
+- firebase deploy (update all firebase from local files, functions, rules etc)
+- npx eslint "src/**/*.{js,ts,tsx}" --fix (fix formatting of ts files)
+- flutter clean (remove compiled code from flutter build after making decent changes)
+- flutter pub get (rebuilds what was lost during flutter clean)
+- flutter run -d chrome (run flutter app locally in chrome)
