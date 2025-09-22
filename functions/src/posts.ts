@@ -269,7 +269,7 @@ export const createPost = onCall<CreatePostData>(
         title,
         postText,
         isPublished,
-        publishedAt: now,
+        // publishedAt: now,
       };
       if (finalised.length > 0) {
         publicDoc.attachments = finalised;
@@ -277,12 +277,14 @@ export const createPost = onCall<CreatePostData>(
       if (postType === "enquiry") {
         publicDoc.isOpen = isOpen;
         publicDoc.enquiryNumber = enquiryNumber;
-        publicDoc.roundNumber = 0;
+        publicDoc.roundNumber = 1;
         publicDoc.teamsCanRespond = true; // updated on response publish
-        publicDoc.teamsCanComment = true; // updated on response publish
+        publicDoc.teamsCanComment = false; // updated on response publish
+        publicDoc.stageLength = 4; // working days
       } else if (postType === "response") {
-        publicDoc.roundNumber = enquiryRoundNumber;
+        publicDoc.roundNumber = enquiryRoundNumber; // +1 if RC response
         publicDoc.responseNumber = enquiryResponseNumber; // set on publishing
+        // fromRC field
       } else {
         // comment
       }

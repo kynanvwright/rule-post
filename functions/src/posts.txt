@@ -18,3 +18,15 @@ Team comments:
 RC response:
 - When teamsCanRespond is false
 - When they are responding to the correct round
+
+Pseudocode for publishing function
+
+- search through enquiries, responses, comments
+- skip whenever an enquiry "isClosed"
+- only search the latest rounds
+- find ones with isPublished = false and switch to true
+- send email alerts
+- run every 12 hours at the publishing time
+- think about what to do for RC responses (publish at nearest time or end of phase)
+  - could be toggleable
+- note that I need a better check for responses, as they should be delayed longer

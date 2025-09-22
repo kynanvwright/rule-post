@@ -27,3 +27,15 @@ export const blockAllSelfRegistration = beforeUserCreated(() => {
 import {createPost} from "./posts";
 // Re-export the Cloud Functions
 export {createPost};
+
+import{
+  enquiryPublisher,
+  teamResponsePublisher,
+  commentPublisher,
+  committeeResponsePublisher
+}from'./publishing_and_permissions';
+
+exports.enquiryPublisher=enquiryPublisher;
+exports.teamResponsePublisher=teamResponsePublisher;
+exports.commentPublisher=commentPublisher;
+exports.committeeResponsePublisher=committeeResponsePublisher;
