@@ -28,12 +28,12 @@ import {createPost} from "./posts";
 // Re-export the Cloud Functions
 export {createPost};
 
-import{
+import {
   enquiryPublisher,
   teamResponsePublisher,
   commentPublisher,
-  committeeResponsePublisher
-}from'./publishing_and_permissions';
+  committeeResponsePublisher,
+} from "./publishing_and_permissions";
 
 exports.enquiryPublisher=enquiryPublisher;
 exports.teamResponsePublisher=teamResponsePublisher;
