@@ -26,7 +26,7 @@ A website for facilitating America's Cup Rule Enquiries.
 
 ## MVP
 - Each team has an account
-- Scheduled publishing
+- Scheduled publishing (deployed but not tested)
 - RC can skip scheduling as detailed in the rule
 - Basic email alerts
 - Colour-coding (optional but good)
@@ -40,6 +40,7 @@ A website for facilitating America's Cup Rule Enquiries.
   - include limiting each team to one response per round
 - Allocate users to teams
   - Consider having a 'master user' for each team who can add and remove members, and overwrite their drafts
+  - they could also chose if a user can write or only read
 - Add admin-only features
   - skip to end of certain phases
   - close enquiries
