@@ -416,9 +416,10 @@ class _ChildrenSection extends StatelessWidget {
                   onTap: () => context.go('/enquiries/$enquiryId/responses/$responseId'),
                 );
               } else if (segments.contains('comments')) {
-                tile = Card(
-                  child: ExpandableCommentTile(snippet, maxLines: 3),
-                );
+                // tile = ExpandableCommentTile(text, maxLines: 3);
+                // tile = ExpandableTextTile(text, maxLines: 3);
+                // tile = SimpleExpandableTile(text, maxLines: 3);
+                tile = CollapsibleTextTile(text, maxLines: 3);
               }
               return tile ?? const SizedBox.shrink();
             },
@@ -492,8 +493,8 @@ class _StatusChip extends StatelessWidget {
   }
 }
 
-class ExpandableCommentTile extends StatefulWidget {
-  const ExpandableCommentTile(
+class ExpandableTextTile extends StatefulWidget {
+  const ExpandableTextTile(
     this.text, {
     super.key,
     this.maxLines = 3,
@@ -502,67 +503,169 @@ class ExpandableCommentTile extends StatefulWidget {
 
   final String text;
   final int maxLines;
-  final EdgeInsetsGeometry padding;
+  final EdgeInsets padding;
 
   @override
-  State<ExpandableCommentTile> createState() => _ExpandableCommentTileState();
+  State<ExpandableTextTile> createState() => _ExpandableTextTileState();
 }
 
-class _ExpandableCommentTileState extends State<ExpandableCommentTile> {
-  bool _isOverflowing = false;
+class _ExpandableTextTileState extends State<ExpandableTextTile> {
+  bool _expanded = false;
+  bool _overflow = false;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Measure once to see if it exceeds maxLines.
-    final style = DefaultTextStyle.of(context).style;
-    final width = MediaQuery.of(context).size.width -
-        (widget.padding is EdgeInsets ? (widget.padding as EdgeInsets).horizontal : 32);
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Check if text exceeds maxLines
+        final style = DefaultTextStyle.of(context).style;
+        final maxWidth = constraints.maxWidth - widget.padding.horizontal;
+        final tp = TextPainter(
+          text: TextSpan(text: widget.text, style: style),
+          maxLines: widget.maxLines,
+          textDirection: Directionality.of(context),
+        )..layout(maxWidth: maxWidth);
 
+        _overflow = tp.didExceedMaxLines;
+
+        if (!_overflow) {
+          return Padding(
+            padding: widget.padding,
+            child: Text(widget.text),
+          );
+        }
+
+        return ExpansionTile(
+          tilePadding: widget.padding,
+          title: const SizedBox.shrink(), // required, but hidden
+          subtitle: !_expanded
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.text,
+                      maxLines: widget.maxLines,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      "…",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                )
+              : null,
+          onExpansionChanged: (val) {
+            setState(() => _expanded = val);
+          },
+          childrenPadding: EdgeInsets.only(
+            left: widget.padding.left,
+            right: widget.padding.right,
+            bottom: widget.padding.bottom,
+          ),
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: SelectableText(widget.text), // full text
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class CollapsibleTextTile extends StatefulWidget {
+  const CollapsibleTextTile(
+    this.text, {
+    super.key,
+    this.maxLines = 3,
+    this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    this.showCollapsedHint = true, // shows a separate "…" line when collapsed
+  });
+
+  final String text;
+  final int maxLines;
+  final EdgeInsets padding;
+  final bool showCollapsedHint;
+
+  @override
+  State<CollapsibleTextTile> createState() => _CollapsibleTextTileState();
+}
+
+class _CollapsibleTextTileState extends State<CollapsibleTextTile>
+    with TickerProviderStateMixin {
+  bool _expanded = false;
+  bool _overflows = false;
+
+  void _checkOverflow(BoxConstraints c, TextStyle style, TextDirection dir) {
+    final maxWidth = c.maxWidth - widget.padding.horizontal;
     final tp = TextPainter(
       text: TextSpan(text: widget.text, style: style),
       maxLines: widget.maxLines,
-      textDirection: TextDirection.ltr,
-    )..layout(maxWidth: width);
-
-    _isOverflowing = tp.didExceedMaxLines;
+      textDirection: dir,
+    )..layout(maxWidth: maxWidth);
+    _overflows = tp.didExceedMaxLines;
   }
 
   @override
   Widget build(BuildContext context) {
-    final collapsed = Text(
-      widget.text,
-      maxLines: widget.maxLines,
-      overflow: TextOverflow.ellipsis,
-    );
+    final style = DefaultTextStyle.of(context).style;
+    final dir = Directionality.of(context);
 
-    if (!_isOverflowing) {
-      // Simple non-expandable "tile"
-      return Padding(
-        padding: widget.padding,
-        child: collapsed,
-      );
-    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        _checkOverflow(constraints, style, dir);
 
-    // Expandable, ListTile-like
-    return ExpansionTile(
-      tilePadding: widget.padding,
-      childrenPadding: EdgeInsets.only(
-        left: (widget.padding is EdgeInsets) ? (widget.padding as EdgeInsets).left : 16,
-        right: (widget.padding is EdgeInsets) ? (widget.padding as EdgeInsets).right : 16,
-        bottom: (widget.padding is EdgeInsets) ? (widget.padding as EdgeInsets).bottom : 12,
-      ),
-      title: collapsed, // truncated preview
-      children: [
-        Align(
-          alignment: Alignment.centerLeft,
-          child: SelectableText(widget.text), // full text
-        ),
-      ],
+        return Material(
+          child: InkWell(
+            onTap: _overflows ? () => setState(() => _expanded = !_expanded) : null,
+            child: Padding(
+              padding: widget.padding,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: AnimatedSize(
+                          duration: const Duration(milliseconds: 160),
+                          alignment: Alignment.topLeft,
+                          // vsync: this,
+                          child: Text(
+                            widget.text,
+                            maxLines: _expanded ? null : widget.maxLines,
+                            overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                      if (_overflows) ...[
+                        const SizedBox(width: 8),
+                        AnimatedRotation(
+                          duration: const Duration(milliseconds: 160),
+                          turns: _expanded ? 0.5 : 0.0,
+                          child: const Icon(Icons.expand_more),
+                        ),
+                      ],
+                    ],
+                  ),
+                  if (_overflows && !_expanded && widget.showCollapsedHint) ...[
+                    const SizedBox(height: 4),
+                    Text("…", style: style.copyWith(color: Colors.grey)),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
-
 
 
 /// -------------------- META CHIPS ROW --------------------
