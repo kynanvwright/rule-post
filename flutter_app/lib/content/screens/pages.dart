@@ -505,7 +505,6 @@ class _ChildrenSection extends StatelessWidget {
 /// -------------------- PRESENTATION HELPERS --------------------
 class _SectionCard extends StatelessWidget {
   const _SectionCard({
-    super.key,
     this.title,
     this.trailing,
     this.padding = const EdgeInsets.all(16),
