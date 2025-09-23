@@ -268,14 +268,10 @@ export const createPost = onCall<CreatePostData>(
     const now = FieldValue.serverTimestamp();
     // const metaRef = db.collection("enquiries_meta").doc(enquiryId);
 
-    const userData = await db.collection("user_data").doc(authorUid).get();
-    if (!userData.exists) {
-      throw new HttpsError(
-        "failed-precondition",
-        "No matching user in the collection.",
-      );
+    const authorTeam = req.auth.token.team;
+    if (typeof authorTeam !== "string" || authorTeam.length === 0) {
+        throw new HttpsError("failed-precondition", "No team assigned to this user.");
     }
-    const authorTeam = userData.get("team") as string;
 
     let enquiryNumber: number;
     let enquiryRoundNumber: number;
@@ -300,9 +296,6 @@ export const createPost = onCall<CreatePostData>(
       if (authorTeam === "RC") {
         enquiryRoundNumber += 1;
         enquiryResponseNumber = 0;
-        // await db.collection("enquiries").doc(parentIds[0]).update({
-        //     roundNumber: enquiryRoundNumber,
-        // }); // update on publish not submission
       } else {
         enquiryResponseNumber = null;
       }
