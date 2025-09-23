@@ -261,7 +261,6 @@ class _DetailScaffold extends StatelessWidget {
     this.subHeaderLines = const <String>[],
     this.commentary,
     this.attachments = const <Widget>[],
-    this.trailingActions = const <Widget>[],
     this.footer,
   });
 
@@ -270,7 +269,6 @@ class _DetailScaffold extends StatelessWidget {
   final Widget meta;               // usually MetaChips (+ optional status chips)
   final Widget? commentary;        // null => hide section
   final List<Widget> attachments;  // empty => hide section
-  final List<Widget> trailingActions;
   final Widget? footer;            // usually Children card; null => hide
 
   @override
@@ -297,12 +295,6 @@ class _DetailScaffold extends StatelessWidget {
                         subHeaderLines: subHeaderLines,
                       ),
                     ),
-                    if (trailingActions.isNotEmpty)
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: trailingActions,
-                      ),
                   ],
                 ),
                 const SizedBox(height: 12),
