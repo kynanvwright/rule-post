@@ -106,23 +106,6 @@ final router = GoRouter(
                         enquiryId: state.pathParameters['enquiryId']!,
                         responseId: state.pathParameters['responseId']!,
                       ),
-                      routes: [
-                        // Level 3: comments
-                        GoRoute(
-                          path: 'comments',
-                          builder: (context, state) => const NoSelectionPage(),
-                          routes: [
-                            GoRoute(
-                              path: ':commentId',
-                              builder: (context, state) => CommentDetailPage(
-                                enquiryId: state.pathParameters['enquiryId']!,
-                                responseId: state.pathParameters['responseId']!,
-                                commentId: state.pathParameters['commentId']!,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
                     ),
                   ],
                 ),

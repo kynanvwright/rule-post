@@ -189,70 +189,6 @@ class ResponseDetailPage extends StatelessWidget {
 }
 
 
-/// -------------------- COMMENT DETAIL --------------------
-class CommentDetailPage extends StatelessWidget {
-  const CommentDetailPage({
-    super.key,
-    required this.enquiryId,
-    required this.responseId,
-    required this.commentId,
-  });
-
-  final String enquiryId;
-  final String responseId;
-  final String commentId;
-
-  @override
-  Widget build(BuildContext context) {
-    final ref = FirebaseFirestore.instance
-        .collection('enquiries')
-        .doc(enquiryId)
-        .collection('responses')
-        .doc(responseId)
-        .collection('comments')
-        .doc(commentId)
-        .withConverter<Map<String, dynamic>>(
-          fromFirestore: (s, _) => s.data() ?? {},
-          toFirestore: (v, _) => v,
-        );
-
-    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: ref.snapshots(),
-      builder: (context, snap) {
-        if (snap.hasError) return const Center(child: Text('Failed to load comment'));
-        if (!snap.hasData) return const Center(child: CircularProgressIndicator());
-        final data = snap.data!.data() ?? {};
-
-        final text = (data['postText'] ?? '').toString().trim();
-        final publishedAt = (data['publishedAt'] as Timestamp?)?.toDate();
-        // final author = (data['author'] ?? 'Unknown').toString();
-        final number = (data['commentNumber'] ?? '—').toString();
-        // final attachments = (data['attachments'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
-
-        return _DetailScaffold(
-          headerLines: [
-            'Comment #$number',
-          ],
-          subHeaderLines: const [],
-
-          meta: MetaChips(
-            chips: [
-              // Chip(label: Text(author)),
-              if (publishedAt != null) Chip(label: Text(_fmtDateTime(publishedAt))),
-            ],
-          ),
-
-          commentary: text.isEmpty ? null : SelectableText(text),
-          // attachments: attachments.map((m) => AttachmentTile.fromMap(m)).toList(),
-
-          // Comments have no children section
-          footer: null,
-        );
-      },
-    );
-  }
-}
-
 /// -------------------- SHARED DETAIL SCAFFOLD (Card-based) --------------------
 class _DetailScaffold extends StatelessWidget {
   const _DetailScaffold({
@@ -461,7 +397,6 @@ class _ChildrenSection extends StatelessWidget {
             itemBuilder: (context, i) {
               final d = docs[i].data();
               final id = docs[i].id;
-              // final author = (d['author'] ?? 'Unknown').toString();
               final t = (d['publishedAt'] as Timestamp?)?.toDate();
               final text = (d['postText'] ?? '').toString().trim();
               final snippet = text.isEmpty
@@ -476,21 +411,13 @@ class _ChildrenSection extends StatelessWidget {
                 final enquiryId = segments[1];
                 final responseId = id;
                 tile = ListTile(
-                  // title: Text(author),
                   subtitle: Text(snippet),
                   trailing: Text(t == null ? '' : _fmtRelativeTime(t)),
                   onTap: () => context.go('/enquiries/$enquiryId/responses/$responseId'),
                 );
               } else if (segments.contains('comments')) {
-                // Comment item (child of response)
-                final enquiryId = segments[1];
-                final responseId = segments[3];
-                final commentId = id;
-                tile = ListTile(
-                  // title: Text(author),
-                  subtitle: Text(snippet),
-                  trailing: Text(t == null ? '' : _fmtRelativeTime(t)),
-                  onTap: () => context.go('/enquiries/$enquiryId/responses/$responseId/comments/$commentId'),
+                tile = Card(
+                  child: ExpandableCommentTile(snippet, maxLines: 3),
                 );
               }
               return tile ?? const SizedBox.shrink();
@@ -565,6 +492,79 @@ class _StatusChip extends StatelessWidget {
   }
 }
 
+class ExpandableCommentTile extends StatefulWidget {
+  const ExpandableCommentTile(
+    this.text, {
+    super.key,
+    this.maxLines = 3,
+    this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+  });
+
+  final String text;
+  final int maxLines;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  State<ExpandableCommentTile> createState() => _ExpandableCommentTileState();
+}
+
+class _ExpandableCommentTileState extends State<ExpandableCommentTile> {
+  bool _isOverflowing = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Measure once to see if it exceeds maxLines.
+    final style = DefaultTextStyle.of(context).style;
+    final width = MediaQuery.of(context).size.width -
+        (widget.padding is EdgeInsets ? (widget.padding as EdgeInsets).horizontal : 32);
+
+    final tp = TextPainter(
+      text: TextSpan(text: widget.text, style: style),
+      maxLines: widget.maxLines,
+      textDirection: TextDirection.ltr,
+    )..layout(maxWidth: width);
+
+    _isOverflowing = tp.didExceedMaxLines;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final collapsed = Text(
+      widget.text,
+      maxLines: widget.maxLines,
+      overflow: TextOverflow.ellipsis,
+    );
+
+    if (!_isOverflowing) {
+      // Simple non-expandable "tile"
+      return Padding(
+        padding: widget.padding,
+        child: collapsed,
+      );
+    }
+
+    // Expandable, ListTile-like
+    return ExpansionTile(
+      tilePadding: widget.padding,
+      childrenPadding: EdgeInsets.only(
+        left: (widget.padding is EdgeInsets) ? (widget.padding as EdgeInsets).left : 16,
+        right: (widget.padding is EdgeInsets) ? (widget.padding as EdgeInsets).right : 16,
+        bottom: (widget.padding is EdgeInsets) ? (widget.padding as EdgeInsets).bottom : 12,
+      ),
+      title: collapsed, // truncated preview
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: SelectableText(widget.text), // full text
+        ),
+      ],
+    );
+  }
+}
+
+
+
 /// -------------------- META CHIPS ROW --------------------
 class MetaChips extends StatelessWidget {
   const MetaChips({super.key, required this.chips});
@@ -581,11 +581,6 @@ class MetaChips extends StatelessWidget {
 }
 
 /// -------------------- UTIL --------------------
-String _fmtDateTime(DateTime dt) {
-  return '${dt.year}-${_two(dt.month)}-${_two(dt.day)} '
-      '${_two(dt.hour)}:${_two(dt.minute)}';
-}
-
 String _fmtRelativeTime(DateTime dt) {
   final now = DateTime.now();
   final diff = now.difference(dt);
@@ -594,5 +589,3 @@ String _fmtRelativeTime(DateTime dt) {
   if (diff.inHours < 24) return '${diff.inHours}h ago';
   return '${diff.inDays}d ago';
 }
-
-String _two(int n) => n.toString().padLeft(2, '0');
