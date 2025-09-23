@@ -416,10 +416,7 @@ class _ChildrenSection extends StatelessWidget {
                   onTap: () => context.go('/enquiries/$enquiryId/responses/$responseId'),
                 );
               } else if (segments.contains('comments')) {
-                // tile = ExpandableCommentTile(text, maxLines: 3);
-                // tile = ExpandableTextTile(text, maxLines: 3);
-                // tile = SimpleExpandableTile(text, maxLines: 3);
-                tile = CollapsibleTextTile(text, maxLines: 3);
+                tile = ListTileCollapsibleText(text, maxLines: 3);
               }
               return tile ?? const SizedBox.shrink();
             },
@@ -492,142 +489,74 @@ class _StatusChip extends StatelessWidget {
     );
   }
 }
-
-class ExpandableTextTile extends StatefulWidget {
-  const ExpandableTextTile(
+/// -------------------- COLLAPSIBLE TEXT (for comments) --------------------
+class ListTileCollapsibleText extends StatefulWidget {
+  const ListTileCollapsibleText(
     this.text, {
     super.key,
     this.maxLines = 3,
-    this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    this.contentPadding = const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    this.showCollapsedHint = true,
   });
 
   final String text;
   final int maxLines;
-  final EdgeInsets padding;
-
-  @override
-  State<ExpandableTextTile> createState() => _ExpandableTextTileState();
-}
-
-class _ExpandableTextTileState extends State<ExpandableTextTile> {
-  bool _expanded = false;
-  bool _overflow = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Check if text exceeds maxLines
-        final style = DefaultTextStyle.of(context).style;
-        final maxWidth = constraints.maxWidth - widget.padding.horizontal;
-        final tp = TextPainter(
-          text: TextSpan(text: widget.text, style: style),
-          maxLines: widget.maxLines,
-          textDirection: Directionality.of(context),
-        )..layout(maxWidth: maxWidth);
-
-        _overflow = tp.didExceedMaxLines;
-
-        if (!_overflow) {
-          return Padding(
-            padding: widget.padding,
-            child: Text(widget.text),
-          );
-        }
-
-        return ExpansionTile(
-          tilePadding: widget.padding,
-          title: const SizedBox.shrink(), // required, but hidden
-          subtitle: !_expanded
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.text,
-                      maxLines: widget.maxLines,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      "…",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                )
-              : null,
-          onExpansionChanged: (val) {
-            setState(() => _expanded = val);
-          },
-          childrenPadding: EdgeInsets.only(
-            left: widget.padding.left,
-            right: widget.padding.right,
-            bottom: widget.padding.bottom,
-          ),
-          children: [
-            Align(
-              alignment: Alignment.centerLeft,
-              child: SelectableText(widget.text), // full text
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class CollapsibleTextTile extends StatefulWidget {
-  const CollapsibleTextTile(
-    this.text, {
-    super.key,
-    this.maxLines = 3,
-    this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-    this.showCollapsedHint = true, // shows a separate "…" line when collapsed
-  });
-
-  final String text;
-  final int maxLines;
-  final EdgeInsets padding;
+  final EdgeInsetsGeometry contentPadding;
   final bool showCollapsedHint;
 
   @override
-  State<CollapsibleTextTile> createState() => _CollapsibleTextTileState();
+  State<ListTileCollapsibleText> createState() => _ListTileCollapsibleTextState();
 }
 
-class _CollapsibleTextTileState extends State<CollapsibleTextTile>
+class _ListTileCollapsibleTextState extends State<ListTileCollapsibleText>
     with TickerProviderStateMixin {
   bool _expanded = false;
   bool _overflows = false;
 
-  void _checkOverflow(BoxConstraints c, TextStyle style, TextDirection dir) {
-    final maxWidth = c.maxWidth - widget.padding.horizontal;
+  void _checkOverflow(BoxConstraints c, TextStyle style, TextDirection dir, EdgeInsets resolvedPad) {
+    final maxWidth = c.maxWidth - resolvedPad.horizontal;
     final tp = TextPainter(
       text: TextSpan(text: widget.text, style: style),
       maxLines: widget.maxLines,
       textDirection: dir,
-    )..layout(maxWidth: maxWidth);
+    )..layout(maxWidth: maxWidth > 0 ? maxWidth : 0);
     _overflows = tp.didExceedMaxLines;
   }
 
   @override
   Widget build(BuildContext context) {
-    final style = DefaultTextStyle.of(context).style;
+    final theme = Theme.of(context);
+    final listTileTheme = ListTileTheme.of(context);
     final dir = Directionality.of(context);
+    final textStyle = theme.textTheme.bodyMedium!;
+    final iconColor = listTileTheme.iconColor ?? theme.iconTheme.color;
+    final resolvedPad = widget.contentPadding.resolve(dir);
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        _checkOverflow(constraints, style, dir);
+        _checkOverflow(constraints, textStyle, dir, resolvedPad);
 
         return Material(
+          color: Colors.transparent, // keep background consistent with surroundings
           child: InkWell(
             onTap: _overflows ? () => setState(() => _expanded = !_expanded) : null,
+            overlayColor: MaterialStateProperty.resolveWith((states) {
+              // match ListTile-ish overlay behaviour
+              final base = theme.colorScheme.onSurface;
+              if (states.contains(MaterialState.pressed) || states.contains(MaterialState.focused)) {
+                return base.withOpacity(0.12);
+              }
+              if (states.contains(MaterialState.hovered)) {
+                return base.withOpacity(0.04);
+              }
+              return null;
+            }),
             child: Padding(
-              padding: widget.padding,
+              padding: resolvedPad,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Row: preview text + chevron (ListTile vibe)
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -638,6 +567,7 @@ class _CollapsibleTextTileState extends State<CollapsibleTextTile>
                           // vsync: this,
                           child: Text(
                             widget.text,
+                            style: textStyle,
                             maxLines: _expanded ? null : widget.maxLines,
                             overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
                           ),
@@ -647,16 +577,32 @@ class _CollapsibleTextTileState extends State<CollapsibleTextTile>
                         const SizedBox(width: 8),
                         AnimatedRotation(
                           duration: const Duration(milliseconds: 160),
-                          turns: _expanded ? 0.5 : 0.0,
-                          child: const Icon(Icons.expand_more),
+                          turns: _expanded ? 0.5 : 0.0, // flip chevron
+                          child: Icon(Icons.expand_more, size: 24, color: iconColor),
                         ),
                       ],
                     ],
                   ),
+
+                  // Hint line under the title when collapsed (matches your UX)
                   if (_overflows && !_expanded && widget.showCollapsedHint) ...[
                     const SizedBox(height: 4),
-                    Text("…", style: style.copyWith(color: Colors.grey)),
+                    Text(
+                      "…",
+                      style: textStyle.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
                   ],
+
+                  // Accessibility
+                  Semantics(
+                    button: true,
+                    expanded: _expanded,
+                    label: _expanded ? 'Collapse' : 'Expand',
+                    child: const SizedBox.shrink(),
+                  ),
                 ],
               ),
             ),
@@ -666,6 +612,7 @@ class _CollapsibleTextTileState extends State<CollapsibleTextTile>
     );
   }
 }
+
 
 
 /// -------------------- META CHIPS ROW --------------------
