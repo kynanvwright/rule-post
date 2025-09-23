@@ -17,29 +17,24 @@ type TargetTime = {
 
 /**
  * Returns a JS Date for the target time in Rome,
- * N working days ahead of "nowRome".
- * - Counts future working days exclusive of today.
+ * N working days ahead of "now" (inclusive of today).
+ * - Counts working days inclusive of today.
+ * - If today's target time has already passed, rolls to the next working day.
  * - Target time defaults to 19:55:00.000 if omitted.
- *
- * @param {DateTime} nowRome - Current DateTime in the Rome timezone.
- * @param {number} workDaysAhead - Working days to count forward (excl. today).
+ * @param {number} workDaysAhead - Working days to count forward (incl. today).
  * @param {TargetTime} [targetTime] - Optional time overrides.
  * @return {Date} JS Date at the computed target time.
  */
-function computeStageEnds(
-  nowRome: DateTime,
+export function computeStageEnds(
   workDaysAhead: number,
   targetTime?: TargetTime,
 ): Date {
-  let d = nowRome;
-  let added = 0;
-
-  while (added < workDaysAhead) {
-    d = d.plus({ days: 1 });
-    if (isWorkingDay(d)) {
-      added += 1;
-    }
+  if (!Number.isFinite(workDaysAhead) || workDaysAhead <= 0) {
+    throw new Error(`workDaysAhead must be a positive number`);
   }
+
+  const now = Timestamp.now().toDate();
+  const nowRome = DateTime.fromJSDate(now).setZone(ROME_TZ);
 
   const tt = {
     hour: 19,
@@ -49,15 +44,36 @@ function computeStageEnds(
     ...(targetTime ?? {}),
   };
 
-  const atTarget = d.set({
-    hour: tt.hour,
-    minute: tt.minute,
-    second: tt.second ?? 0,
-    millisecond: tt.millisecond ?? 0,
-  });
+  // Start counting from today's midnight (Rome), inclusive
+  let d = nowRome.startOf("day");
+  let remaining = workDaysAhead;
 
-  return atTarget.toJSDate();
+  // Walk days until we land on the Nth working day (inclusive of today)
+  // When remaining === 1 and today is a working day, candidate is today.
+  while (true) {
+    if (isWorkingDay(d)) {
+      if (remaining <= 1) {
+        // Candidate day reached; set to target time
+        const atTargetRome = d.set(tt);
+
+        // If target time today has already passed relative to `now`,
+        // roll forward to the next working day at the same target time.
+        if (atTargetRome <= nowRome) {
+          let next = d;
+          do {
+            next = next.plus({ days: 1 }).startOf("day");
+          } while (!isWorkingDay(next));
+          return next.set(tt).toUTC().toJSDate();
+        }
+
+        return atTargetRome.toUTC().toJSDate();
+      }
+      remaining -= 1;
+    }
+    d = d.plus({ days: 1 }).startOf("day");
+  }
 }
+
 
 /**
  * Publishes all enquiries where isPublished == false.
@@ -69,23 +85,9 @@ function computeStageEnds(
 export const enquiryPublisher = onSchedule(
   { region: "europe-west6", schedule: "0 0,12 * * *", timeZone: ROME_TZ },
   async (): Promise<void> => {
-    const nowRome = DateTime.now().setZone(ROME_TZ);
 
-    if (!isWorkingDay(nowRome)) {
-      console.log(
-        `[enquiryPublisher] ${nowRome.toISO()} not a working day; skipping.`,
-      );
-      return;
-    }
-
-    const stageEndsDate = computeStageEnds(nowRome, 3, {
-      hour: 19,
-      minute: 55,
-      second: 0,
-    });
-
+    const stageEndsDate = computeStageEnds(4, {hour: 19,minute: 55});
     const publishedAt = FieldValue.serverTimestamp();
-
     const q = db.collection("enquiries").where("isPublished", "==", false);
     const snap = await q.get();
 
@@ -118,25 +120,15 @@ export const enquiryPublisher = onSchedule(
 export const teamResponsePublisher = onSchedule(
   { region: "europe-west6", schedule: "0 20 * * *", timeZone: ROME_TZ },
   async (): Promise<void> => {
-    const nowRome = DateTime.now().setZone(ROME_TZ);
-
-    if (!isWorkingDay(nowRome)) {
-      console.log(
-        `[teamResponsePublisher] ${nowRome.toISO()} not a working day; ` +
-          "skipping.",
-      );
-      return;
-    }
-
     const nowTs = Timestamp.now();
-    const q = db
-      .collection("enquiries")
+    const publishedAt = FieldValue.serverTimestamp();
+
+    const enquiriesSnap = await db.collection("enquiries")
       .where("isPublished", "==", true)
       .where("isOpen", "==", true)
       .where("teamsCanRespond", "==", true)
-      .where("stageEnds", "<", nowTs);
-
-    const enquiriesSnap = await q.get();
+      .where("stageEnds", "<", nowTs)
+      .get();
 
     if (enquiriesSnap.empty) {
       console.log("[teamResponsePublisher] No qualifying enquiries.");
@@ -145,13 +137,12 @@ export const teamResponsePublisher = onSchedule(
 
     const writer = db.bulkWriter();
     let totalResponsesPublished = 0;
-    let processedEnquiries = 0;
 
     for (const enquiryDoc of enquiriesSnap.docs) {
       const enquiryRef = enquiryDoc.ref;
 
+      // Try ordered; if that fails, fall back and sort in-memory to keep numbering stable.
       let unpublishedSnap: FirebaseFirestore.QuerySnapshot;
-
       try {
         unpublishedSnap = await enquiryRef
           .collection("responses")
@@ -163,56 +154,49 @@ export const teamResponsePublisher = onSchedule(
           .collection("responses")
           .where("isPublished", "==", false)
           .get();
+        // optional: enforce deterministic numbering
+        const sorted = [...unpublishedSnap.docs].sort(
+          (a, b) => (a.get("createdAt")?.toMillis?.() ?? 0) - (b.get("createdAt")?.toMillis?.() ?? 0)
+        );
+        for (let i = 0; i < sorted.length; i++) {
+          writer.update(sorted[i].ref, {
+            isPublished: true,
+            responseNumber: i + 1,
+            publishedAt,
+          });
+          totalResponsesPublished += 1;
+        }
       }
 
-      if (unpublishedSnap.empty) {
-        const newStageEnds = computeStageEnds(nowRome, 4, {
-          hour: 11,
-          minute: 55,
-        });
-
-        writer.update(enquiryRef, {
-          teamsCanRespond: false,
-          teamsCanComment: true,
-          stageEnds: Timestamp.fromDate(newStageEnds),
-        });
-
-        processedEnquiries += 1;
-        continue;
+      if (!unpublishedSnap.empty) {
+        const docs = unpublishedSnap.docs; // already ordered if try succeeded
+        for (let i = 0; i < docs.length; i++) {
+          writer.update(docs[i].ref, {
+            isPublished: true,
+            responseNumber: i + 1,
+            publishedAt,
+          });
+          totalResponsesPublished += 1;
+        }
       }
 
-      const docs = unpublishedSnap.docs;
-
-      for (let i = 0; i < docs.length; i += 1) {
-        writer.update(docs[i].ref, {
-          isPublished: true,
-          responseNumber: i + 1,
-        });
-        totalResponsesPublished += 1;
-      }
-
-      const newStageEnds = computeStageEnds(nowRome, 4, {
-        hour: 11,
-        minute: 55,
-      });
-
+      // single DRY update per enquiry
+      const newStageEnds = computeStageEnds(5, {hour: 11, minute: 55});
       writer.update(enquiryRef, {
         teamsCanRespond: false,
         teamsCanComment: true,
         stageEnds: Timestamp.fromDate(newStageEnds),
       });
-
-      processedEnquiries += 1;
     }
 
     await writer.close();
-
     console.log(
-      `[teamResponsePublisher] Processed ${processedEnquiries} enquiries; ` +
-        `published ${totalResponsesPublished} responses.`,
+      `[teamResponsePublisher] Processed ${enquiriesSnap.size} enquiries; ` +
+      `published ${totalResponsesPublished} responses.`
     );
-  },
+  }
 );
+
 
 export const commentPublisher = onSchedule(
   { region: "europe-west6", schedule: "0 0,12 * * *", timeZone: ROME_TZ },
@@ -273,7 +257,9 @@ export const commentPublisher = onSchedule(
         }
 
         unpublishedCommentsSnap.docs.forEach((c) => {
-          writer.update(c.ref, { isPublished: true });
+          writer.update(c.ref, {
+            isPublished: true,
+            publishedAt: FieldValue.serverTimestamp()});
           totalCommentsPublished += 1;
         });
       }
@@ -285,11 +271,7 @@ export const commentPublisher = onSchedule(
       const nowTs = Timestamp.now();
 
       if (stageEnds && stageEnds.toMillis() < nowTs.toMillis()) {
-        const newStageEndsDate = computeStageEnds(nowRome, 0, {
-          hour: 23,
-          minute: 55,
-          second: 0,
-        });
+        const newStageEndsDate = computeStageEnds(1, {hour: 23, minute: 55});
 
         writer.update(enquiryRef, {
           teamsCanComment: false,
@@ -392,10 +374,7 @@ export const committeeResponsePublisher = onSchedule(
             responseNumber: 0,
           });
 
-          const nextStageEnds = computeStageEnds(nowRome, 3, {
-            hour: 19,
-            minute: 55,
-          });
+          const nextStageEnds = computeStageEnds(4, {hour: 19, minute: 55});
 
           tx.update(enquiryRef, {
             roundNumber: FieldValue.increment(1),

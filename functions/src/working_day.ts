@@ -17,32 +17,43 @@ const holidays: readonly HolidayRange[] = [
 const RACE_DATE: DateTime = DateTime.fromISO("2027-07-01", { zone: ROME_TZ });
 
 /**
- * Returns true if the given Luxon DateTime is a working day.
+ * Returns true if the given Luxon DateTime is a working day (Europe/Rome).
  * Working days exclude:
  * - Sundays
  * - Saturdays prior to 3 months before the AC Match
- * - Dates falling within defined holiday ranges
+ * - Dates falling within defined holiday ranges (inclusive)
  * @param {DateTime} dt - A Luxon DateTime object
- * @return {Boolean} If that datetime is on a working day
+ * @return {boolean} If that datetime is on a working day
  */
 export const isWorkingDay = (dt: DateTime): boolean => {
   const local = dt.setZone(ROME_TZ);
-  const weekday = local.weekday; // 1 = Mon, 7 = Sun
-  if (weekday === 7) return false; // Sundays excluded
+  if (!local.isValid) return false;
 
-  // Check if date falls within any holiday range (inclusive start and end)
+  // Compare by calendar day in Rome to avoid time-of-day edge cases
+  const day = local.startOf("day");
+
+  // 1 = Mon ... 7 = Sun
+  const weekday = day.weekday;
+  if (weekday === 7) return false; // Sunday
+
+  // Saturday cutoff: Saturdays are non-working ONLY before this date
+  const saturdayCutoff = RACE_DATE
+    .setZone(ROME_TZ)
+    .startOf("day")
+    .minus({ months: 3 });
+
+  if (weekday === 6 && day < saturdayCutoff) return false; // Saturday before cutoff
+
+  // Holiday check (inclusive of start and end dates)
+  // Assumes holidays: Array<{ start: string; end: string }>, ISO "YYYY-MM-DD"
   const inHoliday = holidays.some(({ start, end }) => {
-    const startDt = DateTime.fromISO(start, { zone: ROME_TZ });
-    const endDt = DateTime.fromISO(end, { zone: ROME_TZ });
-    // Inclusive on both ends
-    return local >= startDt && local <= endDt;
+    const startDt = DateTime.fromISO(start, { zone: ROME_TZ }).startOf("day");
+    const endDt = DateTime.fromISO(end, { zone: ROME_TZ }).endOf("day");
+    return day >= startDt && day <= endDt;
   });
 
-  // Saturday cutoff: 3 months before the AC Match
-  const saturdayCutoff = RACE_DATE.minus({ months: 3 });
+  if (inHoliday) return false;
 
-  // Prior to the cutoff, Saturdays are excluded
-  if (weekday === 6 && local < saturdayCutoff) return false;
-
-  return !inHoliday;
+  return true;
 };
+

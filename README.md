@@ -94,6 +94,8 @@ A website for facilitating America's Cup Rule Enquiries.
 - Rename variables that shouldn't have "enquiry" in them
 - Refactor code once it's all working, and format it as a series of widgets
 - Check which widgets/screens are still in use, delete as required
+- Look for edge cases where RC speeds up stage end and team response gets stuck. 
+  - Need to block submission in that case so it doesn't end up getting published in the next round, or alongside the RC without them reading it.
 
 ## Other Notes
 - Check how it looks on various devices

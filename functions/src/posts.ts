@@ -266,7 +266,6 @@ export const createPost = onCall<CreatePostData>(
 
     // ---- Write Firestore docs ----
     const now = FieldValue.serverTimestamp();
-    // const metaRef = db.collection("enquiries_meta").doc(enquiryId);
 
     const authorTeam = req.auth.token.team;
     if (typeof authorTeam !== "string" || authorTeam.length === 0) {
