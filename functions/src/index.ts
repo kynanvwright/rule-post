@@ -1,11 +1,8 @@
+// src/index.ts
 import { getApps, initializeApp } from "firebase-admin/app";
 import { setGlobalOptions } from "firebase-functions/v2";
-import { HttpsError } from "firebase-functions/v2/https";
-import { beforeUserCreated } from "firebase-functions/v2/identity";
 
-/**
- * Global options for all functions.
- */
+/** Global options for all functions. */
 setGlobalOptions({
   region: "europe-west8",
   maxInstances: 10,
@@ -15,22 +12,13 @@ if (!getApps().length) {
   initializeApp();
 }
 
-/** Block all self-registration */
-export const blockAllSelfRegistration = beforeUserCreated(() => {
-  throw new HttpsError("permission-denied", "Self-registration is disabled.");
-});
-
-import { createPost } from "./posts";
-export { createPost };
-
-import {
+/** App functions (re-exports) */
+export { blockAllSelfRegistration } from "./new_users";
+export { createPost } from "./posts";
+export {
   enquiryPublisher,
   teamResponsePublisher,
   commentPublisher,
   committeeResponsePublisher,
 } from "./publishing_and_permissions";
-
-exports.enquiryPublisher = enquiryPublisher;
-exports.teamResponsePublisher = teamResponsePublisher;
-exports.commentPublisher = commentPublisher;
-exports.committeeResponsePublisher = committeeResponsePublisher;
+export { syncCustomClaims } from "./claims_sync";

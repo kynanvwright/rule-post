@@ -25,7 +25,7 @@ A website for facilitating America's Cup Rule Enquiries.
 - Inline pdf and doc viewing
 - Delayed publishing with cloud functions
 - Automated locking/unlocking of submission permissions with cloud functions
-
+- Basic custom claims set up
 
 ## MVP
 - Each team has an account
@@ -94,3 +94,4 @@ A website for facilitating America's Cup Rule Enquiries.
 - flutter clean (remove compiled code from flutter build after making decent changes)
 - flutter pub get (rebuilds what was lost during flutter clean)
 - flutter run -d chrome (run flutter app locally in chrome)
+- npx ts-node applyClaims.ts --serviceAccount ./serviceAccountKey.json --collection user_data [--uids uid1,uid2] [--fields role,team] [--dry-run] [--replace]
