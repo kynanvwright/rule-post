@@ -16,10 +16,6 @@ class BreadcrumbBar extends StatelessWidget {
         _Crumb('Responses', '/enquiries/${p['enquiryId']}/responses', goParent: true, upLevels: 1), // go up one level, no page for responses
       if (p['responseId'] != null)
         _Crumb('R-${p['responseId']}', '/enquiries/${p['enquiryId']}/responses/${p['responseId']}'),
-      // if (state.matchedLocation.contains('/comments'))
-      //   _Crumb('Comments', '/enquiries/${p['enquiryId']}/responses/${p['responseId']}/comments', goParent: true, upLevels: 1),
-      // if (p['commentId'] != null)
-      //   _Crumb('C-${p['commentId']}', state.matchedLocation),
     ];
 
     return SingleChildScrollView(

@@ -1,4 +1,5 @@
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
+
 import { pickClaimsFromDoc, applyClaimsForUid } from "./claims_core";
 
 const COLLECTION = "user_data";

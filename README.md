@@ -40,11 +40,11 @@ A website for facilitating America's Cup Rule Enquiries.
 ### 🔒 Permissions & Roles
 - One "teamLead" role per team
   - Can add/remove members (less burden on RC/admins)
-  - Can assign members read-only or write permissions
 - Add admin-only features  
   - Skip to end of certain phases  
   - Close enquiries  
-- Require email verification (via Firebase Auth)  
+- Require email verification (via Firebase Auth)
+- Allow guest users, log-in is for submissions only
 
 ### 📤 Publishing & Workflow
 - Permit editing prior to submission (be careful of permissions here)
@@ -56,7 +56,8 @@ A website for facilitating America's Cup Rule Enquiries.
 ### 📑 Enquiries & Responses
 - Add per-user limits on new enquiries and attachments per day  
 - Allow multiple attachments to be uploaded without reselection  
-- Alias the documentIDs for breadcrumbs (e.g. `RE#120-R1.2`)  
+- Alias the documentIDs for breadcrumbs (e.g. `RE#120-R1.2`)
+- Remove title requirement from responses and comments
 
 ### 🎨 UI / UX
 - Add colour-coding of responses/comments

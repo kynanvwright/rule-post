@@ -270,7 +270,10 @@ export const createPost = onCall<CreatePostData>(
 
     const authorTeam = req.auth.token.team;
     if (typeof authorTeam !== "string" || authorTeam.length === 0) {
-        throw new HttpsError("failed-precondition", "No team assigned to this user.");
+      throw new HttpsError(
+        "failed-precondition",
+        "No team assigned to this user.",
+      );
     }
 
     let enquiryNumber: number;
@@ -283,7 +286,7 @@ export const createPost = onCall<CreatePostData>(
         "enquiryNumber",
       );
       enquiryNumber = maxEnquiryNumber + 1;
-    } else if (postType === "response") {
+    } else {
       enquiryDoc = await db.collection("enquiries").doc(parentIds[0]).get();
       if (!enquiryDoc.exists) {
         throw new HttpsError(
@@ -387,6 +390,8 @@ export const createPost = onCall<CreatePostData>(
           }
           const responseDoc = await db
             .collection("enquiries")
+            .doc(parentIds[0])
+            .collection("responses")
             .doc(parentIds[1])
             .get();
           const responseRound = responseDoc.get("roundNumber");
@@ -394,7 +399,7 @@ export const createPost = onCall<CreatePostData>(
           if (responseRound !== enquiryRound) {
             throw new HttpsError(
               "failed-precondition",
-              "Comments can only be made on the latest round of responses.",
+              `Comments can only be made on the latest round of responses.`,
             );
           }
           // consider blocking comments on RC responses

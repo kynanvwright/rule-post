@@ -8,9 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 // Screens
 import 'auth/screens/login_screen.dart';
-// import 'content/screens/home_screen.dart';
 import 'core/widgets/two_panel_shell.dart';
-// import 'core/widgets/left_pane_switcher.dart';
 import 'core/widgets/breadcrumb_bar.dart';
 import 'core/widgets/app_scaffold.dart';
 import 'content/screens/pages.dart';
@@ -54,7 +52,6 @@ final router = GoRouter(
       final from = Uri.encodeComponent(state.uri.toString()); // preserves query + path
       return '/login?from=$from';
     }
-
 
     // If logged in and on /login → bounce to intended page (or default)
     if (loggedIn && isLogin) {
