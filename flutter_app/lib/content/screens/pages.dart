@@ -140,6 +140,7 @@ class ResponseDetailPage extends StatelessWidget {
             final enquiry = enqSnap.data!.data() ?? {};
 
             // --- response fields---
+            final summary = (response['title'] ?? '').toString().trim();
             final text = (response['postText'] ?? '').toString().trim();
             final roundNumber = (response['roundNumber'] ?? 'x').toString();
             final responseNumber = (response['responseNumber'] ?? 'x').toString();
@@ -170,6 +171,8 @@ class ResponseDetailPage extends StatelessWidget {
                   ],
                 ],
               ),
+            // SUMMARY
+            summary: summary.isEmpty ? null : SelectableText(summary),
             // COMMENTARY
             commentary: text.isEmpty ? null : SelectableText(text),
             // ATTACHMENTS
@@ -195,6 +198,7 @@ class _DetailScaffold extends StatelessWidget {
     required this.headerLines,
     required this.meta,
     this.subHeaderLines = const <String>[],
+    this.summary,
     this.commentary,
     this.attachments = const <Widget>[],
     this.footer,
@@ -203,6 +207,7 @@ class _DetailScaffold extends StatelessWidget {
   final List<String> headerLines;
   final List<String> subHeaderLines;
   final Widget meta;               // usually MetaChips (+ optional status chips)
+  final Widget? summary;        // null => hide section
   final Widget? commentary;        // null => hide section
   final List<Widget> attachments;  // empty => hide section
   final Widget? footer;            // usually Children card; null => hide
@@ -240,10 +245,22 @@ class _DetailScaffold extends StatelessWidget {
           ),
 
           // CONTENT CARD (optional)
+          if (summary != null) ...[
+            const SizedBox(height: 12),
+            _SectionCard(
+              title: 'Summary',
+              child: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: summary!,
+              ),
+            ),
+          ],
+
+          // CONTENT CARD (optional)
           if (commentary != null) ...[
             const SizedBox(height: 12),
             _SectionCard(
-              title: 'Content',
+              title: 'Details',
               child: Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: commentary!,
@@ -323,7 +340,7 @@ class _ChildrenSection extends StatelessWidget {
             .doc(enquiryId)
             .collection('responses')
             .where('isPublished', isEqualTo: true)
-            .orderBy('publishedAt', descending: true);
+            .orderBy('publishedAt', descending: false);
         return q.snapshots().map((s) => s.docs);
       },
     );
@@ -350,7 +367,7 @@ class _ChildrenSection extends StatelessWidget {
             .doc(responseId)
             .collection('comments')
             .where('isPublished', isEqualTo: true)
-            .orderBy('publishedAt', descending: true);
+            .orderBy('publishedAt', descending: false);
         return q.snapshots().map((s) => s.docs);
       },
     );
@@ -398,7 +415,11 @@ class _ChildrenSection extends StatelessWidget {
               final d = docs[i].data();
               final id = docs[i].id;
               final t = (d['publishedAt'] as Timestamp?)?.toDate();
+              final title = (d['title'] ?? '').toString().trim();
               final text = (d['postText'] ?? '').toString().trim();
+              final titleSnippet = title.isEmpty
+                  ? '…'
+                  : (title.length > 140 ? '${title.substring(0, 140)}…' : title);
               final snippet = text.isEmpty
                   ? '…'
                   : (text.length > 140 ? '${text.substring(0, 140)}…' : text);
@@ -411,6 +432,7 @@ class _ChildrenSection extends StatelessWidget {
                 final enquiryId = segments[1];
                 final responseId = id;
                 tile = ListTile(
+                  title: Text(titleSnippet),
                   subtitle: Text(snippet),
                   trailing: Text(t == null ? '' : _fmtRelativeTime(t)),
                   onTap: () => context.go('/enquiries/$enquiryId/responses/$responseId'),
