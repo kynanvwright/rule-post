@@ -59,17 +59,13 @@ A website for facilitating America's Cup Rule Enquiries.
 - Alias the documentIDs for breadcrumbs (e.g. `RE#120-R1.2`)  
 
 ### 🎨 UI / UX
-- Fix up homescreen  
-  - Resize panes  
-  - Actually show enquiry details **[done]**  
-  - Redo filters (Open, Closed, My Unpublished)  
-- Add colour-coding of responses/comments  
-  - Need to create per-enquiry team IDs for this  
-- Set left pane to minimum of:  
-  - Current width  
-  - Smallest width where all title text shown  
-- Add filters/search to left pane  
-- Filter/search on RE navigation pane  
+- Add colour-coding of responses/comments
+  - Need to create per-enquiry team IDs for this
+  - Add colour assignment on post creation
+- Set navigation pane to minimum of:
+  - Current width
+  - Smallest width where all title text shown
+- Add filters/search to navigation pane
 - Align flutter with backend, so that buttons are greyed out or hidden if user is not permitted to use them (use custom claims)
 
 ### 📧 Notifications & Alerts

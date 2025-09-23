@@ -47,14 +47,12 @@ class EnquiryDetailPage extends StatelessWidget {
         final title = (data['title'] ?? 'Untitled').toString();
         final enquiryNumber = (data['enquiryNumber'] ?? '—').toString();
         final postText = (data['postText'] ?? '').toString().trim();
-        final publishedAt = (data['publishedAt'] as Timestamp?)?.toDate();
-        // final author = (data['author'] ?? 'Unknown').toString();
         final attachments = (data['attachments'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
 
         // Optional status flags. Only show if present.
         final isOpen = data['isOpen'] == true;
-        final lockedToTeams = data['lockedToTeams'] == true; // if false => open to competitors
-        final underReview = data['underReview'] == true;
+        final teamsCanRespond = data['teamsCanRespond'] == true;
+        final teamsCanComment = data['teamsCanComment'] == true;
 
         return _DetailScaffold(
           // HEADER (within a card)
@@ -67,17 +65,16 @@ class EnquiryDetailPage extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              // Chip(label: Text(author)),
-              if (publishedAt != null) 
-                Chip(label: Text(_fmtDateTime(publishedAt))),
               const SizedBox(height: 16),
               if (data.containsKey('isOpen'))
                 _StatusChip(isOpen ? 'Enquiry in progress' : 'Closed',
                   color: isOpen ? Colors.green : Colors.red),
-              if (data.containsKey('lockedToTeams') && !lockedToTeams)
-                const _StatusChip('Responses/Comments currently open to Competitors'),
-              if (underReview) 
-                const _StatusChip('Under Review by Rules Committee', color: Colors.orange),
+              if (data.containsKey('teamsCanRespond') && teamsCanRespond)
+                const _StatusChip('Competitors may respond', color: Colors.green),
+              if (data.containsKey('teamsCanComment') && teamsCanComment)
+                const _StatusChip('Competitors may comment on responses', color: Colors.green),
+              if (data.containsKey('teamsCanRespond') && data.containsKey('teamsCanComment') && !teamsCanRespond && !teamsCanComment)
+                const _StatusChip('Under review by Rules Committee', color: Colors.orange),
                 ],
               ),
 
@@ -85,7 +82,6 @@ class EnquiryDetailPage extends StatelessWidget {
           commentary: postText.isEmpty ? null : SelectableText(postText),
 
           // ATTACHMENTS
-          // attachments: attachments.map((m) => AttachmentTile.fromMap(m)).toList(),
           attachments: attachments.map((m) => FancyAttachmentTile.fromMap(
             m,
             previewHeight: MediaQuery.of(context).size.height * 0.6,
@@ -94,13 +90,6 @@ class EnquiryDetailPage extends StatelessWidget {
           // CHILDREN: Responses list + New child
           footer: _ChildrenSection.responses(enquiryId: enquiryId),
 
-          // trailingActions: [
-          //   FilledButton.icon(
-          //     onPressed: () => context.go('/enquiries/$enquiryId/responses'),
-          //     icon: const Icon(Icons.forum_outlined),
-          //     label: const Text('View Responses'),
-          //   ),
-          // ],
         );
       },
     );
@@ -120,7 +109,7 @@ class ResponseDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ref = FirebaseFirestore.instance
+    final respRef = FirebaseFirestore.instance
         .collection('enquiries')
         .doc(enquiryId)
         .collection('responses')
@@ -130,65 +119,75 @@ class ResponseDetailPage extends StatelessWidget {
           toFirestore: (v, _) => v,
         );
 
+    final enquiryRef = respRef.parent.parent! // -> DocumentReference to 'enquiries/{enquiryId}'
+        .withConverter<Map<String, dynamic>>(
+          fromFirestore: (s, _) => s.data() ?? {},
+          toFirestore: (v, _) => v,
+        );
+
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: ref.snapshots(),
-      builder: (context, snap) {
-        if (snap.hasError) return const Center(child: Text('Failed to load response'));
-        if (!snap.hasData) return const Center(child: CircularProgressIndicator());
-        final data = snap.data!.data() ?? {};
+      stream: respRef.snapshots(),
+      builder: (context, respSnap) {
+        if (respSnap.hasError) return const Center(child: Text('Failed to load response'));
+        if (!respSnap.hasData) return const Center(child: CircularProgressIndicator());
+        final response = respSnap.data!.data() ?? {};
 
-        final text = (data['postText'] ?? '').toString().trim();
-        final publishedAt = (data['publishedAt'] as Timestamp?)?.toDate();
-        // final author = (data['author'] ?? 'Unknown').toString();
-        final roundNumber = (data['responseNumber'] ?? 'x').toString();
-        final responseNumber = (data['responseNumber'] ?? 'x').toString();
-        final attachments = (data['attachments'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
+        return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+          stream: enquiryRef.snapshots(),
+          builder: (context, enqSnap) {
+            if (enqSnap.hasError) return const Center(child: Text('Failed to load enquiry'));
+            if (!enqSnap.hasData) return const Center(child: CircularProgressIndicator());
+            final enquiry = enqSnap.data!.data() ?? {};
 
-        // Optional status on parent (bubble up if provided)
-        final underReview = data['underReview'] == true;
+            // --- response fields---
+            final text = (response['postText'] ?? '').toString().trim();
+            final roundNumber = (response['roundNumber'] ?? 'x').toString();
+            final responseNumber = (response['responseNumber'] ?? 'x').toString();
+            final attachments =
+                (response['attachments'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
 
-        return _DetailScaffold(
-          headerLines: [
-            // 'Rule Enquiry – Response $number',
-            // 'Rule Enquiry #$enquiryNumber – $title',
-            'Response $roundNumber.$responseNumber'
-          ],
-          // subHeaderLines: ['Response $roundNumber.$responseNumber'], // keeps the visual rhythm; adjust if you store a label
-          meta: Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              // Chip(label: Text(author)),
-              if (publishedAt != null) 
-                Chip(label: Text(_fmtDateTime(publishedAt))),
-              if (underReview) 
-                const SizedBox(height: 8),
-                const _StatusChip('Under Review by Rules Committee', color: Colors.orange),
-            ],
-          ),
+            // --- enquiry fields ---
+            final enquiryNumber = (enquiry['enquiryNumber'] ?? 'x').toString();
+            final isOpen = enquiry['isOpen'] == true;
+            final currentRound = enquiry['roundNumber'] == response['roundNumber'];
+            final teamsCanComment = enquiry['teamsCanComment'] == true;
 
-          commentary: text.isEmpty ? null : SelectableText(text),
-          // attachments: attachments.map((m) => AttachmentTile.fromMap(m)).toList(),
-          attachments: attachments.map((m) => FancyAttachmentTile.fromMap(
-            m,
-            previewHeight: MediaQuery.of(context).size.height * 0.6,
-            )).toList(), // consider making platform dependent
+            return _DetailScaffold(
+              headerLines: ['RE #$enquiryNumber - Response $roundNumber.$responseNumber'],
+              meta: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  if (enquiry.containsKey('isOpen'))
+                    _StatusChip(isOpen ? 'Enquiry in progress' : 'Enquiry closed',
+                      color: isOpen ? Colors.green : Colors.red),
+                  if (enquiry.containsKey('roundNumber') && response.containsKey('roundNumber')) ...[
+                    _StatusChip(currentRound ? 'Round in progress' : 'Round closed',
+                      color: currentRound ? Colors.green : Colors.red),
+                    if (response.containsKey('teamsCanComment') && teamsCanComment)
+                      _StatusChip(teamsCanComment ? 'Competitors may comment' : 'Comments closed', 
+                      color: teamsCanComment ? Colors.green : Colors.red),
+                  ],
+                ],
+              ),
+            // COMMENTARY
+            commentary: text.isEmpty ? null : SelectableText(text),
+            // ATTACHMENTS
+            attachments: attachments.map((m) => FancyAttachmentTile.fromMap(
+              m,
+              previewHeight: MediaQuery.of(context).size.height * 0.6,
+              )).toList(), // consider making platform dependent
 
-          // CHILDREN: Comments list + New child
-          footer: _ChildrenSection.comments(enquiryId: enquiryId, responseId: responseId),
-
-          // trailingActions: [
-          //   FilledButton.icon(
-          //     onPressed: () => context.go('/enquiries/$enquiryId/responses/$responseId/comments'),
-          //     icon: const Icon(Icons.mode_comment_outlined),
-          //     label: const Text('View Comments'),
-          //   ),
-          // ],
+            // CHILDREN: Comments list + New child
+            footer: _ChildrenSection.comments(enquiryId: enquiryId, responseId: responseId),
+            );
+          },
         );
       },
     );
   }
 }
+
 
 /// -------------------- COMMENT DETAIL --------------------
 class CommentDetailPage extends StatelessWidget {
