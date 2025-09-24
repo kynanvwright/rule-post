@@ -49,6 +49,7 @@ class NewPostButton extends StatelessWidget {
           builder: (_) => _NewPostDialog(
             dialogTitle: titleText,
             tempFolder: type.tempFolder,
+            postType: type.labelSingular,
           ),
         );
         if (payload == null) return;
@@ -86,10 +87,13 @@ class _NewPostDialog extends StatefulWidget {
   const _NewPostDialog({
     required this.dialogTitle,
     required this.tempFolder,
+    required this.postType,
   });
 
   final String dialogTitle;
   final String tempFolder;
+  final String postType;
+
 
   @override
   State<_NewPostDialog> createState() => _NewPostDialogState();
@@ -124,38 +128,42 @@ class _NewPostDialogState extends State<_NewPostDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextFormField(
-                  controller: _title,
-                  decoration: const InputDecoration(labelText: 'Title'),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Title is required' : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _text,
-                  decoration: const InputDecoration(labelText: 'Content'),
-                  maxLines: 5,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Content is required' : null,
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: _uploading ? null : _addAttachmentToTemp,
-                      icon: const Icon(Icons.attach_file),
-                      label: const Text('Add attachment'),
-                    ),
-                    const SizedBox(width: 12),
-                    if (_uploading)
-                      const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                if (widget.postType != 'comment') ...[
+                  TextFormField(
+                    controller: _title,
+                    decoration: InputDecoration(labelText: widget.postType == 'enquiry' ? 'Title' : 'Summary (optional)'),
+                    validator: (v) =>
+                        ((widget.postType == 'enquiry') && (v == null || v.trim().isEmpty)) ? 'Title is required' : null,
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                  TextFormField(
+                    controller: _text,
+                    decoration: InputDecoration(labelText: widget.postType == 'comment' ? 'Comment' : 'Details'),
+                    maxLines: 5,
+                    validator: (v) =>
+                        ((widget.postType == 'comment') && (v == null || v.trim().isEmpty)) ? 'Content is required' : null,
+                  ),
+                  const SizedBox(height: 16),
+                if (widget.postType != 'comment') ...[
+                  Row(
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: _uploading ? null : _addAttachmentToTemp,
+                        icon: const Icon(Icons.attach_file),
+                        label: const Text('Add attachment'),
                       ),
-                  ],
-                ),
+                      const SizedBox(width: 12),
+                      if (_uploading)
+                        const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                    ],
+                  ),
                 const SizedBox(height: 8),
+                ],
                 if (_pending.isNotEmpty)
                   Align(
                     alignment: Alignment.centerLeft,
@@ -185,6 +193,14 @@ class _NewPostDialogState extends State<_NewPostDialog> {
           onPressed: canSubmit
               ? () async {
                   if (!(_form.currentState?.validate() ?? false)) return;
+                  if (widget.postType == 'enquiry' && _text.text.trim().isEmpty && _pending.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No details or attachments provided.')));
+                    return;
+                  }
+                  if (widget.postType == 'response' && _title.text.trim().isEmpty && _text.text.trim().isEmpty && _pending.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No input provided.')));
+                    return;
+                  }
                   setState(() => _busy = true);
                   if (context.mounted) {
                     Navigator.pop(

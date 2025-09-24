@@ -116,8 +116,10 @@ class _ResponsesBranch extends StatelessWidget {
       stream: q.snapshots(),
       builder: (context, snap) {
         if (snap.hasError) {debugPrint('Firestore stream error: ${snap.error}');}
-        if (!snap.hasData) return const Padding(
+        if (!snap.hasData) {
+          return const Padding(
           padding: EdgeInsets.symmetric(vertical: 8), child: CircularProgressIndicator());
+        }
         final docs = snap.data!.docs;
         if (docs.isEmpty) {
           return leafInfo('No responses yet'); // small muted text
