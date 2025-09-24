@@ -6,8 +6,8 @@ class TwoPaneShell extends StatefulWidget {
     required this.leftPane,
     required this.child,
     required this.breadcrumb,
-    this.initialLeftWidth = 360,
-    this.minLeftWidth = 260,
+    this.initialLeftWidth = 320,
+    this.minLeftWidth = 240,
     this.maxLeftWidth = 520,
     this.collapseBreakpoint = 820,   // below this, left becomes a drawer
     this.tightBreakpoint = 600,      // below this, we gently scale content

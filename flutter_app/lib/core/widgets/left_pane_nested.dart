@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../content/widgets/new_post_button.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../content/widgets/new_post_button.dart';
 import 'left_pane_frame.dart';
 
 class LeftPaneNested extends StatefulWidget {
