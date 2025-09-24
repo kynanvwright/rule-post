@@ -5,8 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../widgets/new_post_button.dart';
 import '../widgets/fancy_attachment_tile.dart';
-
-final counterProvider = StateProvider<int>((ref) => 0);
+import '../../riverpod/post_alias.dart';
 
 /// -------------------- NO SELECTION --------------------
 class NoSelectionPage extends StatelessWidget {
@@ -32,7 +31,7 @@ class EnquiryDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ref = FirebaseFirestore.instance
+    final refDoc = FirebaseFirestore.instance
         .collection('enquiries')
         .doc(enquiryId)
         .withConverter<Map<String, dynamic>>(
@@ -40,71 +39,83 @@ class EnquiryDetailPage extends StatelessWidget {
           toFirestore: (v, _) => v,
         );
 
-    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: ref.snapshots(),
-      builder: (context, snap) {
-        if (snap.hasError) return const Center(child: Text('Failed to load enquiry'));
-        if (!snap.hasData) return const Center(child: CircularProgressIndicator());
-        final data = snap.data!.data() ?? {};
+    return Consumer(
+      builder: (context, ref, _) {
 
-        final title = (data['title'] ?? 'Untitled').toString();
-        final enquiryNumber = (data['enquiryNumber'] ?? '—').toString();
-        final postText = (data['postText'] ?? '').toString().trim();
-        final attachments = (data['attachments'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
+        return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+          stream: refDoc.snapshots(),
+          builder: (context, snap) {
+            if (snap.hasError) return const Center(child: Text('Failed to load enquiry'));
+            if (!snap.hasData) return const Center(child: CircularProgressIndicator());
+            final data = snap.data!.data() ?? {};
 
-        // Optional status flags. Only show if present.
-        final isOpen = data['isOpen'] == true;
-        final teamsCanRespond = data['teamsCanRespond'] == true;
-        final teamsCanComment = data['teamsCanComment'] == true;
-        final lockedResponses = !isOpen || !teamsCanRespond;
-        final lockedResponseReason = !lockedResponses
-          ? ''
-            : !data['isOpen']
-              ? 'Enquiry closed'
-                : 'Responses currently closed';
+            final title = (data['title'] ?? 'Untitled').toString();
+            final enquiryNumber = (data['enquiryNumber'] ?? '—').toString();
+            final postText = (data['postText'] ?? '').toString().trim();
+            final attachments = (data['attachments'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
 
-        return _DetailScaffold(
-          // HEADER (within a card)
-          headerLines: [
-            'Rule Enquiry #$enquiryNumber – $title',
-          ],
-          subHeaderLines: const [], // enquiries themselves don’t need a subheader
-          // META (chips row under header)
-          meta: Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              const SizedBox(height: 16),
-              if (data.containsKey('isOpen'))
-                _StatusChip(isOpen ? 'Enquiry in progress' : 'Closed',
-                  color: isOpen ? Colors.green : Colors.red),
-              if (data.containsKey('teamsCanRespond') && teamsCanRespond)
-                const _StatusChip('Competitors may respond', color: Colors.green),
-              if (data.containsKey('teamsCanComment') && teamsCanComment)
-                const _StatusChip('Competitors may comment on responses', color: Colors.green),
-              if (data.containsKey('teamsCanRespond') && data.containsKey('teamsCanComment') && !teamsCanRespond && !teamsCanComment)
-                const _StatusChip('Under review by Rules Committee', color: Colors.orange),
-                ],
-              ),
+            // Optional status flags. Only show if present.
+            final isOpen = data['isOpen'] == true;
+            final teamsCanRespond = data['teamsCanRespond'] == true;
+            final teamsCanComment = data['teamsCanComment'] == true;
+            final lockedResponses = !isOpen || !teamsCanRespond;
+            final lockedResponseReason = !lockedResponses
+              ? ''
+                : !data['isOpen']
+                  ? 'Enquiry closed'
+                    : 'Responses currently closed';
 
-          // COMMENTARY
-          commentary: postText.isEmpty ? null : SelectableText(postText),
+            // Record latest visit (runs after this frame to avoid write-in-build)
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ref.read(latestVisitProvider.notifier).state = LatestVisit(
+                enquiryId: enquiryId,
+                enquiryAlias: 'RE# $enquiryNumber',
+              );
+            });   
 
-          // ATTACHMENTS
-          attachments: attachments.map((m) => FancyAttachmentTile.fromMap(
-            m,
-            previewHeight: MediaQuery.of(context).size.height * 0.6,
-            )).toList(), // consider making platform dependent
+            return _DetailScaffold(
+              // HEADER (within a card)
+              headerLines: [
+                'Rule Enquiry #$enquiryNumber – $title',
+              ],
+              subHeaderLines: const [], // enquiries themselves don’t need a subheader
+              // META (chips row under header)
+              meta: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  const SizedBox(height: 16),
+                  if (data.containsKey('isOpen'))
+                    _StatusChip(isOpen ? 'Enquiry in progress' : 'Closed',
+                      color: isOpen ? Colors.green : Colors.red),
+                  if (data.containsKey('teamsCanRespond') && teamsCanRespond)
+                    const _StatusChip('Competitors may respond', color: Colors.green),
+                  if (data.containsKey('teamsCanComment') && teamsCanComment)
+                    const _StatusChip('Competitors may comment on responses', color: Colors.green),
+                  if (data.containsKey('teamsCanRespond') && data.containsKey('teamsCanComment') && !teamsCanRespond && !teamsCanComment)
+                    const _StatusChip('Under review by Rules Committee', color: Colors.orange),
+                    ],
+                  ),
 
-          // CHILDREN: Responses list + New child
-          footer: _ChildrenSection.responses(
-            enquiryId: enquiryId,
-            lockedResponses: lockedResponses,
-            lockedReason: lockedResponseReason
-            ),
+              // COMMENTARY
+              commentary: postText.isEmpty ? null : SelectableText(postText),
 
+              // ATTACHMENTS
+              attachments: attachments.map((m) => FancyAttachmentTile.fromMap(
+                m,
+                previewHeight: MediaQuery.of(context).size.height * 0.6,
+                )).toList(), // consider making platform dependent
+
+              // CHILDREN: Responses list + New child
+              footer: _ChildrenSection.responses(
+                enquiryId: enquiryId,
+                lockedResponses: lockedResponses,
+                lockedReason: lockedResponseReason
+                ),
+            );
+          },
         );
-      },
+      }
     );
   }
 }
@@ -138,76 +149,91 @@ class ResponseDetailPage extends StatelessWidget {
           toFirestore: (v, _) => v,
         );
 
-    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: respRef.snapshots(),
-      builder: (context, respSnap) {
-        if (respSnap.hasError) return const Center(child: Text('Failed to load response'));
-        if (!respSnap.hasData) return const Center(child: CircularProgressIndicator());
-        final response = respSnap.data!.data() ?? {};
+    return Consumer(
+      builder: (context, ref, _) {
 
         return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-          stream: enquiryRef.snapshots(),
-          builder: (context, enqSnap) {
-            if (enqSnap.hasError) return const Center(child: Text('Failed to load enquiry'));
-            if (!enqSnap.hasData) return const Center(child: CircularProgressIndicator());
-            final enquiry = enqSnap.data!.data() ?? {};
+          stream: respRef.snapshots(),
+          builder: (context, respSnap) {
+            if (respSnap.hasError) return const Center(child: Text('Failed to load response'));
+            if (!respSnap.hasData) return const Center(child: CircularProgressIndicator());
+            final response = respSnap.data!.data() ?? {};
 
-            // --- response fields---
-            final summary = (response['title'] ?? '').toString().trim();
-            final text = (response['postText'] ?? '').toString().trim();
-            final roundNumber = (response['roundNumber'] ?? 'x').toString();
-            final responseNumber = (response['responseNumber'] ?? 'x').toString();
-            final attachments =
-                (response['attachments'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
+            return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+              stream: enquiryRef.snapshots(),
+              builder: (context, enqSnap) {
+                if (enqSnap.hasError) return const Center(child: Text('Failed to load enquiry'));
+                if (!enqSnap.hasData) return const Center(child: CircularProgressIndicator());
+                final enquiry = enqSnap.data!.data() ?? {};
 
-            // --- enquiry fields ---
-            final enquiryNumber = (enquiry['enquiryNumber'] ?? 'x').toString();
-            final isOpen = enquiry['isOpen'] == true;
-            final currentRound = enquiry['roundNumber'] == response['roundNumber'];
-            final teamsCanComment = enquiry['teamsCanComment'] == true;
-            final lockedComments = !isOpen || !currentRound || !teamsCanComment;
-            final lockedCommentReason = !lockedComments
-              ? ''
-                : !enquiry['isOpen']
-                  ? 'Enquiry closed'
-                    : !currentRound
-                      ? 'This round is closed'
-                        : 'Comments currently closed';
+                // --- response fields---
+                final summary = (response['title'] ?? '').toString().trim();
+                final text = (response['postText'] ?? '').toString().trim();
+                final roundNumber = (response['roundNumber'] ?? 'x').toString();
+                final responseNumber = (response['responseNumber'] ?? 'x').toString();
+                final attachments =
+                    (response['attachments'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
 
-            return _DetailScaffold(
-              headerLines: ['RE #$enquiryNumber - Response $roundNumber.$responseNumber'],
-              meta: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  if (enquiry.containsKey('isOpen'))
-                    _StatusChip(isOpen ? 'Enquiry in progress' : 'Enquiry closed',
-                      color: isOpen ? Colors.green : Colors.red),
-                  if (enquiry.containsKey('roundNumber') && response.containsKey('roundNumber')) ...[
-                    _StatusChip(currentRound ? 'Round in progress' : 'Round closed',
-                      color: currentRound ? Colors.green : Colors.red),
-                    if (response.containsKey('teamsCanComment') && teamsCanComment)
-                      _StatusChip(teamsCanComment ? 'Competitors may comment' : 'Comments closed', 
-                      color: teamsCanComment ? Colors.green : Colors.red),
-                  ],
-                ],
-              ),
-            // SUMMARY
-            summary: summary.isEmpty ? null : SelectableText(summary),
-            // COMMENTARY
-            commentary: text.isEmpty ? null : SelectableText(text),
-            // ATTACHMENTS
-            attachments: attachments.map((m) => FancyAttachmentTile.fromMap(
-              m,
-              previewHeight: MediaQuery.of(context).size.height * 0.6,
-              )).toList(), // consider making platform dependent
+                // --- enquiry fields ---
+                final enquiryNumber = (enquiry['enquiryNumber'] ?? 'x').toString();
+                final isOpen = enquiry['isOpen'] == true;
+                final currentRound = enquiry['roundNumber'] == response['roundNumber'];
+                final teamsCanComment = enquiry['teamsCanComment'] == true;
+                final lockedComments = !isOpen || !currentRound || !teamsCanComment;
+                final lockedCommentReason = !lockedComments
+                  ? ''
+                    : !enquiry['isOpen']
+                      ? 'Enquiry closed'
+                        : !currentRound
+                          ? 'This round is closed'
+                            : 'Comments currently closed';
 
-            // CHILDREN: Comments list + New child
-            footer: _ChildrenSection.comments(
-              enquiryId: enquiryId, 
-              responseId: responseId,
-              lockedComments: lockedComments,
-              lockedReason: lockedCommentReason,),
+                // Record latest visit (runs after this frame to avoid write-in-build)
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  ref.read(latestVisitProvider.notifier).state = LatestVisit(
+                    enquiryId: enquiryId,
+                    enquiryAlias: 'RE# $enquiryNumber',
+                    responseId: responseId,
+                    responseAlias: 'Response $roundNumber.$responseNumber',
+                  );
+                });   
+
+                return _DetailScaffold(
+                  headerLines: ['RE #$enquiryNumber - Response $roundNumber.$responseNumber'],
+                  meta: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      if (enquiry.containsKey('isOpen'))
+                        _StatusChip(isOpen ? 'Enquiry in progress' : 'Enquiry closed',
+                          color: isOpen ? Colors.green : Colors.red),
+                      if (enquiry.containsKey('roundNumber') && response.containsKey('roundNumber')) ...[
+                        _StatusChip(currentRound ? 'Round in progress' : 'Round closed',
+                          color: currentRound ? Colors.green : Colors.red),
+                        if (response.containsKey('teamsCanComment') && teamsCanComment)
+                          _StatusChip(teamsCanComment ? 'Competitors may comment' : 'Comments closed', 
+                          color: teamsCanComment ? Colors.green : Colors.red),
+                      ],
+                    ],
+                  ),
+                // SUMMARY
+                summary: summary.isEmpty ? null : SelectableText(summary),
+                // COMMENTARY
+                commentary: text.isEmpty ? null : SelectableText(text),
+                // ATTACHMENTS
+                attachments: attachments.map((m) => FancyAttachmentTile.fromMap(
+                  m,
+                  previewHeight: MediaQuery.of(context).size.height * 0.6,
+                  )).toList(), // consider making platform dependent
+
+                // CHILDREN: Comments list + New child
+                footer: _ChildrenSection.comments(
+                  enquiryId: enquiryId, 
+                  responseId: responseId,
+                  lockedComments: lockedComments,
+                  lockedReason: lockedCommentReason,),
+                );
+              },
             );
           },
         );
@@ -316,23 +342,6 @@ class _DetailScaffold extends StatelessWidget {
             footer!,
             const SizedBox(height: 12),
           ],
-              // ⬇️ Riverpod bit only here
-          Consumer(
-            builder: (context, ref, _) {
-              final count = ref.watch(counterProvider);
-              return Row(
-                children: [
-                  FloatingActionButton(
-                    onPressed: () =>
-                        ref.read(counterProvider.notifier).state++,
-                    child: const Icon(Icons.add),
-                  ),
-                  const SizedBox(width: 12),
-                  Text('Count: $count'),
-                ],
-              );
-            },
-          ),
         ],
       ),
     );

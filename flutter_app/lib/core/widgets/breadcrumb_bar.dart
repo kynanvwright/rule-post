@@ -1,21 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class BreadcrumbBar extends StatelessWidget {
+import '../../riverpod/post_alias.dart';
+
+class BreadcrumbBar extends ConsumerWidget  {
   const BreadcrumbBar({super.key, required this.state});
   final GoRouterState state;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final p = state.pathParameters;
+    final latest = ref.watch(latestVisitProvider);
+    String enquiryLabel() {
+      return latest?.enquiryAlias ?? '';
+    }
+    String responseLabel() {
+      return latest?.responseAlias ?? '';
+    }
+
     final items = <_Crumb>[
       _Crumb('Enquiries', '/enquiries${state.uri.hasQuery ? '?${state.uri.query}' : ''}'),
       if (p['enquiryId'] != null)
-        _Crumb('E-${p['enquiryId']}', '/enquiries/${p['enquiryId']}'),
+        _Crumb(enquiryLabel(), '/enquiries/${p['enquiryId']}'),
       if (state.matchedLocation.contains('/responses'))
         _Crumb('Responses', '/enquiries/${p['enquiryId']}/responses', goParent: true, upLevels: 1), // go up one level, no page for responses
       if (p['responseId'] != null)
-        _Crumb('R-${p['responseId']}', '/enquiries/${p['enquiryId']}/responses/${p['responseId']}'),
+        _Crumb(responseLabel(), '/enquiries/${p['enquiryId']}/responses/${p['responseId']}'),
     ];
 
     return SingleChildScrollView(
