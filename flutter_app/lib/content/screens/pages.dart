@@ -1,9 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../widgets/new_post_button.dart';
 import '../widgets/fancy_attachment_tile.dart';
+
+final counterProvider = StateProvider<int>((ref) => 0);
 
 /// -------------------- NO SELECTION --------------------
 class NoSelectionPage extends StatelessWidget {
@@ -313,6 +316,23 @@ class _DetailScaffold extends StatelessWidget {
             footer!,
             const SizedBox(height: 12),
           ],
+              // ⬇️ Riverpod bit only here
+          Consumer(
+            builder: (context, ref, _) {
+              final count = ref.watch(counterProvider);
+              return Row(
+                children: [
+                  FloatingActionButton(
+                    onPressed: () =>
+                        ref.read(counterProvider.notifier).state++,
+                    child: const Icon(Icons.add),
+                  ),
+                  const SizedBox(width: 12),
+                  Text('Count: $count'),
+                ],
+              );
+            },
+          ),
         ],
       ),
     );
