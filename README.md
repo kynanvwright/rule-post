@@ -46,6 +46,8 @@ A website for facilitating America's Cup Rule Enquiries.
   - Close enquiries  
 - Require email verification (via Firebase Auth)
 - Allow guest users, log-in is for submissions only
+  - create static mirror of site for public viewing, updated whenever post details change
+    - stops firestore getting overwhelmed by queries
 
 ### 📤 Publishing & Workflow
 - Permit editing prior to submission (be careful of permissions here)

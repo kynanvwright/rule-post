@@ -1,11 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-import '../widgets/new_post_button.dart';
 import '../widgets/fancy_attachment_tile.dart';
+import '../widgets/new_post_button.dart';
 import '../../riverpod/post_alias.dart';
+import '../../riverpod/user_detail.dart';
 
 /// -------------------- NO SELECTION --------------------
 class NoSelectionPage extends StatelessWidget {
@@ -58,12 +59,16 @@ class EnquiryDetailPage extends StatelessWidget {
             final isOpen = data['isOpen'] == true;
             final teamsCanRespond = data['teamsCanRespond'] == true;
             final teamsCanComment = data['teamsCanComment'] == true;
-            final lockedResponses = !isOpen || !teamsCanRespond;
+            final teamAsync = ref.watch(teamProvider);
+            final isRC = teamAsync.value == 'RC';
+            final lockedResponses = (isRC && teamsCanRespond) || (!isRC && (!isOpen || !teamsCanRespond));
             final lockedResponseReason = !lockedResponses
               ? ''
-                : !data['isOpen']
-                  ? 'Enquiry closed'
-                    : 'Responses currently closed';
+                : isRC
+                  ? 'Competitor response window currently open'
+                    : !data['isOpen']
+                      ? 'Enquiry closed'
+                        : 'Responses currently closed';
 
             // Record latest visit (runs after this frame to avoid write-in-build)
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -179,14 +184,18 @@ class ResponseDetailPage extends StatelessWidget {
                 final isOpen = enquiry['isOpen'] == true;
                 final currentRound = enquiry['roundNumber'] == response['roundNumber'];
                 final teamsCanComment = enquiry['teamsCanComment'] == true;
-                final lockedComments = !isOpen || !currentRound || !teamsCanComment;
+                final teamAsync = ref.watch(teamProvider);
+                final isRC = teamAsync.value == 'RC';
+                final lockedComments = isRC || !isOpen || !currentRound || !teamsCanComment;
                 final lockedCommentReason = !lockedComments
                   ? ''
-                    : !enquiry['isOpen']
-                      ? 'Enquiry closed'
-                        : !currentRound
-                          ? 'This round is closed'
-                            : 'Comments currently closed';
+                    : isRC
+                      ? 'Rules Committee may not comment'
+                        : !isOpen
+                          ? 'Enquiry closed'
+                            : !currentRound
+                              ? 'This round is closed'
+                                : 'Comments currently closed';
 
                 // Record latest visit (runs after this frame to avoid write-in-build)
                 WidgetsBinding.instance.addPostFrameCallback((_) {
