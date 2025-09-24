@@ -26,62 +26,110 @@ extension on PostType {
 }
 
 /// Use this one button for all three types.
-class NewPostButton extends StatelessWidget {
+class NewPostButton extends StatefulWidget {
   const NewPostButton({
     super.key,
     required this.type,
-    this.parentIds, // e.g. [enquiryId] for response, [enquiryId, responseId] for comment
+    this.parentIds,
+    this.isLocked = false,
+    this.lockedReason,
   });
 
   final PostType type;
   final List<String>? parentIds;
+  final bool isLocked;
+  final String? lockedReason;
+
+  @override
+  State<NewPostButton> createState() => _NewPostButtonState();
+}
+
+class _NewPostButtonState extends State<NewPostButton> {
+  final _tooltipKey = GlobalKey<TooltipState>();
 
   @override
   Widget build(BuildContext context) {
-    // final titleText = 'New ${type.labelSingular}';
-    final titleText = 'New';
-    return FilledButton.icon(
-      icon: const Icon(Icons.add),
-      label: Text(titleText),
-      onPressed: () async {
-        final payload = await showDialog<_NewPostPayload>(
-          context: context,
-          builder: (_) => _NewPostDialog(
-            dialogTitle: titleText,
-            tempFolder: type.tempFolder,
-            postType: type.labelSingular,
+    final locked = widget.isLocked;
+    const labelText = 'New';
+
+    final scheme = Theme.of(context).colorScheme;
+    final bg = scheme.primary;
+    final fg = scheme.onPrimary;
+
+    // Dimmed look when locked (keeps theme hue, lowers alpha only).
+    final bgColor = locked ? bg.withValues(alpha: 0.55) : bg;
+    final fgColor = locked ? fg.withValues(alpha: 0.55) : fg;
+
+    return Semantics(
+      button: true,
+      enabled: !locked, // SRs know it's unavailable, but we keep it focusable.
+      label: locked && widget.lockedReason != null
+          ? 'New (locked — ${widget.lockedReason})'
+          : 'New',
+      child: Tooltip(
+        key: _tooltipKey,
+        triggerMode: TooltipTriggerMode.longPress, // hover still works on desktop
+        message: locked
+            ? (widget.lockedReason ?? 'This action is currently locked.')
+            : 'Create a new ${widget.type.labelSingular}',
+        child: FilledButton.icon(
+          style: ButtonStyle(
+            backgroundColor: WidgetStatePropertyAll(bgColor),
+            foregroundColor: WidgetStatePropertyAll(fgColor),
+            overlayColor: WidgetStatePropertyAll(
+              locked
+                  ? scheme.onSurface.withValues(alpha: 0.04)
+                  : scheme.primary.withValues(alpha: 0.08),
+            ),
           ),
-        );
-        if (payload == null) return;
+          icon: Icon(locked ? Icons.lock_outline : Icons.add, color: fgColor),
+          label: const Text(labelText),
+          onPressed: () async {
+            if (locked) {
+              final s = _tooltipKey.currentState;
+              if (s is TooltipState) s.ensureTooltipVisible();
+              return;
+            }
 
-        final messenger = ScaffoldMessenger.of(context);
-        final api = PostApi();
+            final payload = await showDialog<_NewPostPayload>(
+              context: context,
+              builder: (_) => _NewPostDialog(
+                dialogTitle: 'New ${widget.type.labelSingular}',
+                tempFolder: widget.type.tempFolder,
+                postType: widget.type.labelSingular,
+              ),
+            );
+            if (payload == null) return;
 
-        try {
-          await api.createPost(
-            postType: type.apiName,
-            title: payload.title,
-            postText: payload.text,
-            attachments: (payload.attachments == null ||
-                    payload.attachments!.isEmpty)
-                ? null
-                : payload.attachments,
-            parentIds: parentIds, // server side will validate/use this
-          );
-          messenger.showSnackBar(
-            SnackBar(content: Text('${_cap(titleText)} ${type.labelSingular} created')),
-          );
-        } catch (e) {
-          messenger.showSnackBar(
-            SnackBar(content: Text('Failed to create ${type.labelSingular}: $e')),
-          );
-        }
-      },
+            final messenger = ScaffoldMessenger.of(context);
+            final api = PostApi();
+
+            try {
+              await api.createPost(
+                postType: widget.type.apiName,
+                title: payload.title,
+                postText: payload.text,
+                attachments: (payload.attachments == null || payload.attachments!.isEmpty)
+                    ? null
+                    : payload.attachments,
+                parentIds: widget.parentIds,
+              );
+              messenger.showSnackBar(
+                SnackBar(content: Text('New ${widget.type.labelSingular} created')),
+              );
+            } catch (e) {
+              messenger.showSnackBar(
+                SnackBar(content: Text('Failed to create ${widget.type.labelSingular}: $e')),
+              );
+            }
+          },
+        ),
+      ),
     );
   }
-
-  String _cap(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 }
+
+
 
 class _NewPostDialog extends StatefulWidget {
   const _NewPostDialog({

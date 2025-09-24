@@ -53,6 +53,12 @@ class EnquiryDetailPage extends StatelessWidget {
         final isOpen = data['isOpen'] == true;
         final teamsCanRespond = data['teamsCanRespond'] == true;
         final teamsCanComment = data['teamsCanComment'] == true;
+        final lockedResponses = !isOpen || !teamsCanRespond;
+        final lockedResponseReason = !lockedResponses
+          ? ''
+            : !data['isOpen']
+              ? 'Enquiry closed'
+                : 'Responses currently closed';
 
         return _DetailScaffold(
           // HEADER (within a card)
@@ -88,7 +94,11 @@ class EnquiryDetailPage extends StatelessWidget {
             )).toList(), // consider making platform dependent
 
           // CHILDREN: Responses list + New child
-          footer: _ChildrenSection.responses(enquiryId: enquiryId),
+          footer: _ChildrenSection.responses(
+            enquiryId: enquiryId,
+            lockedResponses: lockedResponses,
+            lockedReason: lockedResponseReason
+            ),
 
         );
       },
@@ -152,6 +162,14 @@ class ResponseDetailPage extends StatelessWidget {
             final isOpen = enquiry['isOpen'] == true;
             final currentRound = enquiry['roundNumber'] == response['roundNumber'];
             final teamsCanComment = enquiry['teamsCanComment'] == true;
+            final lockedComments = !isOpen || !currentRound || !teamsCanComment;
+            final lockedCommentReason = !lockedComments
+              ? ''
+                : !enquiry['isOpen']
+                  ? 'Enquiry closed'
+                    : !currentRound
+                      ? 'This round is closed'
+                        : 'Comments currently closed';
 
             return _DetailScaffold(
               headerLines: ['RE #$enquiryNumber - Response $roundNumber.$responseNumber'],
@@ -182,7 +200,11 @@ class ResponseDetailPage extends StatelessWidget {
               )).toList(), // consider making platform dependent
 
             // CHILDREN: Comments list + New child
-            footer: _ChildrenSection.comments(enquiryId: enquiryId, responseId: responseId),
+            footer: _ChildrenSection.comments(
+              enquiryId: enquiryId, 
+              responseId: responseId,
+              lockedComments: lockedComments,
+              lockedReason: lockedCommentReason,),
             );
           },
         );
@@ -324,7 +346,11 @@ class _ChildrenSection extends StatelessWidget {
     required this.newChildButton,
   });
 
-  factory _ChildrenSection.responses({required String enquiryId}) {
+  factory _ChildrenSection.responses({
+    required String enquiryId,
+    bool lockedResponses = false,
+    String lockedReason = '',
+  }) {
     return _ChildrenSection._(
       title: 'Responses',
       newChildButton: Align(
@@ -332,6 +358,8 @@ class _ChildrenSection extends StatelessWidget {
         child: NewPostButton(
           type: PostType.response,
           parentIds: [enquiryId],
+          isLocked: lockedResponses,
+          lockedReason: lockedReason,
         ),
       ),
       builder: (context) {
@@ -349,6 +377,8 @@ class _ChildrenSection extends StatelessWidget {
   factory _ChildrenSection.comments({
     required String enquiryId,
     required String responseId,
+    bool lockedComments = false,
+    String lockedReason = '',
   }) {
     return _ChildrenSection._(
       title: 'Comments',
@@ -357,6 +387,8 @@ class _ChildrenSection extends StatelessWidget {
         child: NewPostButton(
           type: PostType.comment,
           parentIds: [enquiryId, responseId],
+          isLocked: lockedComments,
+          lockedReason: lockedReason,
         ),
       ),
       builder: (context) {
