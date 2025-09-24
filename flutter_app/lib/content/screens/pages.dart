@@ -478,12 +478,8 @@ class _ChildrenSection extends StatelessWidget {
               final t = (d['publishedAt'] as Timestamp?)?.toDate();
               final title = (d['title'] ?? '').toString().trim();
               final text = (d['postText'] ?? '').toString().trim();
-
-              final titleSnippet =
-                  title.isEmpty ? null : (title.length > 140 ? '${title.substring(0, 140)}…' : title);
-
-              final snippet =
-                  text.isEmpty ? null : (text.length > 140 ? '${text.substring(0, 140)}…' : text);
+              final roundNumber = (d['roundNumber'] ?? 'x').toString().trim();
+              final responseNumber = (d['responseNumber'] ?? 'x').toString().trim();
 
               // Determine route target based on collection depth
               final segments = docs[i].reference.path.split('/');
@@ -492,9 +488,11 @@ class _ChildrenSection extends StatelessWidget {
                 // Response item (child of enquiry)
                 final enquiryId = segments[1];
                 final responseId = id;
+                final titleSnippet =
+                    title.isEmpty ? null : (title.length > 140 ? '${title.substring(0, 140)}…' : title);
                 tile = ListTile(
-                  title: titleSnippet == null ? null : Text(titleSnippet),
-                  subtitle: snippet == null ? null : Text(snippet),
+                  title: Text('Response $roundNumber.$responseNumber'),
+                  subtitle: titleSnippet == null ? null : Text(titleSnippet),
                   trailing: Text(t == null ? '' : _fmtRelativeTime(t)),
                   onTap: () => context.go('/enquiries/$enquiryId/responses/$responseId'),
                 );
