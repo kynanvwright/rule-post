@@ -276,6 +276,7 @@ export const commentPublisher = onSchedule(
         const newStageEndsDate = computeStageEnds(1, { hour: 23, minute: 55 });
 
         writer.update(enquiryRef, {
+          teamsCanRespond: false,
           teamsCanComment: false,
           stageEnds: Timestamp.fromDate(newStageEndsDate),
         });
@@ -381,6 +382,7 @@ export const committeeResponsePublisher = onSchedule(
           tx.update(enquiryRef, {
             roundNumber: FieldValue.increment(1),
             teamsCanRespond: true,
+            teamsCanComment: false,
             stageEnds: Timestamp.fromDate(nextStageEnds),
           });
 
