@@ -23,6 +23,7 @@ A website for facilitating America's Cup Rule Enquiries.
 - Inline pdf and doc viewing
 - Delayed publishing with cloud functions
 - Automated locking/unlocking of submission permissions with cloud functions
+  - frontend buttons aligned with backend permissions
 - Basic custom claims set up, assigns user role and team to their account
   - allows both frontend and backend to query user's access level without database permissions
   - triggers cloud function whenever the `user_data` collection is updated
