@@ -68,6 +68,8 @@ A website for facilitating America's Cup Rule Enquiries.
   - Smallest width where all title text shown
 - Add filters/search to navigation pane
 - Align flutter with backend, so that buttons are greyed out or hidden if user is not permitted to use them (use custom claims)
+- In navigation pane, allow final RC response to be labelled 'interpretation' or 'amendment'
+- Add subheaders to navigation pane for rounds
 
 ### 📧 Notifications & Alerts
 - Add (toggleable) email alerts to users for when:

@@ -127,7 +127,7 @@ class _ResponsesBranch extends StatelessWidget {
           children: docs.map((d) {
             final id = d.id;
             final data = d.data();
-            final label = (data['title'] ?? 'Response').toString();
+            final label = 'Response ${data['roundNumber'] ?? 'x'}.${data['responseNumber'] ?? 'x'}';
             final isOpen = id == initiallyOpenResponseId;
 
             return Padding(
