@@ -36,23 +36,26 @@ class BreadcrumbBar extends ConsumerWidget  {
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           for (int i = 0; i < items.length; i++) ...[
-            GestureDetector(
-              onTap: () {
-                final target = items[i].goParent
-                    ? _parentOf(items[i].href, upLevels: items[i].upLevels)
-                    : items[i].href;
-                context.go(target);
-              },
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 500),
-                transitionBuilder: (child, animation) =>
-                    FadeTransition(opacity: animation, child: child),
-                child: Text(
-                  items[i].label,
-                  key: ValueKey(items[i].label), // 👈 important: new key when text changes
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                  onTap: () {
+                    final target = items[i].goParent
+                        ? _parentOf(items[i].href, upLevels: items[i].upLevels)
+                        : items[i].href;
+                    context.go(target);
+                  },
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 500),
+                    transitionBuilder: (child, animation) =>
+                        FadeTransition(opacity: animation, child: child),
+                    child: Text(
+                      items[i].label,
+                      key: ValueKey(items[i].label), // 👈 important: new key when text changes
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
                 ),
-              ),
             ),
             if (i < items.length - 1) const Padding(
               padding: EdgeInsets.symmetric(horizontal: 8.0),

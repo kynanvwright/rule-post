@@ -69,7 +69,7 @@ class EnquiryDetailPage extends StatelessWidget {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               ref.read(latestVisitProvider.notifier).state = LatestVisit(
                 enquiryId: enquiryId,
-                enquiryAlias: 'RE# $enquiryNumber',
+                enquiryAlias: 'RE #$enquiryNumber',
               );
             });   
 
@@ -192,7 +192,7 @@ class ResponseDetailPage extends StatelessWidget {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   ref.read(latestVisitProvider.notifier).state = LatestVisit(
                     enquiryId: enquiryId,
-                    enquiryAlias: 'RE# $enquiryNumber',
+                    enquiryAlias: 'RE #$enquiryNumber',
                     responseId: responseId,
                     responseAlias: 'Response $roundNumber.$responseNumber',
                   );
