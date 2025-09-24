@@ -37,8 +37,7 @@ export const isWorkingDay = (dt: DateTime): boolean => {
   if (weekday === 7) return false; // Sunday
 
   // Saturday cutoff: Saturdays are non-working ONLY before this date
-  const saturdayCutoff = RACE_DATE
-    .setZone(ROME_TZ)
+  const saturdayCutoff = RACE_DATE.setZone(ROME_TZ)
     .startOf("day")
     .minus({ months: 3 });
 
@@ -56,4 +55,3 @@ export const isWorkingDay = (dt: DateTime): boolean => {
 
   return true;
 };
-

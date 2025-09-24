@@ -398,7 +398,7 @@ export const createPost = onCall<CreatePostData>(
           if (responseRound !== enquiryRound) {
             throw new HttpsError(
               "failed-precondition",
-              `Comments can only be made on the latest round of responses.`,
+              "Comments can only be made on the latest round of responses.",
             );
           }
           // consider blocking comments on RC responses

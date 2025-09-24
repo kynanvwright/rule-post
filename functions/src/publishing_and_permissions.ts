@@ -30,7 +30,7 @@ export function computeStageEnds(
   targetTime?: TargetTime,
 ): Date {
   if (!Number.isFinite(workDaysAhead) || workDaysAhead <= 0) {
-    throw new Error(`workDaysAhead must be a positive number`);
+    throw new Error("workDaysAhead must be a positive number");
   }
 
   const now = Timestamp.now().toDate();
@@ -50,9 +50,9 @@ export function computeStageEnds(
 
   // Walk days until we land on the Nth working day (inclusive of today)
   // When remaining === 1 and today is a working day, candidate is today.
-  while (true) {
+  while (remaining > 0) {
     if (isWorkingDay(d)) {
-      if (remaining <= 1) {
+      if (remaining === 1) {
         // Candidate day reached; set to target time
         const atTargetRome = d.set(tt);
 
@@ -72,8 +72,8 @@ export function computeStageEnds(
     }
     d = d.plus({ days: 1 }).startOf("day");
   }
+  throw new Error("No valid working day found");
 }
-
 
 /**
  * Publishes all enquiries where isPublished == false.
@@ -85,8 +85,7 @@ export function computeStageEnds(
 export const enquiryPublisher = onSchedule(
   { region: "europe-west6", schedule: "0 0,12 * * *", timeZone: ROME_TZ },
   async (): Promise<void> => {
-
-    const stageEndsDate = computeStageEnds(4, {hour: 19,minute: 55});
+    const stageEndsDate = computeStageEnds(4, { hour: 19, minute: 55 });
     const publishedAt = FieldValue.serverTimestamp();
     const q = db.collection("enquiries").where("isPublished", "==", false);
     const snap = await q.get();
@@ -123,7 +122,8 @@ export const teamResponsePublisher = onSchedule(
     const nowTs = Timestamp.now();
     const publishedAt = FieldValue.serverTimestamp();
 
-    const enquiriesSnap = await db.collection("enquiries")
+    const enquiriesSnap = await db
+      .collection("enquiries")
       .where("isPublished", "==", true)
       .where("isOpen", "==", true)
       .where("teamsCanRespond", "==", true)
@@ -156,7 +156,9 @@ export const teamResponsePublisher = onSchedule(
           .get();
         // optional: enforce deterministic numbering
         const sorted = [...unpublishedSnap.docs].sort(
-          (a, b) => (a.get("createdAt")?.toMillis?.() ?? 0) - (b.get("createdAt")?.toMillis?.() ?? 0)
+          (a, b) =>
+            (a.get("createdAt")?.toMillis?.() ?? 0) -
+            (b.get("createdAt")?.toMillis?.() ?? 0),
         );
         for (let i = 0; i < sorted.length; i++) {
           writer.update(sorted[i].ref, {
@@ -181,7 +183,7 @@ export const teamResponsePublisher = onSchedule(
       }
 
       // single DRY update per enquiry
-      const newStageEnds = computeStageEnds(5, {hour: 11, minute: 55});
+      const newStageEnds = computeStageEnds(5, { hour: 11, minute: 55 });
       writer.update(enquiryRef, {
         teamsCanRespond: false,
         teamsCanComment: true,
@@ -192,11 +194,10 @@ export const teamResponsePublisher = onSchedule(
     await writer.close();
     console.log(
       `[teamResponsePublisher] Processed ${enquiriesSnap.size} enquiries; ` +
-      `published ${totalResponsesPublished} responses.`
+        `published ${totalResponsesPublished} responses.`,
     );
-  }
+  },
 );
-
 
 export const commentPublisher = onSchedule(
   { region: "europe-west6", schedule: "0 0,12 * * *", timeZone: ROME_TZ },
@@ -259,7 +260,8 @@ export const commentPublisher = onSchedule(
         unpublishedCommentsSnap.docs.forEach((c) => {
           writer.update(c.ref, {
             isPublished: true,
-            publishedAt: FieldValue.serverTimestamp()});
+            publishedAt: FieldValue.serverTimestamp(),
+          });
           totalCommentsPublished += 1;
         });
       }
@@ -271,7 +273,7 @@ export const commentPublisher = onSchedule(
       const nowTs = Timestamp.now();
 
       if (stageEnds && stageEnds.toMillis() < nowTs.toMillis()) {
-        const newStageEndsDate = computeStageEnds(1, {hour: 23, minute: 55});
+        const newStageEndsDate = computeStageEnds(1, { hour: 23, minute: 55 });
 
         writer.update(enquiryRef, {
           teamsCanComment: false,
@@ -374,7 +376,7 @@ export const committeeResponsePublisher = onSchedule(
             responseNumber: 0,
           });
 
-          const nextStageEnds = computeStageEnds(4, {hour: 19, minute: 55});
+          const nextStageEnds = computeStageEnds(4, { hour: 19, minute: 55 });
 
           tx.update(enquiryRef, {
             roundNumber: FieldValue.increment(1),
