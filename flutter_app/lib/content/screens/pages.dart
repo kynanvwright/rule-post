@@ -493,6 +493,14 @@ class _ChildrenSection extends StatelessWidget {
               // Determine route target based on collection depth
               final segments = docs[i].reference.path.split('/');
               Widget? tile;
+              final teamColourHex = d['colour'];
+              Color teamColourFaded ;
+              if (teamColourHex != null) {
+                final teamColour = _parseHexColour(teamColourHex);
+                teamColourFaded = teamColour.withValues(alpha: 0.2);
+              } else {
+                teamColourFaded = Colors.transparent;
+              }
               if (segments.contains('responses') && !segments.contains('comments')) {
                 // Response item (child of enquiry)
                 final enquiryId = segments[1];
@@ -501,12 +509,16 @@ class _ChildrenSection extends StatelessWidget {
                     title.isEmpty ? null : (title.length > 140 ? '${title.substring(0, 140)}…' : title);
                 tile = ListTile(
                   title: Text('Response $roundNumber.$responseNumber'),
+                  tileColor: teamColourFaded,
                   subtitle: titleSnippet == null ? null : Text(titleSnippet),
                   trailing: Text(t == null ? '' : _fmtRelativeTime(t)),
                   onTap: () => context.go('/enquiries/$enquiryId/responses/$responseId'),
                 );
               } else if (segments.contains('comments')) {
-                tile = ListTileCollapsibleText(text, maxLines: 3);
+                tile = ListTileCollapsibleText(
+                  text, 
+                  maxLines: 3,
+                  tileColor: teamColourFaded);
               }
               return tile ?? const SizedBox.shrink();
             },
@@ -587,12 +599,14 @@ class ListTileCollapsibleText extends StatefulWidget {
     this.maxLines = 3,
     this.contentPadding = const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     this.showCollapsedHint = true,
+    this.tileColor, // NEW: mimic ListTile.tileColor
   });
 
   final String text;
   final int maxLines;
   final EdgeInsetsGeometry contentPadding;
   final bool showCollapsedHint;
+  final Color? tileColor; // NEW
 
   @override
   State<ListTileCollapsibleText> createState() => _ListTileCollapsibleTextState();
@@ -603,7 +617,12 @@ class _ListTileCollapsibleTextState extends State<ListTileCollapsibleText>
   bool _expanded = false;
   bool _overflows = false;
 
-  void _checkOverflow(BoxConstraints c, TextStyle style, TextDirection dir, EdgeInsets resolvedPad) {
+  void _checkOverflow(
+    BoxConstraints c,
+    TextStyle style,
+    TextDirection dir,
+    EdgeInsets resolvedPad,
+  ) {
     final maxWidth = c.maxWidth - resolvedPad.horizontal;
     final tp = TextPainter(
       text: TextSpan(text: widget.text, style: style),
@@ -627,17 +646,19 @@ class _ListTileCollapsibleTextState extends State<ListTileCollapsibleText>
         _checkOverflow(constraints, textStyle, dir, resolvedPad);
 
         return Material(
-          color: Colors.transparent, // keep background consistent with surroundings
+          // NEW: allow background colour like ListTile.tileColor
+          color: widget.tileColor ?? Colors.transparent,
           child: InkWell(
             onTap: _overflows ? () => setState(() => _expanded = !_expanded) : null,
-            overlayColor: MaterialStateProperty.resolveWith((states) {
-              // match ListTile-ish overlay behaviour
+            // DEPRECATION: MaterialStateProperty -> WidgetStateProperty
+            overlayColor: WidgetStateProperty.resolveWith((states) {
               final base = theme.colorScheme.onSurface;
-              if (states.contains(MaterialState.pressed) || states.contains(MaterialState.focused)) {
-                return base.withOpacity(0.12);
+              // DEPRECATION: withOpacity -> withValues(alpha: ...)
+              if (states.contains(WidgetState.pressed) || states.contains(WidgetState.focused)) {
+                return base.withValues(alpha: 0.12);
               }
-              if (states.contains(MaterialState.hovered)) {
-                return base.withOpacity(0.04);
+              if (states.contains(WidgetState.hovered)) {
+                return base.withValues(alpha: 0.04);
               }
               return null;
             }),
@@ -646,7 +667,6 @@ class _ListTileCollapsibleTextState extends State<ListTileCollapsibleText>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Row: preview text + chevron (ListTile vibe)
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -654,7 +674,6 @@ class _ListTileCollapsibleTextState extends State<ListTileCollapsibleText>
                         child: AnimatedSize(
                           duration: const Duration(milliseconds: 160),
                           alignment: Alignment.topLeft,
-                          // vsync: this,
                           child: Text(
                             widget.text,
                             style: textStyle,
@@ -667,14 +686,12 @@ class _ListTileCollapsibleTextState extends State<ListTileCollapsibleText>
                         const SizedBox(width: 8),
                         AnimatedRotation(
                           duration: const Duration(milliseconds: 160),
-                          turns: _expanded ? 0.5 : 0.0, // flip chevron
+                          turns: _expanded ? 0.5 : 0.0,
                           child: Icon(Icons.expand_more, size: 24, color: iconColor),
                         ),
                       ],
                     ],
                   ),
-
-                  // Hint line under the title when collapsed (matches your UX)
                   if (_overflows && !_expanded && widget.showCollapsedHint) ...[
                     const SizedBox(height: 4),
                     Text(
@@ -685,8 +702,6 @@ class _ListTileCollapsibleTextState extends State<ListTileCollapsibleText>
                       ),
                     ),
                   ],
-
-                  // Accessibility
                   Semantics(
                     button: true,
                     expanded: _expanded,
@@ -702,8 +717,6 @@ class _ListTileCollapsibleTextState extends State<ListTileCollapsibleText>
     );
   }
 }
-
-
 
 /// -------------------- META CHIPS ROW --------------------
 class MetaChips extends StatelessWidget {
@@ -728,4 +741,10 @@ String _fmtRelativeTime(DateTime dt) {
   if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
   if (diff.inHours < 24) return '${diff.inHours}h ago';
   return '${diff.inDays}d ago';
+}
+
+Color _parseHexColour(String hex) {
+  final s = hex.replaceFirst('#', '');
+  final argb = (s.length == 6) ? 'FF$s' : s; // add alpha if needed
+  return Color(int.parse(argb, radix: 16));
 }
