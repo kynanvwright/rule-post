@@ -43,6 +43,8 @@ class EnquiryDetailPage extends StatelessWidget {
     return Consumer(
       builder: (context, ref, _) {
 
+        final claimsAsync = ref.watch(claimsProvider);
+
         return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
           stream: refDoc.snapshots(),
           builder: (context, snap) {
@@ -59,8 +61,8 @@ class EnquiryDetailPage extends StatelessWidget {
             final isOpen = data['isOpen'] == true;
             final teamsCanRespond = data['teamsCanRespond'] == true;
             final teamsCanComment = data['teamsCanComment'] == true;
-            final teamAsync = ref.watch(teamProvider);
-            final isRC = teamAsync.value == 'RC';
+            final userTeam = claimsAsync.asData?.value.team;
+            final isRC = userTeam == 'RC';
             final lockedResponses = (isRC && teamsCanRespond) || (!isRC && (!isOpen || !teamsCanRespond));
             final lockedResponseReason = !lockedResponses
               ? ''
@@ -157,6 +159,8 @@ class ResponseDetailPage extends StatelessWidget {
     return Consumer(
       builder: (context, ref, _) {
 
+        final claimsAsync = ref.watch(claimsProvider);
+
         return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
           stream: respRef.snapshots(),
           builder: (context, respSnap) {
@@ -184,8 +188,8 @@ class ResponseDetailPage extends StatelessWidget {
                 final isOpen = enquiry['isOpen'] == true;
                 final currentRound = enquiry['roundNumber'] == response['roundNumber'];
                 final teamsCanComment = enquiry['teamsCanComment'] == true;
-                final teamAsync = ref.watch(teamProvider);
-                final isRC = teamAsync.value == 'RC';
+                final userTeam = claimsAsync.asData?.value.team;
+                final isRC = userTeam == 'RC';
                 final lockedComments = isRC || !isOpen || !currentRound || !teamsCanComment;
                 final lockedCommentReason = !lockedComments
                   ? ''

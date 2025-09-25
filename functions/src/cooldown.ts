@@ -71,7 +71,7 @@ export async function enforceCooldown(
       const retryAfterSec = ttl > 0 ? ttl : windowSec;
       throw new HttpsError(
         "resource-exhausted",
-        "This action is on cooldown. Try again later.",
+        "This action is on cooldown. Try again shortly.",
         { retryAfterSec },
       );
     }
@@ -91,7 +91,7 @@ export async function enforceCooldown(
     const retryAfterSec = Math.ceil((exp - now) / 1000);
     throw new HttpsError(
       "resource-exhausted",
-      "This action is on cooldown. Try again later.",
+      "This action is on cooldown. Try again shortly.",
       { retryAfterSec },
     );
   }
