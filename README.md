@@ -28,13 +28,27 @@ A website for facilitating America's Cup Rule Enquiries.
   - allows both frontend and backend to query user's access level without database permissions
   - triggers cloud function whenever the `user_data` collection is updated
 
-## MVP
+## Targets
+
+### MVP
 - New accounts can be created
   - only by RC for now, through firebase console
 - Scheduled publishing (deployed but all phases not tested)
 - RC can skip scheduling as detailed in the rule (only in firebase console for now)
 - Basic email alerts
 - Colour-coding (optional but good)
+
+### Published version
+- Site mostly used while logged out
+  - only log in for posting or notification settings
+- One team lead user per team, can add new users
+- Email notifications with customisation
+- Publishing permissions move via schedule or RC acceleration
+  - allow alternative stage lengths
+- Identify RC in all of their posts
+- Pre-publication editing available after submission (maybe)
+- Search/filter in navigation pane
+- Robust testing
 
 ## 📌 Future Features
 
