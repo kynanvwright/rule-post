@@ -15,6 +15,7 @@ import {
 } from "firebase-functions/v2/https";
 
 import { assignUniqueColoursForEnquiry } from "./post_colours";
+import { enforceCooldown, cooldownKeyFromCallable } from "./cooldown";
 
 const ALLOWED_TYPES = [
   "application/pdf",
@@ -120,6 +121,9 @@ type CreatePostData = {
 export const createPost = onCall<CreatePostData>(
   { enforceAppCheck: true },
   async (req: CallableRequest<CreatePostData>) => {
+    // Enforce cooldown (e.g., 60s per caller for createPost)
+    const key = cooldownKeyFromCallable(req, "createPost");
+    await enforceCooldown(key, 10);
     // auth check
     if (!req.auth?.uid) {
       throw new HttpsError("unauthenticated", "Sign in required.");
