@@ -20,6 +20,7 @@ A website for facilitating America's Cup Rule Enquiries.
   - as an exception, frontend can write to temporary file storage
   - Cloud Storage rule for clearing out temporary file storage (1+ days old)
 - Nested structure of enquiries, responses and comments
+  - coloured by author, unique mapping per enquiry
 - Inline pdf and doc viewing
 - Delayed publishing with cloud functions
 - Automated locking/unlocking of submission permissions with cloud functions
@@ -79,9 +80,6 @@ A website for facilitating America's Cup Rule Enquiries.
 - Remove title requirement from responses and comments
 
 ### 🎨 UI / UX
-- Add colour-coding of responses/comments
-  - Need to create per-enquiry team IDs for this
-  - Add colour assignment on post creation
 - Set navigation pane to minimum of:
   - Current width
   - Smallest width where all title text shown

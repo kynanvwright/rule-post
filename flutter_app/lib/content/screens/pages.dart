@@ -477,10 +477,11 @@ class _ChildrenSection extends StatelessWidget {
           }
 
           return ListView.separated(
+            padding: const EdgeInsets.all(8),
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: docs.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
             itemBuilder: (context, i) {
               final d = docs[i].data();
               final id = docs[i].id;
@@ -490,37 +491,44 @@ class _ChildrenSection extends StatelessWidget {
               final roundNumber = (d['roundNumber'] ?? 'x').toString().trim();
               final responseNumber = (d['responseNumber'] ?? 'x').toString().trim();
 
-              // Determine route target based on collection depth
               final segments = docs[i].reference.path.split('/');
-              Widget? tile;
               final teamColourHex = d['colour'];
-              Color teamColourFaded ;
-              if (teamColourHex != null) {
-                final teamColour = _parseHexColour(teamColourHex);
-                teamColourFaded = teamColour.withValues(alpha: 0.2);
-              } else {
-                teamColourFaded = Colors.transparent;
-              }
+              final Color teamColourFaded = teamColourHex == null
+                  ? Colors.transparent
+                  : _parseHexColour(teamColourHex).withValues(alpha: 0.2);
+
+              Widget? tile;
               if (segments.contains('responses') && !segments.contains('comments')) {
-                // Response item (child of enquiry)
                 final enquiryId = segments[1];
                 final responseId = id;
-                final titleSnippet =
-                    title.isEmpty ? null : (title.length > 140 ? '${title.substring(0, 140)}…' : title);
+                final titleSnippet = title.isEmpty
+                    ? null
+                    : (title.length > 140 ? '${title.substring(0, 140)}…' : title);
+
                 tile = ListTile(
                   title: Text('Response $roundNumber.$responseNumber'),
-                  tileColor: teamColourFaded,
                   subtitle: titleSnippet == null ? null : Text(titleSnippet),
                   trailing: Text(t == null ? '' : _fmtRelativeTime(t)),
                   onTap: () => context.go('/enquiries/$enquiryId/responses/$responseId'),
                 );
               } else if (segments.contains('comments')) {
                 tile = ListTileCollapsibleText(
-                  text, 
+                  text,
                   maxLines: 3,
-                  tileColor: teamColourFaded);
+                );
               }
-              return tile ?? const SizedBox.shrink();
+
+              if (tile == null) return const SizedBox.shrink();
+
+              return Card(
+                color: teamColourFaded,
+                elevation: 0, // 🚫 no shadow
+                margin: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                clipBehavior: Clip.antiAlias,
+                surfaceTintColor: Colors.transparent, // avoids Material3 tint
+                child: tile,
+              );
             },
           );
         },
