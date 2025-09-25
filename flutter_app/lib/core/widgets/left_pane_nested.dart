@@ -22,7 +22,7 @@ class _LeftPaneNestedState extends State<LeftPaneNested> {
   Widget build(BuildContext context) {
     final qp = widget.state.uri.queryParameters; // keep your filters
     return LeftPaneFrame(
-      title: 'Enquiries',
+      title: 'Rule Enquiries',
       actions: [
         NewPostButton(type: PostType.enquiry),
       ],

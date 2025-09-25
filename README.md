@@ -65,6 +65,7 @@ A website for facilitating America's Cup Rule Enquiries.
     - stops firestore getting overwhelmed by queries
 - Look into limiting the access of cloud functions. Full admin may not be necessary and increase exploitation risk.
 - Check that users can't edit or delete (Firebase Rules)
+- Add rate limiting on functions and queries
 
 ### 📤 Publishing & Workflow
 - Permit editing prior to submission (be careful of permissions here)

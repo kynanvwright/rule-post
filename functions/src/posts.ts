@@ -118,6 +118,7 @@ type CreatePostData = {
 };
 
 export const createPost = onCall<CreatePostData>(
+  { enforceAppCheck: true },
   async (req: CallableRequest<CreatePostData>) => {
     // auth check
     if (!req.auth?.uid) {
