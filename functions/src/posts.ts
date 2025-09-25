@@ -14,6 +14,8 @@ import {
   CallableRequest,
 } from "firebase-functions/v2/https";
 
+import { assignUniqueColoursForEnquiry } from "./post_colours";
+
 const ALLOWED_TYPES = [
   "application/pdf",
   // "image/.+",
@@ -23,6 +25,10 @@ const ALLOWED_TYPES = [
 ];
 const ALLOWED_MIME = new RegExp(`^(${ALLOWED_TYPES.join("|")})$`, "i");
 const MAX_BYTES = 25 * 1024 * 1024; // 25 MB cap for MVP
+
+function assert(cond: unknown, msg: string): asserts cond {
+  if (!cond) throw new HttpsError("failed-precondition", msg);
+}
 
 /**
  * Lightweight filename sanitiser (keeps extensions).
@@ -279,12 +285,15 @@ export const createPost = onCall<CreatePostData>(
     let enquiryRoundNumber: number;
     let enquiryResponseNumber: number | null;
     let enquiryDoc: DocumentSnapshot | null;
+    let postColourMap: Record<string, string> | null = null;
+    let postColour: string | null = null;
     if (postType === "enquiry") {
       const maxEnquiryNumber = await getMaxOrDefault(
         "enquiries",
         "enquiryNumber",
       );
       enquiryNumber = maxEnquiryNumber + 1;
+      postColourMap = await assignUniqueColoursForEnquiry(postId);
     } else {
       enquiryDoc = await db.collection("enquiries").doc(parentIds[0]).get();
       if (!enquiryDoc.exists) {
@@ -300,6 +309,23 @@ export const createPost = onCall<CreatePostData>(
         enquiryResponseNumber = 0;
       } else {
         enquiryResponseNumber = null;
+      }
+      // Assign post colour based on team
+      const enquiryMetaDoc = await enquiryDoc.ref
+        .collection("meta")
+        .doc("data")
+        .get();
+      assert(enquiryMetaDoc, "enquiries/{id}/meta/data not found");
+      const map = enquiryMetaDoc.get("teamColourMap") as
+        | Record<string, string>
+        | undefined;
+      if (map) {
+        postColour = map[authorTeam];
+      } else {
+        throw new HttpsError(
+          "failed-precondition",
+          "Team colour map not retrieved/interpreted correctly.",
+        );
       }
     }
     const isOpen = true; // future use
@@ -369,6 +395,8 @@ export const createPost = onCall<CreatePostData>(
         }
         publicDoc.roundNumber = enquiryRoundNumber;
         publicDoc.responseNumber = enquiryResponseNumber; // set on publishing
+        assert(postColour, "Post colour not populated for assignment.");
+        publicDoc.colour = postColour;
       } else {
         if (!enquiryDoc) {
           throw new HttpsError(
@@ -401,6 +429,7 @@ export const createPost = onCall<CreatePostData>(
               "Comments can only be made on the latest round of responses.",
             );
           }
+          publicDoc.colour = postColour;
           // consider blocking comments on RC responses
         }
       }
@@ -410,6 +439,9 @@ export const createPost = onCall<CreatePostData>(
         authorTeam,
         createdAt: now,
       };
+      if (postType === "enquiry") {
+        metaDoc.teamColourMap = postColourMap;
+      }
 
       tx.set(docRef, publicDoc);
       tx.set(docRef.collection("meta").doc("data"), metaDoc);

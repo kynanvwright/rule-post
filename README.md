@@ -62,6 +62,8 @@ A website for facilitating America's Cup Rule Enquiries.
 - Allow guest users, log-in is for submissions only
   - create static mirror of site for public viewing, updated whenever post details change
     - stops firestore getting overwhelmed by queries
+- Look into limiting the access of cloud functions. Full admin may not be necessary and increase exploitation risk.
+- Check that users can't edit or delete (Firebase Rules)
 
 ### 📤 Publishing & Workflow
 - Permit editing prior to submission (be careful of permissions here)
@@ -115,6 +117,8 @@ A website for facilitating America's Cup Rule Enquiries.
 - Check which widgets/screens are still in use, delete as required
 - Look for edge cases where RC speeds up stage end and team response gets stuck. 
   - Need to block submission in that case so it doesn't end up getting published in the next round, or alongside the RC without them reading it.
+- If I rapidly change who I'm logged in as, it keeps the old user data (e.g. getting confused about whether I'm RC or not)
+  - might be unique to local version, also not a common issue
 
 ## Other Notes
 - Check how it looks on various devices
