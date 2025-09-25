@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 // Local imports
 import 'auth/screens/login_screen.dart';
 import 'content/screens/pages.dart';
+import 'content/screens/user_screen.dart';
 import 'core/widgets/app_scaffold.dart';
 import 'core/widgets/breadcrumb_bar.dart';
 import 'core/widgets/left_pane_nested.dart';
@@ -112,6 +113,15 @@ final router = GoRouter(
           ],
         ),
       ],
+    ),
+
+    // User Details
+    GoRoute(
+      path: '/user-details',
+      builder: (context, state) => const AppScaffold(
+        title: 'RulePost',
+        child: ClaimsScreen(),
+      ),
     ),
   ],
 );
