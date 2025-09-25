@@ -1,8 +1,12 @@
 // functions/src/cooldown.ts
-import Redis from "ioredis";
 import crypto from "crypto";
-import { HttpsError } from "firebase-functions/v2/https";
 
+import { HttpsError } from "firebase-functions/v2/https";
+import Redis from "ioredis";
+
+import type { CallableRequest } from "firebase-functions/v2/https";
+
+// ─── Redis Client Singleton ────────────────────────────────────────────────
 let _redis: Redis | null = null;
 function getRedis(): Redis | null {
   if (_redis) return _redis;
@@ -11,68 +15,86 @@ function getRedis(): Redis | null {
     (process.env.REDIS_HOST && process.env.REDIS_PORT
       ? `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
       : undefined);
-  if (!url) return null; // allow in-memory fallback
+  if (!url) return null;
   _redis = new Redis(url);
   return _redis;
 }
 
-/** Stable per-caller key: uid → AppCheck hash → IP */
-export function cooldownKeyFromCallable(req: any, scope: string): string {
-  const uid = req.auth?.uid as string | undefined;
+// ─── Global In-Memory Store for Dev Fallback ───────────────────────────────
+declare global {
+  // eslint-disable-next-line no-var
+  var __cooldowns: Map<string, number> | undefined;
+}
+
+// ─── Key Builder ──────────────────────────────────────────────────────────
+export function cooldownKeyFromCallable<T>(
+  req: CallableRequest<T>,
+  scope: string,
+): string {
+  const uid = req.auth?.uid;
   if (uid) return `cd:${scope}:u:${uid}`;
 
+  // Prefer Express' get(); fall back to raw headers
   const appCheck =
-    req.rawRequest?.header?.("X-Firebase-AppCheck") ??
-    req.rawRequest?.headers?.["x-firebase-appcheck"];
+    req.rawRequest.get("X-Firebase-AppCheck") ??
+    (req.rawRequest.headers["x-firebase-appcheck"] as string | undefined);
+
   if (appCheck) {
-    const h = crypto.createHash("sha256").update(String(appCheck)).digest("hex");
+    const h = crypto.createHash("sha256").update(appCheck).digest("hex");
     return `cd:${scope}:ac:${h}`;
   }
 
-  const ip = req.rawRequest?.ip ?? "unknown";
+  const ip = req.rawRequest.ip ?? "unknown";
   return `cd:${scope}:ip:${ip}`;
 }
 
-/**
- * Enforce a per-caller cooldown.
- * Allows the first call and starts a timer; blocks subsequent calls until expiry.
- * If blocked, throws HttpsError("resource-exhausted") with { retryAfterSec } details.
- */
+// ─── Cooldown Enforcer ────────────────────────────────────────────────────
 export async function enforceCooldown(
   key: string,
-  windowSec: number
+  windowSec: number,
 ): Promise<void> {
   const redis = getRedis();
 
   if (redis) {
-    // Try to create the cooldown key if it doesn't exist (atomic)
-    // OK → first call during window; null → key already exists (still cooling down)
-    const ok = (await redis.call("SET", key, "1", "NX", "EX", String(windowSec))) as string | null;
+    // Atomic SET NX EX via raw call (TS-safe)
+    const ok = (await redis.call(
+      "SET",
+      key,
+      "1",
+      "NX",
+      "EX",
+      String(windowSec),
+    )) as string | null;
 
     if (ok === null) {
-      const ttl = await redis.ttl(key); // seconds remaining (−2 no key, −1 no expire)
+      const ttl = await redis.ttl(key);
       const retryAfterSec = ttl > 0 ? ttl : windowSec;
       throw new HttpsError(
         "resource-exhausted",
-        "This action is on cooldown. Try again in 10 seconds.",
-        { retryAfterSec }
+        "This action is on cooldown. Try again later.",
+        { retryAfterSec },
       );
     }
     return;
   }
 
-  // ── In-memory fallback (single instance only; fine for local dev/emulator) ──
+  // ── In-memory fallback ──
+  if (!global.__cooldowns) {
+    global.__cooldowns = new Map<string, number>();
+  }
+  const store = global.__cooldowns;
+
   const now = Date.now();
-  (global as any).__cooldowns ||= new Map<string, number>(); // key -> expiresAt ms
-  const m: Map<string, number> = (global as any).__cooldowns;
-  const exp = m.get(key);
+  const exp = store.get(key);
+
   if (exp && exp > now) {
     const retryAfterSec = Math.ceil((exp - now) / 1000);
     throw new HttpsError(
       "resource-exhausted",
-      "This action is on cooldown. Try again in 10 seconds.",
-      { retryAfterSec }
+      "This action is on cooldown. Try again later.",
+      { retryAfterSec },
     );
   }
-  m.set(key, now + windowSec * 1000);
+
+  store.set(key, now + windowSec * 1000);
 }

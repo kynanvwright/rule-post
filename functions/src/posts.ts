@@ -14,8 +14,8 @@ import {
   CallableRequest,
 } from "firebase-functions/v2/https";
 
-import { assignUniqueColoursForEnquiry } from "./post_colours";
 import { enforceCooldown, cooldownKeyFromCallable } from "./cooldown";
+import { assignUniqueColoursForEnquiry } from "./post_colours";
 
 const ALLOWED_TYPES = [
   "application/pdf",
