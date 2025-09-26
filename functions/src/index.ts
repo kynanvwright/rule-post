@@ -23,4 +23,4 @@ export {
 } from "./publishing_and_permissions";
 export { syncCustomClaims } from "./claims_sync";
 export { setEmailNotificationsOn } from "./toggleNotifications";
-export { createFirebaseUser } from "./createUser";
+export { createUserWithProfile } from "./createUser";

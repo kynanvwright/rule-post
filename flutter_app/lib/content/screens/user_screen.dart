@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../riverpod/user_detail.dart';
-// import '../../api/notification_api.dart';
+import '../../api/create_user_api.dart';
 import '../widgets/notification_tile.dart';
 
 class ClaimsScreen extends ConsumerStatefulWidget {
@@ -98,6 +98,28 @@ class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
               // ),
               const SizedBox(height: 24),
 
+              // ===== Team Admin panel =====
+              Text('Team Admin Panel', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              Card(child: CreateUserButton()),
+              // Card(
+              //   child: Builder(
+              //     builder: (context) {
+              //       final enabled = ref.watch(emailNotificationsOnProvider);
+              //       return SwitchListTile.adaptive(
+              //         title: const Text('Email notifications'),
+              //         value: enabled,
+              //         onChanged: (next) async {
+              //           debugPrint('Toggled to $next');
+              //           await ref.read(updateEmailNotificationsProvider(next).future);
+              //           debugPrint('Callable finished');
+              //         },
+              //       );
+              //     },
+              //   ),
+              // ),
+              const SizedBox(height: 24),
+
               // // (Optional) Debug view of all claims
               // ExpansionTile(
               //   tilePadding: EdgeInsets.zero,
@@ -142,4 +164,22 @@ class _ClaimSpec {
   final String label;
   final IconData icon;
   const _ClaimSpec({required this.key, required this.label, required this.icon});
+}
+
+class CreateUserButton extends StatelessWidget {
+  const CreateUserButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: () async {
+        // Example hard-coded values — replace with text fields or variables
+        const testEmail = "dan.bernasconi@emiratesteamnz.com";
+        const testPassword = "test1234";
+
+        await createUserFromFrontend(testEmail, testPassword);
+      },
+      child: const Text("Create User"),
+    );
+  }
 }
