@@ -1,9 +1,11 @@
+//content/screens/user_screen.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../riverpod/user_detail.dart';
-import '../../api/notification_api.dart';
+// import '../../api/notification_api.dart';
+import '../widgets/notification_tile.dart';
 
 class ClaimsScreen extends ConsumerStatefulWidget {
   const ClaimsScreen({super.key});
@@ -12,7 +14,7 @@ class ClaimsScreen extends ConsumerStatefulWidget {
 }
 
 class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
-  bool _updating = false;
+  // bool _updating = false;
 
   // ✅ Only show these claim keys if present (edit to taste)
   static const List<_ClaimSpec> _shownClaimSpecs = [
@@ -24,7 +26,7 @@ class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
   @override
   Widget build(BuildContext context) {
     final claimsAsync = ref.watch(allClaimsProvider);
-    final emailOn = ref.watch(emailNotificationsOnProvider);
+    // final emailOn = ref.watch(emailNotificationsOnProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
@@ -77,44 +79,23 @@ class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
               // ===== Settings =====
               Text('Settings', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
-              Card(
-                child: SwitchListTile.adaptive(
-                  title: const Text('Email notifications'),
-                  subtitle: const Text(
-                    'Receive emails about all new enquiries, responses and comments.',
-                  ),
-                  value: emailOn,
-                  onChanged: _updating
-                      ? null
-                      : (v) async {
-                          setState(() => _updating = true);
-                          try {
-                            await ref
-                                .read(updateEmailNotificationsProvider(v).future);
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Email notifications ${v ? 'enabled' : 'disabled'}.',
-                                  ),
-                                ),
-                              );
-                            }
-                          } catch (err) {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Update failed: $err'),
-                                ),
-                              );
-                            }
-                          } finally {
-                            if (mounted) setState(() => _updating = false);
-                          }
-                        },
-                ),
-              ),
-
+              Card(child: EmailNotificationsTile()),
+              // Card(
+              //   child: Builder(
+              //     builder: (context) {
+              //       final enabled = ref.watch(emailNotificationsOnProvider);
+              //       return SwitchListTile.adaptive(
+              //         title: const Text('Email notifications'),
+              //         value: enabled,
+              //         onChanged: (next) async {
+              //           debugPrint('Toggled to $next');
+              //           await ref.read(updateEmailNotificationsProvider(next).future);
+              //           debugPrint('Callable finished');
+              //         },
+              //       );
+              //     },
+              //   ),
+              // ),
               const SizedBox(height: 24),
 
               // // (Optional) Debug view of all claims

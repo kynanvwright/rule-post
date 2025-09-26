@@ -119,16 +119,16 @@ type CreatePostData = {
 };
 
 export const createPost = onCall<CreatePostData>(
-  { enforceAppCheck: true },
+  { cors: true, enforceAppCheck: true },
   async (req: CallableRequest<CreatePostData>) => {
-    // Enforce cooldown (e.g., 60s per caller for createPost)
-    const key = cooldownKeyFromCallable(req, "createPost");
-    await enforceCooldown(key, 10);
     // auth check
     if (!req.auth?.uid) {
       throw new HttpsError("unauthenticated", "Sign in required.");
     }
     const authorUid = req.auth.uid;
+    // Enforce cooldown (e.g., 60s per caller for createPost)
+    const key = cooldownKeyFromCallable(req, "createPost");
+    await enforceCooldown(key, 10);
 
     // ---- Parse + validate inputs ----
     const data = (req.data ?? {}) as CreatePostData;

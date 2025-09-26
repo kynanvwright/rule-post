@@ -22,3 +22,4 @@ export {
   committeeResponsePublisher,
 } from "./publishing_and_permissions";
 export { syncCustomClaims } from "./claims_sync";
+export { setEmailNotificationsOn } from "./toggleNotifications";

@@ -1,6 +1,9 @@
-// user_detail.dart
+// riverpod/user_detail.dart
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/foundation.dart';
 
 /// Emits on login, logout, and token refreshes
 final firebaseUserProvider = StreamProvider<User?>(
@@ -15,9 +18,11 @@ final allClaimsProvider = StreamProvider<Map<String, Object?>>((ref) async* {
       yield const {};
       continue;
     }
+    // Force fresh token so custom claims are up-to-date
+    await user.getIdToken(true);
     final token = await user.getIdTokenResult(); // no force; stream covers refreshes
     // Ensure a fresh, mutable map
-    yield Map<String, Object?>.from(token.claims ?? const {});
+    yield (token.claims ?? const <String, Object?>{});
   }
 });
 
@@ -40,17 +45,47 @@ final teamProvider = Provider<String?>(
 Future<void> forceRefreshClaims() async {
   await FirebaseAuth.instance.currentUser?.getIdToken(true);
 }
-/// Derive a typed bool (default false if missing/invalid)
+
+// 2) Derived flag with sensible default
 final emailNotificationsOnProvider = Provider<bool>((ref) {
   final claimsAsync = ref.watch(allClaimsProvider);
-  return claimsAsync.maybeWhen(
-    data: (c) {
-      final v = c['emailNotificationsOn'];
-      if (v is bool) return v;
-      if (v is String) return v.toLowerCase() == 'true';
-      if (v is num) return v != 0;
-      return false;
-    },
-    orElse: () => false,
-  );
+  final claims = claimsAsync.asData?.value ?? const <String, Object?>{};
+  return (claims['emailNotificationsOn'] as bool?) ?? false;
+});
+
+// 3) Imperative action as a function-returning Provider
+final setEmailNotifications = Provider<Future<void> Function(bool)>((ref) {
+  return (bool enabled) async {
+    debugPrint('[setEmailNotifications] start enabled=$enabled');
+
+    // IMPORTANT: use your deployed region here
+    final functions = FirebaseFunctions.instanceFor(region: 'europe-west8');
+    final callable = functions.httpsCallable('setEmailNotificationsOn');
+
+    await callable.call(<String, dynamic>{'enabled': enabled});
+
+    // Refresh the ID token so new claims can be seen
+    final auth = FirebaseAuth.instance;
+    await auth.currentUser?.getIdToken(true);
+
+    // Option A: quick invalidate so UI re-reads claims
+    ref.invalidate(allClaimsProvider);
+
+    // Option B (optional): short poll to ensure claim flips before returning
+    final deadline = DateTime.now().add(const Duration(seconds: 3));
+    var delay = const Duration(milliseconds: 120);
+    while (DateTime.now().isBefore(deadline)) {
+      await auth.currentUser?.getIdToken(true);
+      final res = await auth.currentUser?.getIdTokenResult(true);
+      final got = (res?.claims?['emailNotificationsOn'] as bool?) ?? false;
+      if (got == enabled) {
+        debugPrint('[setEmailNotifications] claim observed enabled=$enabled');
+        return;
+      }
+      await Future.delayed(delay);
+      delay *= 2;
+    }
+    // No big deal: claims often catch up a moment later.
+    debugPrint('[setEmailNotifications] claim not observed yet; continuing');
+  };
 });
