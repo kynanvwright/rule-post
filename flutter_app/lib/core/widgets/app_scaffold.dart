@@ -1,5 +1,4 @@
 // app_scaffold.dart
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -56,7 +55,7 @@ class AppScaffold extends StatelessWidget {
                   child: Material(
                     elevation: 10,
                     color: Theme.of(context).colorScheme.surface,
-                    shadowColor: Colors.black.withOpacity(0.12),
+                    shadowColor: Colors.black.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(24),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(24),
@@ -75,7 +74,7 @@ class AppScaffold extends StatelessWidget {
                                   end: Alignment.bottomRight,
                                   colors: [
                                     Theme.of(context).colorScheme.surface,
-                                    Theme.of(context).colorScheme.surface.withOpacity(0.97),
+                                    Theme.of(context).colorScheme.surface.withValues(alpha: 0.97),
                                   ],
                                 ),
                               ),
@@ -108,7 +107,7 @@ class _DefaultBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final _authService = AuthService();
+    final authService = AuthService();
 
     return Container(
       height: 64,
@@ -121,7 +120,7 @@ class _DefaultBanner extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: scheme.shadow.withOpacity(0.15),
+            color: scheme.shadow.withValues(alpha: 0.15),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -163,7 +162,7 @@ class _DefaultBanner extends StatelessWidget {
                   }
                   break;
                 case _ProfileAction.logout:
-                  await _authService.signOut();
+                  await authService.signOut();
                   if (context.mounted) {
                     context.go('/login');
                   }
