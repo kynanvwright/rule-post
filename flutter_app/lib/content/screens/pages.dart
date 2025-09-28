@@ -495,7 +495,7 @@ class _ChildrenSection extends StatelessWidget {
               final teamColourHex = d['colour'];
               final Color teamColourFaded = teamColourHex == null
                   ? Colors.transparent
-                  : _parseHexColour(teamColourHex).withValues(alpha: 0.2);
+                  : parseHexColour(teamColourHex).withValues(alpha: 0.2);
 
               Widget? tile;
               if (segments.contains('responses') && !segments.contains('comments')) {
@@ -751,7 +751,7 @@ String _fmtRelativeTime(DateTime dt) {
   return '${diff.inDays}d ago';
 }
 
-Color _parseHexColour(String hex) {
+Color parseHexColour(String hex) {
   final s = hex.replaceFirst('#', '');
   final argb = (s.length == 6) ? 'FF$s' : s; // add alpha if needed
   return Color(int.parse(argb, radix: 16));

@@ -110,6 +110,8 @@ A website for facilitating America's Cup Rule Enquiries.
 - Write data models in JSON, then run code to convert into Dart and TypeScript (one source of truth)
 - Consolidate data models for post types
 
+### Commercial Product Requests
+
 ## Fixes
 - Rename variables that shouldn't have "enquiry" in them
 - Refactor code once it's all working, and format it as a series of widgets
@@ -118,6 +120,7 @@ A website for facilitating America's Cup Rule Enquiries.
   - Need to block submission in that case so it doesn't end up getting published in the next round, or alongside the RC without them reading it.
 - If I rapidly change who I'm logged in as, it keeps the old user data (e.g. getting confused about whether I'm RC or not)
   - might be unique to local version, also not a common issue
+- make sure that top bar on both sides of two-panel shall have same height
 
 ## Other Notes
 - Check how it looks on various devices

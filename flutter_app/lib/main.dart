@@ -130,12 +130,30 @@ final router = GoRouter(
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  static final Color kSeed = parseHexColour('#209ED6'); // 👈 your theme colour
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'Rule Enquiries App',
       routerConfig: router,
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: kSeed,
+          brightness: Brightness.light,
+        ),
+      ),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: kSeed,
+          brightness: Brightness.dark,
+        ),
+      ),
+      themeMode: ThemeMode.system, // or .light / .dark
     );
   }
 }
+
