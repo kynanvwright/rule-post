@@ -10,22 +10,34 @@ class AppScaffold extends StatelessWidget {
     super.key,
     required this.child,
     this.title = 'Rule Post',
+    this.subtitle = "the home of rule enquiries",
     this.maxWidth = 1600,
     this.tileAsset = 'assets/images/cup_logo2.jpg',
     this.banner,
     this.actions = const [],
     this.footer,
-    this.bannerHeight = 128, // 👈 single control for header scale
+    this.bannerHeight = 128,     // 👈 master scale
+    this.logoScale = 0.64,       // 0–1 of banner height
+    this.titleScale = 0.26,      // font size = h * titleScale
+    this.subtitleScale = 0.16,   // font size = h * subtitleScale
+    this.iconScale = 0.34,       // icon size = h * iconScale (kept modest)
   });
 
   final Widget child;
   final String title;
+  final String subtitle;
   final double maxWidth;
   final String tileAsset;
   final Widget? banner;
-  final List<Widget> actions;
+  final List<Widget> actions; // additional right-side actions (optional)
   final Widget? footer;
-  final double bannerHeight; // 👈
+
+  // Proportions
+  final double bannerHeight;
+  final double logoScale;
+  final double titleScale;
+  final double subtitleScale;
+  final double iconScale;
 
   @override
   Widget build(BuildContext context) {
@@ -63,12 +75,16 @@ class AppScaffold extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // Header / banner
                           banner ??
                               _DefaultBanner(
                                 title: title,
+                                subtitle: subtitle,
                                 actions: actions,
-                                height: bannerHeight, // 👈 scale source
+                                height: bannerHeight,
+                                logoScale: logoScale,
+                                titleScale: titleScale,
+                                subtitleScale: subtitleScale,
+                                iconScale: iconScale,
                               ),
 
                           // Page content
@@ -110,19 +126,30 @@ class AppScaffold extends StatelessWidget {
 class _DefaultBanner extends StatelessWidget {
   const _DefaultBanner({
     required this.title,
+    required this.subtitle,
     this.actions = const [],
     this.height = 128,
+    this.logoScale = 0.64,
+    this.titleScale = 0.26,
+    this.subtitleScale = 0.16,
+    this.iconScale = 0.34,
   });
 
   final String title;
+  final String subtitle;
   final List<Widget> actions;
   final double height;
+
+  final double logoScale;
+  final double titleScale;
+  final double subtitleScale;
+  final double iconScale;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final authService = AuthService();
+    // final authService = AuthService();
 
     return SizedBox(
       height: height,
@@ -130,18 +157,19 @@ class _DefaultBanner extends StatelessWidget {
         builder: (context, constraints) {
           final h = constraints.maxHeight;
 
-          // Proportional metrics (tweak these ratios to taste)
-          final horizontalPad = h * 0.125; // 16 @ h=128
-          final logoH = h * 0.72;          // 92 @ h=128
-          final gap = h * 0.094;           // 12 @ h=128
-          final titleSize = h * 0.28;      // ~36 @ h=128
-          final iconSize = h * 0.5;        // 64 @ h=128
-          final elevationBlur = h * 0.062; // 8 @ h=128
-          final elevationOffsetY = h * 0.023; // 3 @ h=128
+          // Derived metrics
+          final padX = h * 0.125;               // ~16 @ 128
+          final logoH = h * logoScale;          // defaults ~82 @ 128
+          final gap = h * 0.09;                 // ~12 @ 128
+          final titleSize = h * titleScale;     // ~33 @ 128
+          final subtitleSize = h * subtitleScale; // ~20 @ 128
+          final iconSize = h * iconScale;       // ~43 @ 128 (noticeably smaller than old)
+          final minTap = 40.0;                  // keep good tap target
 
           return Container(
-            padding: EdgeInsets.symmetric(horizontal: horizontalPad),
+            padding: EdgeInsets.symmetric(horizontal: padX),
             decoration: BoxDecoration(
+              // Clean: solid brand or subtle gradient
               gradient: LinearGradient(
                 colors: [scheme.primary, scheme.primaryContainer],
                 begin: Alignment.centerLeft,
@@ -149,83 +177,120 @@ class _DefaultBanner extends StatelessWidget {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: scheme.shadow.withValues(alpha: 0.15),
-                  blurRadius: elevationBlur,
-                  offset: Offset(0, elevationOffsetY),
+                  color: scheme.shadow.withValues(alpha: 0.12),
+                  blurRadius: h * 0.06,
+                  offset: Offset(0, h * 0.02),
                 ),
               ],
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Left group: logo + title
+                // Left: Logo + Title/Sub
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Image.asset('assets/images/cup_logo.png', height: logoH),
                     SizedBox(width: gap),
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: (textTheme.titleLarge ?? const TextStyle()).copyWith(
-                        fontSize: titleSize,
-                        color: scheme.onPrimary,
-                        height: 1.1,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    // Title + subtitle
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: (textTheme.titleLarge ?? const TextStyle()).copyWith(
+                            fontSize: titleSize,
+                            color: scheme.onPrimary,
+                            height: 1.1,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        SizedBox(height: h * 0.02),
+                        Text(
+                          subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: (textTheme.bodyMedium ?? const TextStyle()).copyWith(
+                            fontSize: subtitleSize,
+                            color: scheme.onPrimary.withValues(alpha: 0.9),
+                            height: 1.2,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
 
-                const Spacer(), // 👈 ensures everything after is forced right
+                const Spacer(),
 
-                // Optional actions
-                ...actions.map((w) => Padding(
-                      padding: EdgeInsets.only(left: gap * 0.7),
-                      child: IconTheme.merge(
-                        data: IconThemeData(size: iconSize * 0.72),
-                        child: w,
-                      ),
-                    )),
+                // Optional extra actions (kept modest)
+                ...actions.map(
+                  (w) => Padding(
+                    padding: EdgeInsets.only(left: gap * 0.7),
+                    child: IconTheme.merge(
+                      data: IconThemeData(size: iconSize * 0.82, color: scheme.onPrimary),
+                      child: w,
+                    ),
+                  ),
+                ),
 
                 SizedBox(width: gap),
 
-                // Account icon all the way right
-                PopupMenuButton<_ProfileAction>(
-                  tooltip: 'Account',
-                  icon: Icon(Icons.account_circle, color: scheme.onPrimary),
-                  iconSize: iconSize,
-                  onSelected: (value) async {
-                    switch (value) {
-                      case _ProfileAction.profile:
-                        if (context.mounted) context.go('/user-details');
-                        break;
-                      case _ProfileAction.logout:
-                        await authService.signOut();
-                        if (context.mounted) context.go('/login');
-                        break;
-                    }
-                  },
-                  itemBuilder: (context) => const [
-                    PopupMenuItem(
-                      value: _ProfileAction.profile,
-                      child: ListTile(
-                        leading: Icon(Icons.person),
-                        title: Text('Profile'),
-                        dense: true,
+                // Right: Help icon
+                ConstrainedBox(
+                  constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                  child: IconButton(
+                    tooltip: 'Help',
+                    onPressed: () => context.go('/help'),
+                    icon: Icon(Icons.help_outline, color: scheme.onPrimary, size: iconSize),
+                    padding: EdgeInsets.zero,
+                    splashRadius: (iconSize + minTap) / 4,
+                  ),
+                ),
+
+                SizedBox(width: gap * 0.6),
+
+                // Right: Account icon (popup)
+                ConstrainedBox(
+                  constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                  child: PopupMenuButton<_ProfileAction>(
+                    tooltip: 'Account',
+                    icon: Icon(Icons.account_circle, color: scheme.onPrimary, size: iconSize),
+                    onSelected: (value) async {
+                      switch (value) {
+                        case _ProfileAction.profile:
+                          if (context.mounted) context.go('/user-details');
+                          break;
+                        case _ProfileAction.logout:
+                          await AuthService().signOut();
+                          if (context.mounted) context.go('/login');
+                          break;
+                      }
+                    },
+                    itemBuilder: (context) => const [
+                      PopupMenuItem(
+                        value: _ProfileAction.profile,
+                        child: ListTile(
+                          leading: Icon(Icons.person),
+                          title: Text('Profile'),
+                          dense: true,
+                        ),
                       ),
-                    ),
-                    PopupMenuDivider(),
-                    PopupMenuItem(
-                      value: _ProfileAction.logout,
-                      child: ListTile(
-                        leading: Icon(Icons.logout),
-                        title: Text('Log out'),
-                        dense: true,
+                      PopupMenuDivider(),
+                      PopupMenuItem(
+                        value: _ProfileAction.logout,
+                        child: ListTile(
+                          leading: Icon(Icons.logout),
+                          title: Text('Log out'),
+                          dense: true,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
