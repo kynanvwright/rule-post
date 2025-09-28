@@ -101,24 +101,18 @@ class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
               // ===== Team Admin panel =====
               Text('Team Admin Panel', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
+              // Add list of users for the user's team (need backend query for this)
+              // Consider adding a popup for the "Create New User" button, for input 
               Card(child: CreateUserButton()),
-              // Card(
-              //   child: Builder(
-              //     builder: (context) {
-              //       final enabled = ref.watch(emailNotificationsOnProvider);
-              //       return SwitchListTile.adaptive(
-              //         title: const Text('Email notifications'),
-              //         value: enabled,
-              //         onChanged: (next) async {
-              //           debugPrint('Toggled to $next');
-              //           await ref.read(updateEmailNotificationsProvider(next).future);
-              //           debugPrint('Callable finished');
-              //         },
-              //       );
-              //     },
-              //   ),
-              // ),
               const SizedBox(height: 24),
+
+              // ===== Admin/Rules Committee panel =====
+              // Text('Admin Panel', style: Theme.of(context).textTheme.titleMedium),
+              // const SizedBox(height: 8),
+              // Add list of users for the user's team (need backend query for this)
+              // Consider adding a popup for the "Create New User" button, for input 
+              // Card(child: CreateUserButton()),
+              // const SizedBox(height: 24),
 
               // // (Optional) Debug view of all claims
               // ExpansionTile(
