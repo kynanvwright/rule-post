@@ -17,7 +17,7 @@ class AppScaffold extends StatelessWidget {
     this.actions = const [],
     this.footer,
     this.bannerHeight = 128,     // 👈 master scale
-    this.logoScale = 0.64,       // 0–1 of banner height
+    this.logoScale = 0.8,       // 0–1 of banner height
     this.titleScale = 0.26,      // font size = h * titleScale
     this.subtitleScale = 0.16,   // font size = h * subtitleScale
     this.iconScale = 0.34,       // icon size = h * iconScale (kept modest)
@@ -160,7 +160,7 @@ class _DefaultBanner extends StatelessWidget {
           // Derived metrics
           final padX = h * 0.125;               // ~16 @ 128
           final logoH = h * logoScale;          // defaults ~82 @ 128
-          final gap = h * 0.09;                 // ~12 @ 128
+          final gap = h * 0.2;                 // ~12 @ 128
           final titleSize = h * titleScale;     // ~33 @ 128
           final subtitleSize = h * subtitleScale; // ~20 @ 128
           final iconSize = h * iconScale;       // ~43 @ 128 (noticeably smaller than old)
@@ -190,7 +190,14 @@ class _DefaultBanner extends StatelessWidget {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Image.asset('assets/images/cup_logo.png', height: logoH),
+                    InkWell(
+                      onTap: () => context.go('/enquiries?status=open'), // 👈 navigate home
+                      borderRadius: BorderRadius.circular(h * 0.1),
+                      child: Padding(
+                        padding: EdgeInsets.all(h * 0.05), // keeps tap target comfy
+                        child: Image.asset('assets/images/cup_logo.png', height: logoH),
+                      ),
+                    ),
                     SizedBox(width: gap),
                     // Title + subtitle
                     Column(
