@@ -284,6 +284,7 @@ export const sendPublishDigest = onSchedule(
     schedule: "5 0,12,20 * * *",
     timeZone: "Europe/Rome",
     secrets: [RESEND_API_KEY],
+    region: "europe-west6",
   },
   async (): Promise<void> => {
     const now = Timestamp.now();
