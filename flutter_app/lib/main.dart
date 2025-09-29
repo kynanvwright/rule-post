@@ -146,7 +146,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      title: 'Rule Enquiries App',
+      title: 'Rule Post',
       routerConfig: router,
       theme: ThemeData(
         useMaterial3: true,
