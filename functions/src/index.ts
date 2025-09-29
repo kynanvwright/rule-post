@@ -24,3 +24,9 @@ export {
 export { syncCustomClaims } from "./claims_sync";
 export { setEmailNotificationsOn } from "./toggleNotifications";
 export { createUserWithProfile } from "./createUser";
+export {
+  onEnquiryIsPublishedUpdated,
+  onResponseIsPublishedUpdated,
+  onCommentIsPublishedUpdated,
+  sendPublishDigest,
+} from "./send_email_on_publish";

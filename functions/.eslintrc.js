@@ -40,7 +40,8 @@ module.exports = {
   rules: {
     // —— Your style choices ——
     quotes: ["error", "double"],
-    indent: ["error", 2],
+    // indent: ["error", 2],
+    indent: ["off"],
 
     // Cross-platform line endings (avoid CI/Windows pain)
     "linebreak-style": "off",
