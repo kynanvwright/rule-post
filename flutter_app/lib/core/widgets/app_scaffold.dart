@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import './colour_helper.dart';
 import '../../auth/widgets/auth_service.dart';
 enum _ProfileAction { profile, logout }
 
@@ -17,7 +18,7 @@ class AppScaffold extends StatelessWidget {
     this.actions = const [],
     this.footer,
     this.bannerHeight = 128,     // 👈 master scale
-    this.logoScale = 0.8,       // 0–1 of banner height
+    this.logoScale = 0.8,        // 0–1 of banner height
     this.titleScale = 0.26,      // font size = h * titleScale
     this.subtitleScale = 0.16,   // font size = h * subtitleScale
     this.iconScale = 0.34,       // icon size = h * iconScale (kept modest)
@@ -171,7 +172,8 @@ class _DefaultBanner extends StatelessWidget {
             decoration: BoxDecoration(
               // Clean: solid brand or subtle gradient
               gradient: LinearGradient(
-                colors: [scheme.primary, scheme.primaryContainer],
+                colors: [scheme.primary, scheme.primary.lighten(0.1)],
+                // colors: [scheme.primary, scheme.primaryContainer],
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
               ),

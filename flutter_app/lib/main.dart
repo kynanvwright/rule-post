@@ -1,9 +1,12 @@
-// main.dart (or router.dart if you prefer)
+// main.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
+import 'firebase_options.dart'; // <-- make sure this path is correct
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Your app scaffolding & screens (replace these imports with your actual ones)
@@ -34,7 +37,7 @@ class RouterRefresh extends ChangeNotifier {
   }
 }
 
-// Navigator keys (optional but handy for nested shells & dialogs)
+// Navigator keys
 final _rootKey = GlobalKey<NavigatorState>();
 final _scaffoldShellKey = GlobalKey<NavigatorState>();
 final _twoPaneShellKey = GlobalKey<NavigatorState>();
@@ -53,16 +56,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: '/enquiries',
     refreshListenable: refreshListenable,
 
-    // Centralised auth guard
     redirect: (context, state) {
       final loggingIn = state.matchedLocation == '/login';
       if (!loggedIn && !loggingIn) {
-        // Not logged in → send to login (remember where they came from)
         final from = Uri.encodeComponent(state.uri.toString());
         return '/login?from=$from';
       }
       if (loggedIn && loggingIn) {
-        // Already logged in → keep them out of /login
         final back = state.uri.queryParameters['from'];
         return back ?? '/enquiries';
       }
@@ -70,19 +70,19 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     },
 
     routes: [
-      // ── Public (no scaffold)
+      // Public (no scaffold)
       GoRoute(
         path: '/login',
         parentNavigatorKey: _rootKey,
         builder: (context, state) => const LoginScreen(),
       ),
 
-      // ── Outer shell: AppScaffold persists for all authenticated routes
+      // Outer shell: AppScaffold persists for all authenticated routes
       ShellRoute(
         navigatorKey: _scaffoldShellKey,
         builder: (context, state, child) => AppScaffold(child: child),
         routes: [
-          // ── Inner shell: TwoPane layout only for /enquiries/**
+          // Inner shell: TwoPane layout only for /enquiries/**
           ShellRoute(
             navigatorKey: _twoPaneShellKey,
             builder: (context, state, child) => TwoPaneShell(
@@ -121,7 +121,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
 
-          // ── Pages that REPLACE the TwoPane (but still sit inside AppScaffold)
+          // Pages that REPLACE the TwoPane (still inside AppScaffold)
           GoRoute(
             path: '/user-details',
             builder: (context, state) => const ClaimsScreen(),
@@ -138,15 +138,29 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // App root
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ✅ Initialise Firebase *before* ProviderScope / any FirebaseAuth usage
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
-  static final Color kSeed = parseHexColour('#209ED6'); // 👈 your theme colour
+  // Replace with your own helper if desired
+  static Color parseHexColour(String hex) {
+    final buffer = StringBuffer();
+    if (hex.length == 7) buffer.write('ff'); // add full alpha if #RRGGBB
+    buffer.write(hex.replaceFirst('#', ''));
+    return Color(int.parse(buffer.toString(), radix: 16));
+  }
+
+  static final Color kSeed = parseHexColour('#209ED6'); // theme seed
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -169,7 +183,7 @@ class MyApp extends ConsumerWidget {
           brightness: Brightness.dark,
         ),
       ),
-      themeMode: ThemeMode.system, // or .light / .dark
+      themeMode: ThemeMode.system,
     );
   }
 }
