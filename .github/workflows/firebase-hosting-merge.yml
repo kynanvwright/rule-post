@@ -44,5 +44,5 @@ jobs:
       
       - name: Deploy Functions (CLI)
         env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
         run: firebase deploy --only functions --project rule-post --non-interactive
