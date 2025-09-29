@@ -121,6 +121,7 @@ A website for facilitating America's Cup Rule Enquiries.
 - If I rapidly change who I'm logged in as, it keeps the old user data (e.g. getting confused about whether I'm RC or not)
   - might be unique to local version, also not a common issue
 - make sure that top bar on both sides of two-panel shall have same height
+- Make AppScaffold into a shell route so that part never reloads 
 
 ## Other Notes
 - Check how it looks on various devices
