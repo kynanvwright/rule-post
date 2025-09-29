@@ -31,7 +31,7 @@ class BreadcrumbBar extends ConsumerWidget  {
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14.5),
       child: Wrap(
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [

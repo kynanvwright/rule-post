@@ -34,8 +34,6 @@ class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (claims) {
-          // final pretty = const JsonEncoder.withIndent('  ')
-          //     .convert(claims.isEmpty ? {'(no custom claims)': true} : claims);
 
           // Build tiles only for claims that exist
           final infoTiles = _shownClaimSpecs
@@ -80,63 +78,20 @@ class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
               Text('Settings', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
               Card(child: EmailNotificationsTile()),
-              // Card(
-              //   child: Builder(
-              //     builder: (context) {
-              //       final enabled = ref.watch(emailNotificationsOnProvider);
-              //       return SwitchListTile.adaptive(
-              //         title: const Text('Email notifications'),
-              //         value: enabled,
-              //         onChanged: (next) async {
-              //           debugPrint('Toggled to $next');
-              //           await ref.read(updateEmailNotificationsProvider(next).future);
-              //           debugPrint('Callable finished');
-              //         },
-              //       );
-              //     },
-              //   ),
-              // ),
               const SizedBox(height: 24),
 
               // ===== Team Admin panel =====
               Text('Team Admin Panel', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
-              // Add list of users for the user's team (need backend query for this)
-              // Consider adding a popup for the "Create New User" button, for input 
+              // Have a dropdown called "Current team users"
+              // - trigger a backend function when clicked, to read them all from user_data and return a list
+              // Add a popup dialog for the "Create New User" button, for email/pass input 
               Card(child: CreateUserButton()),
               const SizedBox(height: 24),
 
               // ===== Admin/Rules Committee panel =====
               // Text('Admin Panel', style: Theme.of(context).textTheme.titleMedium),
-              // const SizedBox(height: 8),
-              // Add list of users for the user's team (need backend query for this)
-              // Consider adding a popup for the "Create New User" button, for input 
-              // Card(child: CreateUserButton()),
               // const SizedBox(height: 24),
-
-              // // (Optional) Debug view of all claims
-              // ExpansionTile(
-              //   tilePadding: EdgeInsets.zero,
-              //   title: const Text('All custom claims (debug)'),
-              //   children: [
-              //     Container(
-              //       width: double.infinity,
-              //       padding: const EdgeInsets.all(12),
-              //       decoration: BoxDecoration(
-              //         borderRadius: BorderRadius.circular(8),
-              //         border: Border.all(color: Theme.of(context).dividerColor),
-              //       ),
-              //       child: SingleChildScrollView(
-              //         scrollDirection: Axis.horizontal,
-              //         child: Text(
-              //           pretty,
-              //           style: const TextStyle(fontFamily: 'monospace'),
-              //         ),
-              //       ),
-              //     ),
-              //     const SizedBox(height: 8),
-              //   ],
-              // ),
             ],
           );
         },
