@@ -26,7 +26,7 @@ class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
   @override
   Widget build(BuildContext context) {
     final claimsAsync = ref.watch(allClaimsProvider);
-    final isTeamAdmin = ref.watch(teamAdminProvider) ?? false;
+    final isTeamAdmin = ref.watch(isTeamAdminProvider);
     // final userRole = ref.watch(roleProvider);
 
     return Scaffold(
