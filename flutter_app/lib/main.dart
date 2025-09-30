@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 
 import 'firebase_options.dart'; // <-- make sure this path is correct
 
@@ -140,10 +141,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 // App root
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // ✅ Initialise Firebase *before* ProviderScope / any FirebaseAuth usage
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
+  );
+  await FirebaseAppCheck.instance.activate(
+    webProvider: ReCaptchaV3Provider('6LeP8ssrAAAAAHuCNAA-tIXVzahLuskzGP7K-Si0'), // or Enterprise
   );
 
   runApp(const ProviderScope(child: MyApp()));
