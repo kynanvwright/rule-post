@@ -1,6 +1,7 @@
 import { getFirestore } from "firebase-admin/firestore";
-import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { logger } from "firebase-functions";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
+
 import { enforceCooldown, cooldownKeyFromCallable } from "./cooldown";
 
 const db = getFirestore(); // fine if admin.initializeApp() was called
@@ -24,7 +25,10 @@ export const listTeamUsers = onCall(
     // 3) Query team emails
     const userTeam = req.auth?.token.team;
     if (!userTeam) {
-      throw new HttpsError("failed-precondition", "User has no allocated team.");
+      throw new HttpsError(
+        "failed-precondition",
+        "User has no allocated team.",
+      );
     }
 
     try {
@@ -41,7 +45,7 @@ export const listTeamUsers = onCall(
 
       // Filter out any missing/empty emails, then sort
       const emails = snap.docs
-        .map(d => d.get("email") as string | undefined)
+        .map((d) => d.get("email") as string | undefined)
         .filter((e): e is string => !!e && e.trim().length > 0)
         .sort((a, b) => a.localeCompare(b));
 
@@ -52,11 +56,17 @@ export const listTeamUsers = onCall(
       });
 
       return emails;
-    } catch (err: any) {
-      const code = err?.code; // gRPC code (9 for failed-precondition)
-      const message = err?.message ?? String(err);
+    } catch (err: unknown) {
+      const code =
+        typeof err === "object" && err !== null && "code" in err
+          ? (err as { code?: unknown }).code
+          : undefined;
 
-      // Try to pull out the Firestore "create index" console URL from the message
+      const message =
+        typeof err === "object" && err !== null && "message" in err
+          ? String((err as { message?: unknown }).message)
+          : String(err);
+
       const match = /https?:\/\/[^\s]+console[^)\s]+/i.exec(message);
       const indexUrl = match?.[0];
 
@@ -73,11 +83,11 @@ export const listTeamUsers = onCall(
         // failed-precondition (missing index)
         throw new HttpsError(
           "failed-precondition",
-          `Missing Firestore index. Create it here: ${indexUrl}`
+          `Missing Firestore index. Create it here: ${indexUrl}`,
         );
       }
 
       throw new HttpsError("internal", "Failed to list team users.");
     }
-  }
+  },
 );

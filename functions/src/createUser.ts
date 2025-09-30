@@ -2,6 +2,7 @@ import { getAuth } from "firebase-admin/auth";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { Resend } from "resend";
+
 import { enforceCooldown, cooldownKeyFromCallable } from "./cooldown";
 // import { defineSecret } from "firebase-functions/params";
 
@@ -30,7 +31,7 @@ export const createUserWithProfile = onCall(
 
     const { email } = req.data as CreateUserPayload;
 
-    if (!email ) {
+    if (!email) {
       throw new HttpsError("invalid-argument", "Missing email");
     }
 
@@ -104,13 +105,13 @@ export const createUserWithProfile = onCall(
     });
 
     // 6) Send email via Resend
-    const recipient_name = getNameFromEmail(email);
+    const recipientName = getNameFromEmail(email);
     await resend.emails.send({
       from: "Rule Post <no-reply@rulepost.com>",
       to: email,
       subject: "Set up your account",
       html: `
-        <p>Hi ${recipient_name},</p>
+        <p>Hi ${recipientName},</p>
         <p>You’ve been invited to Rule Post, the website for rule enquiries in the 38th America's Cup. Click the button below to set your password and finish setup.</p>
         <p><a href="${link}" style="display:inline-block;padding:10px 16px;border-radius:6px;text-decoration:none;">Set your password</a></p>
         <p>If you didn’t expect this, you can ignore this email.</p>
@@ -131,9 +132,7 @@ function getNameFromEmail(email: string): string {
   if (dotParts.length > 1) {
     // Capitalize each part
     return dotParts
-      .map(
-        part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
-      )
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
       .join(" ");
   }
 
