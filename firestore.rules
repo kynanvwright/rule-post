@@ -3,7 +3,7 @@ service cloud.firestore {
   match /databases/{db}/documents {
 
     match /enquiries/{id} {
-      allow read: if request.auth != null && resource.data.isPublished == true;
+      allow read: if resource.data.isPublished == true;
       allow write: if false;
     
       match /meta/{doc} {
@@ -11,7 +11,7 @@ service cloud.firestore {
       }
       
       match /responses/{responseId} {
-      	allow read: if request.auth != null && resource.data.isPublished == true;
+      	allow read: if resource.data.isPublished == true;
       	allow write: if false;
         
         match /meta/{doc} {
@@ -19,7 +19,7 @@ service cloud.firestore {
       	}
         
         match /comments/{commentId} {
-      		allow read: if request.auth != null && resource.data.isPublished == true;
+      		allow read: if resource.data.isPublished == true;
       		allow write: if false;
         
           match /meta/{doc} {

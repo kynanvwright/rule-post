@@ -50,13 +50,13 @@ service firebase.storage {
     // Enquiry-level attachments (e.g., PDFs attached to the enquiry itself)
     match /enquiries/{enquiryId}/{filePath=**} {
       allow write: if false; // Admin SDK bypasses rules
-      allow read: if request.auth != null && isEnquiryPublished(enquiryId);
+      allow read: if isEnquiryPublished(enquiryId);
     }
 
     // Response-level attachments
     match /enquiries/{enquiryId}/responses/{responseId}/{filePath=**} {
       allow write: if false;
-      allow read: if request.auth != null && isResponsePublished(enquiryId, responseId);
+      allow read: if isResponsePublished(enquiryId, responseId);
     }
   }
 }
