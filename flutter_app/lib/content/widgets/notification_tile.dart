@@ -21,6 +21,7 @@ class _EmailNotificationsTileState extends ConsumerState<EmailNotificationsTile>
 
     return SwitchListTile.adaptive(
       title: const Text('Email notifications'),
+      subtitle: const Text('Receive updates on new enquiries, responses and comments'),
       value: value,
       onChanged: _busy
           ? null
