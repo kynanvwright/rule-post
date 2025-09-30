@@ -13,8 +13,8 @@ export const listTeamUsers = onCall(
     const uid = req.auth?.uid;
     if (!uid) throw new HttpsError("unauthenticated", "You must be signed in.");
 
-    const userRole = req.auth?.token.role;
-    if (userRole !== "teamAdmin") {
+    const isTeamAdmin = req.auth?.token.teamAdmin;
+    if (!isTeamAdmin) {
       throw new HttpsError("permission-denied", "Team admin only.");
     }
 

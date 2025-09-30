@@ -46,8 +46,8 @@ export const deleteUser = onCall(
     if (!callerUid)
       throw new HttpsError("unauthenticated", "You must be signed in.");
 
-    const role = (req.auth?.token as { role?: string })?.role;
-    if (role !== "teamAdmin") {
+    const isTeamAdmin = req.auth?.token.teamAdmin;
+    if (!isTeamAdmin) {
       throw new HttpsError("permission-denied", "Team admin only.");
     }
 
