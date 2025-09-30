@@ -87,27 +87,15 @@ class AppScaffold extends StatelessWidget {
                                 subtitleScale: subtitleScale,
                                 iconScale: iconScale,
                               ),
-
                           // Page content
                           Expanded(
                             child: DecoratedBox(
                               decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    Theme.of(context).colorScheme.surface,
-                                    Theme.of(context)
-                                        .colorScheme
-                                        .surface
-                                        .withValues(alpha: 0.97),
-                                  ],
-                                ),
+                                color: Theme.of(context).colorScheme.surface,
                               ),
                               child: child,
                             ),
                           ),
-
                           // Optional footer
                           if (footer != null) footer!,
                         ],

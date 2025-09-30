@@ -16,7 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordVisible = false;
   bool _rememberMe = false;
 
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKeyA = GlobalKey<FormState>();
 
   final _authService = AuthService();
   final _email = TextEditingController(
@@ -30,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Form(
-        key: _formKey,
+        key: _formKeyA,
         child: Center(
           child: Card(
             elevation: 8,
@@ -153,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         onPressed: () async {
-                          if (_formKey.currentState?.validate() ?? false) {
+                          if (_formKeyA.currentState?.validate() ?? false) {
                             
                             // 👇 Only matters on web
                             if (kIsWeb) {

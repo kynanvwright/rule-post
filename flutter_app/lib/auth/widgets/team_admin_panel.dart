@@ -182,7 +182,7 @@ class _AddMemberDialog extends StatefulWidget {
 }
 
 class _AddMemberDialogState extends State<_AddMemberDialog> {
-  final _formKey = GlobalKey<FormState>();
+  final _formKeyB = GlobalKey<FormState>();
   final _email = TextEditingController();
   final _displayName = TextEditingController();
   bool _isAdmin = false;
@@ -199,7 +199,7 @@ class _AddMemberDialogState extends State<_AddMemberDialog> {
     return AlertDialog(
       title: const Text('Add team member'),
       content: Form(
-        key: _formKey,
+        key: _formKeyB,
         child: SizedBox(
           width: 380,
           child: Column(
@@ -231,7 +231,7 @@ class _AddMemberDialogState extends State<_AddMemberDialog> {
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
         FilledButton(
           onPressed: () {
-            if (!_formKey.currentState!.validate()) return;
+            if (!_formKeyB.currentState!.validate()) return;
             Navigator.pop(
               context,
               CreateMemberInput(email: _email.text.trim(), isAdmin: _isAdmin),
