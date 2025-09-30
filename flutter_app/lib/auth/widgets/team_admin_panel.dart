@@ -126,12 +126,12 @@ class TeamAdminPanel extends ConsumerWidget {
 }
 
 // ────────────────────── Parts: Members List ──────────────────────
-class _MembersList extends StatelessWidget {
+class _MembersList extends ConsumerWidget {
   const _MembersList(this.members);
   final List<TeamUser> members;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Column(
       children: members.map((m) {
         return ListTile(
@@ -149,7 +149,7 @@ class _MembersList extends StatelessWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Removed ${m.displayName} from team')),
                   );
-                  // TODO: also remove from your local members list or refetch the team
+                  await ref.read(teamMembersProvider.notifier).fetch();
                 }
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
