@@ -1,10 +1,12 @@
 // app_scaffold.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../riverpod/user_detail.dart';
 import './colour_helper.dart';
 import '../../auth/widgets/auth_service.dart';
-enum _ProfileAction { profile, logout }
+enum _ProfileAction { signIn, profile, signOut }
 
 class AppScaffold extends StatelessWidget {
   const AppScaffold({
@@ -112,7 +114,7 @@ class AppScaffold extends StatelessWidget {
   }
 }
 
-class _DefaultBanner extends StatelessWidget {
+class _DefaultBanner extends ConsumerWidget {
   const _DefaultBanner({
     required this.title,
     required this.subtitle,
@@ -135,9 +137,11 @@ class _DefaultBanner extends StatelessWidget {
   final double iconScale;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    
+    final isLoggedIn = ref.watch(isLoggedInProvider);
     // final authService = AuthService();
 
     return SizedBox(
@@ -259,34 +263,52 @@ class _DefaultBanner extends StatelessWidget {
                     icon: Icon(Icons.account_circle, color: scheme.onPrimary, size: iconSize),
                     onSelected: (value) async {
                       switch (value) {
+                        case _ProfileAction.signIn:
+                          if (context.mounted) context.go('/login');
+                          break;
                         case _ProfileAction.profile:
                           if (context.mounted) context.go('/user-details');
                           break;
-                        case _ProfileAction.logout:
+                        case _ProfileAction.signOut:
                           await AuthService().signOut();
-                          if (context.mounted) context.go('/login');
+                          // if (context.mounted) context.go('/login');
                           break;
                       }
                     },
-                    itemBuilder: (context) => const [
-                      PopupMenuItem(
-                        value: _ProfileAction.profile,
-                        child: ListTile(
-                          leading: Icon(Icons.person),
-                          title: Text('Profile'),
-                          dense: true,
-                        ),
-                      ),
-                      PopupMenuDivider(),
-                      PopupMenuItem(
-                        value: _ProfileAction.logout,
-                        child: ListTile(
-                          leading: Icon(Icons.logout),
-                          title: Text('Log out'),
-                          dense: true,
-                        ),
-                      ),
-                    ],
+                    itemBuilder: (context) {
+                      if (isLoggedIn) {
+                        return const [
+                          PopupMenuItem(
+                            value: _ProfileAction.profile,
+                            child: ListTile(
+                              leading: Icon(Icons.person),
+                              title: Text('Profile'),
+                              dense: true,
+                            ),
+                          ),
+                          PopupMenuDivider(),
+                          PopupMenuItem(
+                            value: _ProfileAction.signOut,
+                            child: ListTile(
+                              leading: Icon(Icons.logout),
+                              title: Text('Sign out'),
+                              dense: true,
+                            ),
+                          ),
+                        ];
+                      } else {
+                        return const [
+                          PopupMenuItem(
+                            value: _ProfileAction.signIn,
+                            child: ListTile(
+                              leading: Icon(Icons.login),
+                              title: Text('Sign In'),
+                              dense: true,
+                            ),
+                          ),
+                        ];
+                      }
+                    }
                   ),
                 ),
               ],
