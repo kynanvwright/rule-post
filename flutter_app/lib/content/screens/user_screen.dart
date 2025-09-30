@@ -27,6 +27,7 @@ class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
   Widget build(BuildContext context) {
     final claimsAsync = ref.watch(allClaimsProvider);
     final isTeamAdmin = ref.watch(teamAdminProvider) ?? false;
+    // final userRole = ref.watch(roleProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
@@ -88,8 +89,10 @@ class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
               ],
 
               // ===== Admin/Rules Committee panel =====
+              // if (userRole == "admin")...[
               // Text('Admin Panel', style: Theme.of(context).textTheme.titleMedium),
               // const SizedBox(height: 24),
+              // ],
             ],
           );
         },
