@@ -7,10 +7,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 
-import 'firebase_options.dart'; // <-- make sure this path is correct
+import 'firebase_options.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Your app scaffolding & screens (replace these imports with your actual ones)
+// Screens & scaffolding
 import 'auth/screens/login_screen.dart';
 import 'content/screens/pages.dart';
 import 'content/screens/user_screen.dart';
@@ -21,11 +21,11 @@ import 'core/widgets/left_pane_nested.dart';
 import 'core/widgets/two_panel_shell.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Riverpod: auth stream
+// (Optional) Riverpod auth stream — keep if used elsewhere in your app
 final authStateProvider =
     StreamProvider<User?>((ref) => FirebaseAuth.instance.authStateChanges());
 
-// A small Listenable that notifies GoRouter whenever a stream emits
+// Notify GoRouter when a stream emits (so redirect runs), without rebuilding router
 class RouterRefresh extends ChangeNotifier {
   RouterRefresh(Stream<dynamic> stream) {
     _sub = stream.asBroadcastStream().listen((_) => notifyListeners());
@@ -38,35 +38,51 @@ class RouterRefresh extends ChangeNotifier {
   }
 }
 
-// Navigator keys
+// Stable navigator keys (created once, reused)
 final _rootKey = GlobalKey<NavigatorState>();
 final _scaffoldShellKey = GlobalKey<NavigatorState>();
 final _twoPaneShellKey = GlobalKey<NavigatorState>();
 
-// Riverpod: provide a GoRouter that reacts to auth changes
-final goRouterProvider = Provider<GoRouter>((ref) {
-  final authAsync = ref.watch(authStateProvider);
-  final loggedIn = authAsync.valueOrNull != null;
+// Mark which routes need auth (public by default)
+bool _needsAuth(GoRouterState s) {
+  final loc = s.matchedLocation;
+  if (loc.startsWith('/user-details')) return true;
+  // add more protected prefixes as you wire them:
+  // if (loc.startsWith('/team-admin')) return true;
+  return false;
+}
 
-  // Make router rebuild when auth changes
-  final refreshListenable =
-      RouterRefresh(FirebaseAuth.instance.authStateChanges());
+// Provide ONE GoRouter instance that does NOT rebuild on auth changes
+final goRouterProvider = Provider<GoRouter>((ref) {
+  // Important: do NOT ref.watch(authStateProvider) here.
+  // Rebuilding this provider would recreate the router and duplicate GlobalKeys.
+  final refreshListenable = RouterRefresh(FirebaseAuth.instance.authStateChanges());
+  ref.onDispose(refreshListenable.dispose);
 
   return GoRouter(
     navigatorKey: _rootKey,
+    // Public landing page
     initialLocation: '/enquiries',
+    // Re-run redirect when auth changes, without rebuilding the router
     refreshListenable: refreshListenable,
 
     redirect: (context, state) {
-      final loggingIn = state.matchedLocation == '/login';
-      if (!loggedIn && !loggingIn) {
+      final isLoggedIn = FirebaseAuth.instance.currentUser != null;
+      final goingToLogin = state.matchedLocation == '/login';
+
+      // If trying to access a protected route while logged out → go to /login
+      if (!isLoggedIn && _needsAuth(state) && !goingToLogin) {
         final from = Uri.encodeComponent(state.uri.toString());
         return '/login?from=$from';
       }
-      if (loggedIn && loggingIn) {
+
+      // If logged in and on /login → bounce back to ?from or default
+      if (isLoggedIn && goingToLogin) {
         final back = state.uri.queryParameters['from'];
         return back ?? '/enquiries';
       }
+
+      // Otherwise, no redirect
       return null;
     },
 
@@ -78,12 +94,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const LoginScreen(),
       ),
 
-      // Outer shell: AppScaffold persists for all authenticated routes
+      // Outer shell: AppScaffold persists for all pages below
       ShellRoute(
         navigatorKey: _scaffoldShellKey,
         builder: (context, state, child) => AppScaffold(child: child),
         routes: [
-          // Inner shell: TwoPane layout only for /enquiries/**
+          // Inner shell: TwoPane layout for /enquiries/**
           ShellRoute(
             navigatorKey: _twoPaneShellKey,
             builder: (context, state, child) => TwoPaneShell(
@@ -122,7 +138,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
 
-          // Pages that REPLACE the TwoPane (still inside AppScaffold)
+          // Pages that replace the TwoPane (still inside AppScaffold)
           GoRoute(
             path: '/user-details',
             builder: (context, state) => const ClaimsScreen(),
@@ -145,7 +161,7 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   await FirebaseAppCheck.instance.activate(
-    webProvider: ReCaptchaV3Provider('6LeP8ssrAAAAAHuCNAA-tIXVzahLuskzGP7K-Si0'), // or Enterprise
+    webProvider: ReCaptchaV3Provider('6LeP8ssrAAAAAHuCNAA-tIXVzahLuskzGP7K-Si0'),
   );
 
   runApp(const ProviderScope(child: MyApp()));
@@ -154,7 +170,6 @@ Future<void> main() async {
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
-  // Replace with your own helper if desired
   static Color parseHexColour(String hex) {
     final buffer = StringBuffer();
     if (hex.length == 7) buffer.write('ff'); // add full alpha if #RRGGBB
