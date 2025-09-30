@@ -24,6 +24,8 @@ export {
 export { syncCustomClaims } from "./claims_sync";
 export { setEmailNotificationsOn } from "./toggleNotifications";
 export { createUserWithProfile } from "./createUser";
+export { deleteUser } from "./delete_user";
+export { listTeamUsers } from "./list_team_users";
 export {
   onEnquiryIsPublishedUpdated,
   onResponseIsPublishedUpdated,
