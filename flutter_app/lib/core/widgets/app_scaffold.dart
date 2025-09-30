@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import '../../riverpod/user_detail.dart';
 import './colour_helper.dart';
 import '../../auth/widgets/auth_service.dart';
-enum _ProfileAction { signIn, profile, signOut }
 
 class AppScaffold extends StatelessWidget {
   const AppScaffold({
@@ -258,58 +257,36 @@ class _DefaultBanner extends ConsumerWidget {
                 // Right: Account icon (popup)
                 ConstrainedBox(
                   constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-                  child: PopupMenuButton<_ProfileAction>(
-                    tooltip: 'Account',
-                    icon: Icon(Icons.account_circle, color: scheme.onPrimary, size: iconSize),
-                    onSelected: (value) async {
-                      switch (value) {
-                        case _ProfileAction.signIn:
-                          if (context.mounted) context.go('/login');
-                          break;
-                        case _ProfileAction.profile:
-                          if (context.mounted) context.go('/user-details');
-                          break;
-                        case _ProfileAction.signOut:
-                          await AuthService().signOut();
-                          // if (context.mounted) context.go('/login');
-                          break;
-                      }
+                  child: MenuAnchor(
+                    builder: (context, controller, _) {
+                      return IconButton(
+                        tooltip: 'Account',
+                        icon: Icon(Icons.account_circle, color: scheme.onPrimary, size: iconSize),
+                        onPressed: () => controller.isOpen
+                            ? controller.close()
+                            : controller.open(),
+                      );
                     },
-                    itemBuilder: (context) {
-                      if (isLoggedIn) {
-                        return const [
-                          PopupMenuItem(
-                            value: _ProfileAction.profile,
-                            child: ListTile(
-                              leading: Icon(Icons.person),
-                              title: Text('Profile'),
-                              dense: true,
-                            ),
-                          ),
-                          PopupMenuDivider(),
-                          PopupMenuItem(
-                            value: _ProfileAction.signOut,
-                            child: ListTile(
-                              leading: Icon(Icons.logout),
-                              title: Text('Sign out'),
-                              dense: true,
-                            ),
-                          ),
-                        ];
-                      } else {
-                        return const [
-                          PopupMenuItem(
-                            value: _ProfileAction.signIn,
-                            child: ListTile(
-                              leading: Icon(Icons.login),
-                              title: Text('Sign In'),
-                              dense: true,
-                            ),
-                          ),
-                        ];
-                      }
-                    }
-                  ),
+                    menuChildren: [
+                      if (isLoggedIn) ...[
+                        MenuItemButton(
+                          leadingIcon: const Icon(Icons.person),
+                          child: const Text("Profile"),
+                          onPressed: () => context.go('/user-details'),
+                        ),
+                        MenuItemButton(
+                          leadingIcon: const Icon(Icons.logout),
+                          child: const Text("Sign Out"),
+                          onPressed: () => AuthService().signOut(),
+                        ),
+                      ] else
+                        MenuItemButton(
+                          leadingIcon: const Icon(Icons.login),
+                          child: const Text("Sign In"),
+                          onPressed: () => context.go('/login'),
+                        ),
+                    ],
+                  )
                 ),
               ],
             ),
