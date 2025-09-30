@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../riverpod/user_detail.dart';
 import '../../api/create_user_api.dart';
+import '../../auth//widgets/team_admin_panel.dart';
 import '../widgets/notification_tile.dart';
 
 class ClaimsScreen extends ConsumerStatefulWidget {
@@ -86,7 +87,8 @@ class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
               // Have a dropdown called "Current team users"
               // - trigger a backend function when clicked, to read them all from user_data and return a list
               // Add a popup dialog for the "Create New User" button, for email/pass input 
-              Card(child: CreateUserButton()),
+              // Card(child: CreateUserButton()),
+              Card(child: TeamAdminPanel()),
               const SizedBox(height: 24),
 
               // ===== Admin/Rules Committee panel =====
@@ -124,9 +126,8 @@ class CreateUserButton extends StatelessWidget {
       onPressed: () async {
         // Example hard-coded values — replace with text fields or variables
         const testEmail = "dan.bernasconi@emiratesteamnz.com";
-        const testPassword = "test1234";
 
-        await createUserFromFrontend(testEmail, testPassword);
+        await createUserFromFrontend(testEmail);
       },
       child: const Text("Create User"),
     );

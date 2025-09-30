@@ -1,25 +1,43 @@
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { Resend } from "resend";
+import { enforceCooldown, cooldownKeyFromCallable } from "./cooldown";
+// import { defineSecret } from "firebase-functions/params";
 
 const auth = getAuth(); // ✅ this returns an Auth instance (not callable)
 const db = getFirestore(); // ✅ Firestore instance
+// const RESEND_API_KEY = defineSecret("RESEND_API_KEY");
+const resend = new Resend(process.env.RESEND_API_KEY as string);
 
-type CreateUserPayload = { email: string; password: string };
+type CreateUserPayload = { email: string };
 
 export const createUserWithProfile = onCall(
   { cors: true, enforceAppCheck: true },
   async (req) => {
-    const { email, password } = req.data as CreateUserPayload;
+    // 1) Auth + role
+    const uid = req.auth?.uid;
+    if (!uid) throw new HttpsError("unauthenticated", "You must be signed in.");
 
-    if (!email || !password) {
-      throw new HttpsError("invalid-argument", "Missing email or password.");
+    const userRole = req.auth?.token.role;
+    if (userRole !== "teamAdmin") {
+      throw new HttpsError("permission-denied", "Team admin only.");
     }
 
-    // 1) Create the Auth user
+    // 2) Cooldown (10s/caller)
+    const key = cooldownKeyFromCallable(req, "listTeamUsers");
+    await enforceCooldown(key, 10);
+
+    const { email } = req.data as CreateUserPayload;
+
+    if (!email ) {
+      throw new HttpsError("invalid-argument", "Missing email");
+    }
+
+    // 3) Create the Auth user
     let userRecord;
     try {
-      userRecord = await auth.createUser({ email, password });
+      userRecord = await auth.createUser({ email });
       console.log("✅ New user created:", userRecord.uid);
     } catch (e: unknown) {
       // Normalise error shape (covers firebase-admin's errorInfo.code and plain code)
@@ -35,10 +53,6 @@ export const createUserWithProfile = onCall(
           "invalid-argument",
           "Invalid email format.",
         ),
-        "auth/invalid-password": new HttpsError(
-          "invalid-argument",
-          "Invalid password (does not meet policy).",
-        ),
       };
 
       if (code && map[code]) {
@@ -49,7 +63,7 @@ export const createUserWithProfile = onCall(
       throw new HttpsError("internal", "Failed to create auth user.");
     }
 
-    // 2) Create Firestore profile doc
+    // 4) Create Firestore profile doc
     try {
       await db
         .collection("user_data")
@@ -82,6 +96,47 @@ export const createUserWithProfile = onCall(
       );
     }
 
+    // 5) Generate password reset link (lets them set their own password)
+    const link = await auth.generatePasswordResetLink(email, {
+      url: "https://rulepost.com", // post-completion redirect
+      handleCodeInApp: false, // set true if your app handles OOB codes
+      // dynamicLinkDomain: "example.page.link", // if using Firebase Dynamic Links
+    });
+
+    // 6) Send email via Resend
+    const recipient_name = getNameFromEmail(email);
+    await resend.emails.send({
+      from: "Rule Post <no-reply@rulepost.com>",
+      to: email,
+      subject: "Set up your account",
+      html: `
+        <p>Hi ${recipient_name},</p>
+        <p>You’ve been invited to Rule Post, the website for rule enquiries in the 38th America's Cup. Click the button below to set your password and finish setup.</p>
+        <p><a href="${link}" style="display:inline-block;padding:10px 16px;border-radius:6px;text-decoration:none;">Set your password</a></p>
+        <p>If you didn’t expect this, you can ignore this email.</p>
+      `,
+    });
+
     return { uid: userRecord.uid, email: userRecord.email };
   },
 );
+
+function getNameFromEmail(email: string): string {
+  // Get everything before the @
+  const localPart = email.split("@")[0];
+
+  // Try splitting by "."
+  const dotParts = localPart.split(".");
+
+  if (dotParts.length > 1) {
+    // Capitalize each part
+    return dotParts
+      .map(
+        part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+      )
+      .join(" ");
+  }
+
+  // Fallback: just capitalize the localPart
+  return localPart.charAt(0).toUpperCase() + localPart.slice(1).toLowerCase();
+}
