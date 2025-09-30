@@ -393,11 +393,18 @@ class _ChildrenSection extends StatelessWidget {
       title: 'Responses',
       newChildButton: Align(
         alignment: Alignment.centerLeft,
-        child: NewPostButton(
-          type: PostType.response,
-          parentIds: [enquiryId],
-          isLocked: lockedResponses,
-          lockedReason: lockedReason,
+        child: Consumer(
+          builder: (context, ref, _) {
+            final isLoggedIn = ref.watch(isLoggedInProvider);
+            return isLoggedIn
+              ? NewPostButton(
+              type: PostType.response,
+              parentIds: [enquiryId],
+              isLocked: lockedResponses,
+              lockedReason: lockedReason,
+            )
+            : const SizedBox.shrink(); // empty widget when logged out
+          },
         ),
       ),
       builder: (context) {
@@ -422,11 +429,18 @@ class _ChildrenSection extends StatelessWidget {
       title: 'Comments',
       newChildButton: Align(
         alignment: Alignment.centerLeft,
-        child: NewPostButton(
-          type: PostType.comment,
-          parentIds: [enquiryId, responseId],
-          isLocked: lockedComments,
-          lockedReason: lockedReason,
+        child: Consumer(
+          builder: (context, ref, _) {
+            final isLoggedIn = ref.watch(isLoggedInProvider);
+            return isLoggedIn
+              ? NewPostButton(
+                type: PostType.comment,
+                parentIds: [enquiryId, responseId],
+                isLocked: lockedComments,
+                lockedReason: lockedReason,
+            )
+            : const SizedBox.shrink(); // empty widget when logged out
+          },
         ),
       ),
       builder: (context) {

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../content/widgets/new_post_button.dart';
+import '../../riverpod/user_detail.dart';
 import 'left_pane_frame.dart';
 
 class LeftPaneNested extends StatefulWidget {
@@ -24,7 +26,15 @@ class _LeftPaneNestedState extends State<LeftPaneNested> {
     return LeftPaneFrame(
       title: 'Rule Enquiries',
       actions: [
-        NewPostButton(type: PostType.enquiry),
+        // 👇 Wrap with Consumer to read isLoggedInProvider
+        Consumer(
+          builder: (context, ref, _) {
+            final isLoggedIn = ref.watch(isLoggedInProvider);
+            return isLoggedIn
+                ? NewPostButton(type: PostType.enquiry)
+                : const SizedBox.shrink(); // empty widget when logged out
+          },
+        ),
       ],
       child: _EnquiriesTree(
         initiallyOpenEnquiryId: _enquiryId,
