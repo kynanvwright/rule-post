@@ -56,9 +56,10 @@ class EnquiryDetailPage extends StatelessWidget {
             final attachments = (data['attachments'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
 
             // Optional status flags. Only show if present.
-            final isOpen = data['isOpen'] == true;
-            final teamsCanRespond = data['teamsCanRespond'] == true;
-            final teamsCanComment = data['teamsCanComment'] == true;
+            final isOpen = data['isOpen'] ?? false;
+            final teamsCanRespond = data['teamsCanRespond'] ?? false;
+            final teamsCanComment = data['teamsCanComment'] ?? false;
+            final fromRC = data['fromRC'] ?? false;
             final userTeam = ref.watch(teamProvider);
             final isRC = userTeam == 'RC';
             final lockedResponses = (isRC && teamsCanRespond) || (!isRC && (!isOpen || !teamsCanRespond));
@@ -99,6 +100,8 @@ class EnquiryDetailPage extends StatelessWidget {
                     const _StatusChip('Competitors may comment on responses', color: Colors.green),
                   if (data.containsKey('teamsCanRespond') && data.containsKey('teamsCanComment') && !teamsCanRespond && !teamsCanComment)
                     const _StatusChip('Under review by Rules Committee', color: Colors.orange),
+                  if (data.containsKey('fromRC') && fromRC)
+                    const _StatusChip('Rules Committee Enquiry', color: Colors.blue),
                     ],
                   ),
 
@@ -178,12 +181,13 @@ class ResponseDetailPage extends StatelessWidget {
                 final responseNumber = (response['responseNumber'] ?? 'x').toString();
                 final attachments =
                     (response['attachments'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
+                final fromRC = response['fromRC'] ?? false;
 
                 // --- enquiry fields ---
                 final enquiryNumber = (enquiry['enquiryNumber'] ?? 'x').toString();
-                final isOpen = enquiry['isOpen'] == true;
+                final isOpen = enquiry['isOpen'] ?? false;
                 final currentRound = enquiry['roundNumber'] == response['roundNumber'];
-                final teamsCanComment = enquiry['teamsCanComment'] == true;
+                final teamsCanComment = enquiry['teamsCanComment'] ?? false;
                 final userTeam = ref.watch(teamProvider);
                 final isRC = userTeam == 'RC';
                 final lockedComments = isRC || !isOpen || !currentRound || !teamsCanComment;
@@ -219,9 +223,11 @@ class ResponseDetailPage extends StatelessWidget {
                       if (enquiry.containsKey('roundNumber') && response.containsKey('roundNumber')) ...[
                         _StatusChip(currentRound ? 'Round in progress' : 'Round closed',
                           color: currentRound ? Colors.green : Colors.red),
-                        if (response.containsKey('teamsCanComment') && teamsCanComment)
-                          _StatusChip(teamsCanComment ? 'Competitors may comment' : 'Comments closed', 
-                          color: teamsCanComment ? Colors.green : Colors.red),
+                      if (response.containsKey('teamsCanComment') && teamsCanComment)
+                        _StatusChip(teamsCanComment ? 'Competitors may comment' : 'Comments closed', 
+                        color: teamsCanComment ? Colors.green : Colors.red),
+                      if (response.containsKey('fromRC') && fromRC)
+                        const _StatusChip('Rules Committee Response', color: Colors.blue),
                       ],
                     ],
                   ),
