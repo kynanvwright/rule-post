@@ -54,6 +54,13 @@ final roleProvider = Provider<String?>(
       ),
 );
 
+final teamProvider = Provider<String?>(
+  (ref) => ref.watch(allClaimsProvider).maybeWhen(
+        data: (c) => c['team'] as String?,
+        orElse: () => null,
+      ),
+);
+
 final isTeamAdminProvider = Provider<bool>((ref) {
   final claims = ref.watch(allClaimsProvider).maybeWhen(
     data: (m) => m,
@@ -62,13 +69,6 @@ final isTeamAdminProvider = Provider<bool>((ref) {
   return claims.getBool('teamAdmin', fallback: false) ||
          claims.getString('role') == 'teamAdmin';
 });
-
-final teamAdminProvider = Provider<bool?>(
-  (ref) => ref.watch(allClaimsProvider).maybeWhen(
-        data: (c) => c['teamAdmin'] as bool?,
-        orElse: () => null,
-      ),
-);
 
 /// If you *just* updated claims server-side and need an immediate refresh:
 Future<void> forceRefreshClaims() async {
