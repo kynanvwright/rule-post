@@ -504,6 +504,7 @@ class _ChildrenSection extends StatelessWidget {
               final text = (d['postText'] ?? '').toString().trim();
               final roundNumber = (d['roundNumber'] ?? 'x').toString().trim();
               final responseNumber = (d['responseNumber'] ?? 'x').toString().trim();
+              final fromRC = d['fromRC'] ?? false;
 
               final segments = docs[i].reference.path.split('/');
               final teamColourHex = d['colour'];
@@ -520,7 +521,9 @@ class _ChildrenSection extends StatelessWidget {
                     : (title.length > 140 ? '${title.substring(0, 140)}…' : title);
 
                 tile = ListTile(
-                  title: Text('Response $roundNumber.$responseNumber'),
+                  title: fromRC 
+                  ? Text('Response $roundNumber.$responseNumber (Rules Committee)') 
+                  : Text('Response $roundNumber.$responseNumber'),
                   subtitle: titleSnippet == null ? null : Text(titleSnippet),
                   trailing: Text(t == null ? '' : _fmtRelativeTime(t)),
                   onTap: () => context.go('/enquiries/$enquiryId/responses/$responseId'),

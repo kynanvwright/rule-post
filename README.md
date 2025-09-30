@@ -32,18 +32,18 @@ A website for facilitating America's Cup Rule Enquiries.
 ## Targets
 
 ### MVP
-- New accounts can be created
-  - only by RC for now, through firebase console
-- Scheduled publishing (deployed but all phases not tested)
+- New accounts can be created [done]
+  - only by RC for now, through firebase console [superseded]
+- Scheduled publishing [deployed] [testing]
 - RC can skip scheduling as detailed in the rule (only in firebase console for now)
-- Basic email alerts
-- Colour-coding (optional but good)
+- Basic email alerts [deployed] [testing]
+- Colour-coding (optional but good) [done]
 
 ### Published version
-- Site mostly used while logged out
-  - only log in for posting or notification settings
-- One team lead user per team, can add new users
-- Email notifications with customisation
+- Site mostly used while logged out [done]
+  - only log in for posting or notification settings [done]
+- One team lead user per team, can add new users [done]
+- Email notifications with customisation [partial]
 - Publishing permissions move via schedule or RC acceleration
   - allow alternative stage lengths
 - Identify RC in all of their posts
@@ -88,6 +88,7 @@ A website for facilitating America's Cup Rule Enquiries.
 - Align flutter with backend, so that buttons are greyed out or hidden if user is not permitted to use them (use custom claims)
 - In navigation pane, allow final RC response to be labelled 'interpretation' or 'amendment'
 - Add subheaders to navigation pane for rounds
+- Add symbols with colour-coding for colour-blind folks
 
 ### 📧 Notifications & Alerts
 - Add (toggleable) email alerts to users for when:
