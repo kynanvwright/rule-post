@@ -1,20 +1,20 @@
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import { defineSecret } from "firebase-functions/params";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { Resend } from "resend";
 
 import { enforceCooldown, cooldownKeyFromCallable } from "./cooldown";
-// import { defineSecret } from "firebase-functions/params";
 
 const auth = getAuth(); // ✅ this returns an Auth instance (not callable)
 const db = getFirestore(); // ✅ Firestore instance
-// const RESEND_API_KEY = defineSecret("RESEND_API_KEY");
+const RESEND_API_KEY = defineSecret("RESEND_API_KEY");
 const resend = new Resend(process.env.RESEND_API_KEY as string);
 
 type CreateUserPayload = { email: string };
 
 export const createUserWithProfile = onCall(
-  { cors: true, enforceAppCheck: true },
+  { cors: true, enforceAppCheck: true, secrets: [RESEND_API_KEY] },
   async (req) => {
     // 1) Auth + role
     const uid = req.auth?.uid;
