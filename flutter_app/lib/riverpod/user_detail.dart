@@ -26,6 +26,26 @@ final allClaimsProvider = StreamProvider<Map<String, Object?>>((ref) async* {
   }
 });
 
+extension ClaimReader on Map<String, Object?> {
+  bool getBool(String key, {bool fallback = false}) {
+    final v = this[key];
+    if (v is bool) return v;
+    if (v is String) return (v.toLowerCase() == 'true');
+    if (v is num) return v != 0;
+    return fallback;
+  }
+
+  String? getString(String key) {
+    final v = this[key];
+    return v is String ? v : null;
+  }
+}
+
+final isLoggedInProvider = Provider<bool>((ref) {
+  final user = ref.watch(firebaseUserProvider).value;
+  return user != null;
+});
+
 /// Handy typed helpers built on top of the map (optional)
 final roleProvider = Provider<String?>(
   (ref) => ref.watch(allClaimsProvider).maybeWhen(
@@ -34,12 +54,14 @@ final roleProvider = Provider<String?>(
       ),
 );
 
-final teamProvider = Provider<String?>(
-  (ref) => ref.watch(allClaimsProvider).maybeWhen(
-        data: (c) => c['team'] as String?,
-        orElse: () => null,
-      ),
-);
+final isTeamAdminProvider = Provider<bool>((ref) {
+  final claims = ref.watch(allClaimsProvider).maybeWhen(
+    data: (m) => m,
+    orElse: () => const <String, Object?>{},
+  );
+  return claims.getBool('teamAdmin', fallback: false) ||
+         claims.getString('role') == 'teamAdmin';
+});
 
 final teamAdminProvider = Provider<bool?>(
   (ref) => ref.watch(allClaimsProvider).maybeWhen(
