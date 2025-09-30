@@ -15,7 +15,6 @@ class ClaimsScreen extends ConsumerStatefulWidget {
 }
 
 class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
-  // bool _updating = false;
 
   // ✅ Only show these claim keys if present (edit to taste)
   static const List<_ClaimSpec> _shownClaimSpecs = [
@@ -27,7 +26,7 @@ class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
   @override
   Widget build(BuildContext context) {
     final claimsAsync = ref.watch(allClaimsProvider);
-    // final emailOn = ref.watch(emailNotificationsOnProvider);
+    final isTeamAdmin = ref.watch(teamAdminProvider) ?? false;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
@@ -44,7 +43,6 @@ class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
             return ListTile(
               leading: Icon(spec.icon),
               title: Text('${spec.label}: ${_formatValue(value)}'),
-              // subtitle: Text(_formatValue(value)),
               dense: true,
               visualDensity: VisualDensity.compact,
             );
@@ -82,14 +80,12 @@ class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
               const SizedBox(height: 24),
 
               // ===== Team Admin panel =====
+              if (isTeamAdmin)...[
               Text('Team Admin Panel', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
-              // Have a dropdown called "Current team users"
-              // - trigger a backend function when clicked, to read them all from user_data and return a list
-              // Add a popup dialog for the "Create New User" button, for email/pass input 
-              // Card(child: CreateUserButton()),
               Card(child: TeamAdminPanel()),
               const SizedBox(height: 24),
+              ],
 
               // ===== Admin/Rules Committee panel =====
               // Text('Admin Panel', style: Theme.of(context).textTheme.titleMedium),

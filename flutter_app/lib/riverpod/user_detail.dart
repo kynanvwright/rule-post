@@ -41,6 +41,13 @@ final teamProvider = Provider<String?>(
       ),
 );
 
+final teamAdminProvider = Provider<bool?>(
+  (ref) => ref.watch(allClaimsProvider).maybeWhen(
+        data: (c) => c['teamAdmin'] as bool?,
+        orElse: () => null,
+      ),
+);
+
 /// If you *just* updated claims server-side and need an immediate refresh:
 Future<void> forceRefreshClaims() async {
   await FirebaseAuth.instance.currentUser?.getIdToken(true);

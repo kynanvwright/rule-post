@@ -141,7 +141,7 @@ class _MembersList extends ConsumerWidget {
           title: Text(m.displayName),
           subtitle: Text(m.email),
           trailing: IconButton(
-            icon: const Icon(Icons.delete, color: Colors.red),
+            icon: const Icon(Icons.delete),
             onPressed: () async {
               try {
                 final deletedUid = await deleteUserByEmail(m.email);
