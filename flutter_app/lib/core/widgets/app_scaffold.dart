@@ -322,7 +322,12 @@ class _DefaultBanner extends ConsumerWidget {
                                   MenuItemButton(
                                     leadingIcon: const Icon(Icons.logout),
                                     child: const Text("Sign Out"),
-                                    onPressed: () => AuthService().signOut(),
+                                    onPressed: () async {
+                                      await AuthService().signOut();
+                                      if (context.mounted) {
+                                        context.go('/enquiries');
+                                      }
+                                    },
                                   ),
                                 ] else
                                   MenuItemButton(
