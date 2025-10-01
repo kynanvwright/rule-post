@@ -59,7 +59,9 @@ class EnquiryDetailPage extends StatelessWidget {
             final teamsCanRespond = data['teamsCanRespond'] ?? false;
             final teamsCanComment = data['teamsCanComment'] ?? false;
             final fromRC = data['fromRC'] ?? false;
+            final userRole = ref.watch(roleProvider);
             final userTeam = ref.watch(teamProvider);
+            final isAdmin = userRole == 'admin';
             final isRC = userTeam == 'RC';
             final lockedResponses = (isRC && teamsCanRespond) || (!isRC && (!isOpen || !teamsCanRespond));
             final lockedResponseReason = !lockedResponses
@@ -121,8 +123,7 @@ class EnquiryDetailPage extends StatelessWidget {
                 ),
 
               // ADMIN PANEL
-              // showAdminPanel: isRC,
-              showAdminPanel: true,
+              showAdminPanel: isRC || isAdmin,
             );
           },
         );
@@ -365,12 +366,26 @@ class _DetailScaffold extends StatelessWidget {
           // ADMIN PANEL
           if (showAdminPanel) ...[
             const SizedBox(height: 12),
-            _SectionCard(
-              title: 'Rules Committee Panel',
-              titleStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Colors.red,
-                fontWeight: FontWeight.bold,),
-              child: Text("Admin stuff"),
+            AdminButtonsCollapsibleCard(
+              titleColour: Colors.red,
+              boldTitle: true,
+              actions: [
+                AdminAction(
+                  label: 'End Stage',
+                  icon: Icons.skip_next,
+                  tooltip: 'Finish this enquiry stage and skip to the next',
+                  onPressed: () {
+                    // TODO: call your function
+                  },
+                ),
+                AdminAction(
+                  label: 'Close Enquiry',
+                  icon: Icons.lock,
+                  onPressed: () {
+                    // TODO
+                  },
+                ),
+              ],
             ),
             const SizedBox(height: 12),
           ],
@@ -797,4 +812,139 @@ Color parseHexColour(String hex) {
   final s = hex.replaceFirst('#', '');
   final argb = (s.length == 6) ? 'FF$s' : s; // add alpha if needed
   return Color(int.parse(argb, radix: 16));
+}
+
+/// -------------------- RC PANEL --------------------
+/// A single admin action (button) definition.
+class AdminAction {
+  const AdminAction({
+    required this.label,
+    required this.onPressed,
+    this.icon,
+    this.tooltip,
+    this.enabled = true,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+  final IconData? icon;
+  final String? tooltip;
+  final bool enabled;
+}
+
+class AdminButtonsCollapsibleCard extends StatefulWidget {
+  const AdminButtonsCollapsibleCard({
+    super.key,
+    this.title = 'Rules Committee Panel',
+    required this.actions,
+    this.initiallyExpanded = false,
+    this.requireArming = true,
+    this.armLabel = 'Enable admin actions',
+    this.compact = false,
+    this.buttonMinWidth = 140,
+    this.buttonMinHeight = 40,
+    this.titleColour,
+    this.boldTitle = true,
+  });
+
+  final String title;
+  final List<AdminAction> actions;
+  final bool initiallyExpanded;
+
+  /// When true, shows a switch that must be turned on before buttons activate.
+  final bool requireArming;
+  final String armLabel;
+
+  final bool compact;
+  final double buttonMinWidth;
+  final double buttonMinHeight;
+  final Color? titleColour;
+  final bool boldTitle;
+
+  @override
+  State<AdminButtonsCollapsibleCard> createState() =>
+      _AdminButtonsCollapsibleCardState();
+}
+
+class _AdminButtonsCollapsibleCardState
+    extends State<AdminButtonsCollapsibleCard> {
+  bool _expanded = false;
+  bool _armed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _expanded = widget.initiallyExpanded;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final base = Theme.of(context).textTheme.titleMedium;
+    final titleStyle = base?.copyWith(
+      color: widget.titleColour ?? base?.color,
+      fontWeight: widget.boldTitle ? FontWeight.bold : base?.fontWeight,
+    );
+
+    final spacing = widget.compact ? 8.0 : 12.0;
+
+    return Card(
+      child: Theme( // tighten ExpansionTile padding a bit
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: widget.initiallyExpanded,
+          onExpansionChanged: (v) => setState(() {
+            _expanded = v;
+            // Disarm when closing to prevent accidental taps later
+            if (!v) _armed = false;
+          }),
+          title: Text(widget.title, style: titleStyle),
+          subtitle: !_expanded
+              ? null
+              : (widget.requireArming && !_armed
+                  ? Text(widget.armLabel,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(fontStyle: FontStyle.italic))
+                  : null),
+          childrenPadding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+          children: [
+            if (widget.requireArming)
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(widget.armLabel),
+                value: _armed,
+                onChanged: (v) => setState(() => _armed = v),
+              ),
+            Wrap(
+              spacing: spacing,
+              runSpacing: spacing,
+              children: widget.actions.map((a) {
+                final btn = FilledButton.icon(
+                  onPressed:
+                      (a.enabled && (!widget.requireArming || _armed))
+                          ? a.onPressed
+                          : null,
+                  icon: Icon(a.icon ?? Icons.settings),
+                  label: Text(a.label),
+                );
+
+                final wrapped = a.tooltip == null
+                    ? btn
+                    : Tooltip(message: a.tooltip!, child: btn);
+
+                return ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minWidth: widget.buttonMinWidth,
+                    minHeight: widget.buttonMinHeight,
+                  ),
+                  child: wrapped,
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
