@@ -49,7 +49,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: Text(
-                        "Welcome to RulePost!",
+                        "Welcome to Rule Post!",
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),

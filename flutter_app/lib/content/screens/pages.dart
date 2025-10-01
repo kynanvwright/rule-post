@@ -92,7 +92,6 @@ class EnquiryDetailPage extends StatelessWidget {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  const SizedBox(height: 16),
                   if (data.containsKey('isOpen'))
                     _StatusChip(isOpen ? 'Enquiry in progress' : 'Closed',
                       color: isOpen ? Colors.green : Colors.red),
@@ -130,8 +129,8 @@ class EnquiryDetailPage extends StatelessWidget {
               boldTitle: true,
               actions: [
                 AdminAction(
-                  label: 'End Stage',
-                  icon: Icons.skip_next,
+                  label: 'Publish Response',
+                  icon: Icons.publish,
                   tooltip: 'Finish this enquiry stage and skip to the next',
                   onPressed: () {
                     // TODO: call your function
@@ -656,12 +655,12 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = (color ?? Colors.blueGrey).withOpacity(0.12);
+    final bg = (color ?? Colors.blueGrey).withValues(alpha: 0.12);
     final fg = color ?? Theme.of(context).colorScheme.onSurfaceVariant;
     return Chip(
       label: Text(label),
       backgroundColor: bg,
-      side: BorderSide(color: (color ?? Colors.black12).withOpacity(0.2)),
+      side: BorderSide(color: (color ?? Colors.black12).withValues(alpha: 0.2)),
       labelStyle: TextStyle(color: fg),
       visualDensity: VisualDensity.compact,
     );

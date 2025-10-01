@@ -54,6 +54,7 @@ A website for facilitating America's Cup Rule Enquiries.
 - Robust testing
 - Allow RC to close the enquiry in their response
   - add mechanism for circulating for Docusign?
+- Add commercial product area
 
 ## 📌 Future Features
 

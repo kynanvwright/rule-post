@@ -105,6 +105,9 @@ class _TwoPaneFourSlotState extends State<TwoPaneFourSlot> {
 
           final rightHeader = widget.equaliseInCollapsedMode
               ? _EqualisedHeader(
+                  padding: widget.headerPadding,
+                  alignment: widget.rightHeaderAlignment ?? widget.headerAlignment,
+                  sharedMax: _headerMaxHeight,
                   child: Row(
                     children: [
                       if (widget.injectHamburgerInCollapsedHeader)
@@ -116,9 +119,6 @@ class _TwoPaneFourSlotState extends State<TwoPaneFourSlot> {
                       Expanded(child: widget.rightHeader),
                     ],
                   ),
-                  padding: widget.headerPadding,
-                  alignment: widget.rightHeaderAlignment ?? widget.headerAlignment,
-                  sharedMax: _headerMaxHeight,
                 )
               : Padding(
                   padding: widget.headerPadding,

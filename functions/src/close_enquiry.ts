@@ -5,7 +5,7 @@ import { enforceCooldown, cooldownKeyFromCallable } from "./cooldown";
 
 const db = getFirestore();
 
-type DeleteUserPayload = { enquiryID: string };
+type CloseEnquiryPayload = { enquiryID: string };
 
 export const closeEnquiry = onCall(
   { cors: true, enforceAppCheck: true },
@@ -24,7 +24,7 @@ export const closeEnquiry = onCall(
     await enforceCooldown(cooldownKeyFromCallable(req, "deleteUser"), 30);
 
     // 3) Close enquiry
-    const { enquiryID } = req.data as DeleteUserPayload;
+    const { enquiryID } = req.data as CloseEnquiryPayload;
     await db.collection("enquiries").doc(enquiryID).update({
       isOpen: false,
       teamsCanRespond: false,
