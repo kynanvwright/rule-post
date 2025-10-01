@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../content/widgets/new_post_button.dart';
 import '../../riverpod/user_detail.dart';
+import 'two_panel_shell.dart';
 
 class LeftPaneHeader extends StatelessWidget {
   const LeftPaneHeader({
@@ -49,22 +50,7 @@ class _LeftPaneNestedState extends State<LeftPaneNested> {
   @override
   Widget build(BuildContext context) {
     final qp = widget.state.uri.queryParameters; // keep your filters
-    return 
-    // LeftPaneFrame(
-    //   title: 'Rule Enquiries',
-    //   actions: [
-    //     // 👇 Wrap with Consumer to read isLoggedInProvider
-    //     Consumer(
-    //       builder: (context, ref, _) {
-    //         final isLoggedIn = ref.watch(isLoggedInProvider);
-    //         return isLoggedIn
-    //             ? NewPostButton(type: PostType.enquiry)
-    //             : const SizedBox.shrink(); // empty widget when logged out
-    //       },
-    //     ),
-    //   ],
-    //   child: 
-      _EnquiriesTree(
+    return _EnquiriesTree(
         initiallyOpenEnquiryId: _enquiryId,
         initiallyOpenResponseId: _responseId,
         initiallySelectedCommentId: _commentId,
@@ -114,7 +100,10 @@ class _EnquiriesTree extends StatelessWidget {
               title: _RowTile(
                 label: 'RE #$n - $title',
                 selected: selected && initiallyOpenResponseId == null,
-                onTap: () => context.go('/enquiries/$id'),
+                onTap: () {
+                    TwoPaneScope.of(context)?.closeDrawer();
+                    context.go('/enquiries/$id');
+                }
               ),
               children: [
                 _ResponsesBranch(
@@ -177,7 +166,10 @@ class _ResponsesBranch extends StatelessWidget {
                 title: _RowTile(
                   label: label,
                   selected: isOpen && initiallySelectedCommentId == null,
-                  onTap: () => context.go('/enquiries/$enquiryId/responses/$id'),
+                  onTap: () {
+                    TwoPaneScope.of(context)?.closeDrawer();
+                    context.go('/enquiries/$enquiryId/responses/$id');
+                  }
                 ),
               ),
             );

@@ -140,7 +140,9 @@ class _TwoPaneFourSlotState extends State<TwoPaneFourSlot> {
             drawer: Drawer(
               width: widget.initialLeftWidth
                   .clamp(widget.minLeftWidth, widget.maxLeftWidth),
-              child: widget.drawerSafeArea
+              child: TwoPaneScope(
+                closeDrawer: () => _scaffoldKey.currentState?.closeDrawer(),
+                child: widget.drawerSafeArea
                   ? SafeArea(
                       child: _LeftStack(
                         widget: widget,
@@ -154,6 +156,7 @@ class _TwoPaneFourSlotState extends State<TwoPaneFourSlot> {
                       sharedMax:
                           widget.equaliseInCollapsedMode ? _headerMaxHeight : null,
                     ),
+              ),
             ),
             body: Column(
               children: [
@@ -176,59 +179,62 @@ class _TwoPaneFourSlotState extends State<TwoPaneFourSlot> {
         final scale = _computeScaleForRight(rightW);
 
         return Scaffold(
-          body: Row(
-            children: [
-              // Left pane
-              ConstrainedBox(
-                constraints: BoxConstraints(
-                  minWidth: widget.minLeftWidth,
-                  maxWidth: widget.maxLeftWidth,
+          body: TwoPaneScope(
+            closeDrawer: () {}, // no-op in side-by-side mode
+            child: Row(
+              children: [
+                // Left pane
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minWidth: widget.minLeftWidth,
+                    maxWidth: widget.maxLeftWidth,
+                  ),
+                  child: SizedBox(
+                    width: _leftWidth,
+                    child: Column(
+                      children: [
+                        _EqualisedHeader(
+                          padding: widget.headerPadding,
+                          alignment: widget.headerAlignment,
+                          sharedMax: _headerMaxHeight,
+                          child: widget.leftHeader,
+                        ),
+                        if (widget.showDividerBelowHeaders)
+                          const Divider(height: 1),
+                        Expanded(child: widget.leftContent),
+                      ],
+                    ),
+                  ),
                 ),
-                child: SizedBox(
-                  width: _leftWidth,
+
+                // Draggable divider
+                _DragHandle(
+                  onDrag: (dx) {
+                    setState(() {
+                      _leftWidth = (_leftWidth + dx)
+                          .clamp(widget.minLeftWidth, widget.maxLeftWidth);
+                    });
+                  },
+                ),
+
+                // Right pane
+                Expanded(
                   child: Column(
                     children: [
                       _EqualisedHeader(
-                        child: widget.leftHeader,
                         padding: widget.headerPadding,
-                        alignment: widget.headerAlignment,
+                        alignment: widget.rightHeaderAlignment ?? widget.headerAlignment,
                         sharedMax: _headerMaxHeight,
+                        child: widget.rightHeader,
                       ),
                       if (widget.showDividerBelowHeaders)
                         const Divider(height: 1),
-                      Expanded(child: widget.leftContent),
+                      Expanded(child: _maybeScaled(scale, child: widget.rightContent)),
                     ],
                   ),
                 ),
-              ),
-
-              // Draggable divider
-              _DragHandle(
-                onDrag: (dx) {
-                  setState(() {
-                    _leftWidth = (_leftWidth + dx)
-                        .clamp(widget.minLeftWidth, widget.maxLeftWidth);
-                  });
-                },
-              ),
-
-              // Right pane
-              Expanded(
-                child: Column(
-                  children: [
-                    _EqualisedHeader(
-                      child: widget.rightHeader,
-                      padding: widget.headerPadding,
-                      alignment: widget.rightHeaderAlignment ?? widget.headerAlignment,
-                      sharedMax: _headerMaxHeight,
-                    ),
-                    if (widget.showDividerBelowHeaders)
-                      const Divider(height: 1),
-                    Expanded(child: _maybeScaled(scale, child: widget.rightContent)),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -282,10 +288,10 @@ class _LeftStack extends StatelessWidget {
             child: widget.leftHeader,
           )
         : _EqualisedHeader(
-            child: widget.leftHeader,
             padding: widget.headerPadding,
             alignment: widget.headerAlignment,
             sharedMax: sharedMax!,
+            child: widget.leftHeader,
           );
 
     return Column(
@@ -403,4 +409,21 @@ class _EqualisedHeaderState extends State<_EqualisedHeader> {
     // If we already know the shared max, clamp to it; otherwise natural height.
     return target == null ? content : SizedBox(height: target, child: content);
   }
+}
+
+// Helps to close drawers when on skinny screen
+class TwoPaneScope extends InheritedWidget {
+  const TwoPaneScope({
+    super.key,
+    required this.closeDrawer,
+    required super.child,
+  });
+
+  final VoidCallback closeDrawer;
+
+  static TwoPaneScope? of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<TwoPaneScope>();
+
+  @override
+  bool updateShouldNotify(TwoPaneScope oldWidget) => false;
 }
