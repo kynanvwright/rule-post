@@ -102,10 +102,9 @@ class _NewPostButtonState extends State<NewPostButton> {
             if (payload == null) return;
 
             final messenger = ScaffoldMessenger.of(context);
-            final api = PostApi();
 
             try {
-              await api.createPost(
+              await createPost(
                 postType: widget.type.apiName,
                 title: payload.title,
                 postText: payload.text,
