@@ -15,8 +15,9 @@ export const closeEnquiry = onCall(
     if (!callerUid)
       throw new HttpsError("unauthenticated", "You must be signed in.");
     const isAdmin = req.auth?.token.role == "admin";
-    if (!isAdmin) {
-      throw new HttpsError("permission-denied", "Admin function only.");
+    const isRC = req.auth?.token.team == "RC";
+    if (!isAdmin || !isRC) {
+      throw new HttpsError("permission-denied", "Admin/RC function only.");
     }
 
     // 2) Enforce cooldown on function call
