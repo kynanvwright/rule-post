@@ -11,23 +11,25 @@ A website for facilitating America's Cup Rule Enquiries.
   - sign in/out
   - registration blocked outside of firebase console
   - app check feature looks for bots
+  - log in to post
+  - team admins can create new users
 - New enquiry creation
   - storage of those enquiries
   - optional attachments for those enquiries
   - automated enquiry numbering
-- Adaptive screen sizing
+- Nested structure of enquiries, responses and comments
+  - coloured by author, unique mapping per enquiry
 - Database and storage writing implemented via backend functions, frontend write access blocked
   - as an exception, frontend can write to temporary file storage
   - Cloud Storage rule for clearing out temporary file storage (1+ days old)
-- Nested structure of enquiries, responses and comments
-  - coloured by author, unique mapping per enquiry
-- Inline pdf and doc viewing
 - Delayed publishing with cloud functions
 - Automated locking/unlocking of submission permissions with cloud functions
   - frontend buttons aligned with backend permissions
 - Basic custom claims set up, assigns user role and team to their account
   - allows both frontend and backend to query user's access level without database permissions
   - triggers cloud function whenever the `user_data` collection is updated
+- Inline pdf and doc viewing
+- Adaptive screen sizing
 
 ## Targets
 
@@ -50,19 +52,17 @@ A website for facilitating America's Cup Rule Enquiries.
 - Pre-publication editing available after submission (maybe)
 - Search/filter in navigation pane
 - Robust testing
+- Allow RC to close the enquiry in their response
+  - add mechanism for circulating for Docusign
 
 ## 📌 Future Features
 
 ### 🔒 Permissions & Roles
-- One "teamLead" role per team
-  - Can add/remove members (less burden on RC/admins)
 - Add admin-only features  
   - Skip to end of certain phases  
   - Close enquiries  
 - Require email verification (via Firebase Auth)
-- Allow guest users, log-in is for submissions only
-  - create static mirror of site for public viewing, updated whenever post details change
-    - stops firestore getting overwhelmed by queries
+- Create static mirror of site for public viewing, updated whenever post details change
 - Look into limiting the access of cloud functions. Full admin may not be necessary and increase exploitation risk.
 - Check that users can't edit or delete (Firebase Rules)
 - Add rate limiting on functions and queries
@@ -71,21 +71,17 @@ A website for facilitating America's Cup Rule Enquiries.
 - Permit editing prior to submission (be careful of permissions here)
 - Anonymity toggle (default ON to start)  
   - optionally allows teams to identify themselves
-  - should this always be false for RC?
 - Add amendment/interpretation/neither tag on enquiry closure, to allow filtering later  
 
 ### 📑 Enquiries & Responses
 - Add per-user limits on new enquiries and attachments per day  
-- Allow multiple attachments to be uploaded without reselection  
-- Alias the documentIDs for breadcrumbs (e.g. `RE#120-R1.2`)
-- Remove title requirement from responses and comments
+- Allow multiple attachments to be uploaded without reselection
 
 ### 🎨 UI / UX
 - Set navigation pane to minimum of:
   - Current width
   - Smallest width where all title text shown
 - Add filters/search to navigation pane
-- Align flutter with backend, so that buttons are greyed out or hidden if user is not permitted to use them (use custom claims)
 - In navigation pane, allow final RC response to be labelled 'interpretation' or 'amendment'
 - Add subheaders to navigation pane for rounds
 - Add symbols with colour-coding for colour-blind folks

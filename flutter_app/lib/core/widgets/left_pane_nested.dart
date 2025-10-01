@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../content/widgets/new_post_button.dart';
 import '../../riverpod/user_detail.dart';
-// import 'left_pane_frame.dart';
 
 class LeftPaneHeader extends StatelessWidget {
   const LeftPaneHeader({
@@ -32,7 +31,6 @@ class LeftPaneHeader extends StatelessWidget {
     );
   }
 }
-
 
 
 class LeftPaneNested extends StatefulWidget {

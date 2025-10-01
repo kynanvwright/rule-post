@@ -1,24 +1,49 @@
 import 'package:flutter/material.dart';
 
-class TwoPaneShell extends StatefulWidget {
-  const TwoPaneShell({
+/// Two-pane layout with four explicit slots (left/right headers + contents).
+/// Headers are forced to the same height so dividers and content align nicely.
+class TwoPaneFourSlot extends StatefulWidget {
+  const TwoPaneFourSlot({
     super.key,
-    required this.leftPane,
-    required this.child,
-    required this.breadcrumb,
+    // Four explicit slots
+    required this.leftHeader,
+    required this.leftContent,
+    required this.rightHeader,
+    required this.rightContent,
+
+    // Layout controls (same spirit as before)
     this.initialLeftWidth = 320,
     this.minLeftWidth = 240,
     this.maxLeftWidth = 520,
-    this.collapseBreakpoint = 820,   // below this, left becomes a drawer
-    this.tightBreakpoint = 600,      // below this, we gently scale content
-    this.minRightWidth = 320,        // if tighter than this, scaling kicks in
+    this.collapseBreakpoint = 820, // below this, left becomes a drawer
+    this.tightBreakpoint = 600,    // below this, we gently scale content
+    this.minRightWidth = 320,      // if tighter than this, scaling kicks in
     this.enableScaleOnTight = true,
+
+    // Header cosmetics
+    this.headerPadding = const EdgeInsets.fromLTRB(12, 8, 12, 8),
+    this.showDividerBelowHeaders = true,
+
+    // Collapsed-mode helpers
+    this.injectHamburgerInCollapsedHeader = true,
+    this.drawerSafeArea = true,
+
+    // Advanced: equalise header heights even in collapsed mode (usually not needed)
+    this.equaliseInCollapsedMode = false,
+
+    // Alignment of header contents within the equalised box
+    this.headerAlignment = Alignment.centerLeft,
+    this.leftHeaderAlignment = Alignment.centerLeft,
+    this.rightHeaderAlignment = Alignment.center,
   });
 
-  final Widget leftPane;      // list at current level
-  final Widget child;         // detail for current selection (or empty)
-  final Widget breadcrumb;    // shows path
+  // Four slots
+  final Widget leftHeader;
+  final Widget leftContent;
+  final Widget rightHeader;
+  final Widget rightContent;
 
+  // Layout
   final double initialLeftWidth;
   final double minLeftWidth;
   final double maxLeftWidth;
@@ -27,21 +52,44 @@ class TwoPaneShell extends StatefulWidget {
   final double minRightWidth;
   final bool enableScaleOnTight;
 
+  // Styling
+  final EdgeInsets headerPadding;
+  final bool showDividerBelowHeaders;
+
+  // Collapsed mode
+  final bool injectHamburgerInCollapsedHeader;
+  final bool drawerSafeArea;
+
+  // Equalisation behaviour in collapsed mode
+  final bool equaliseInCollapsedMode;
+
+  // Visual alignment of header content inside the fixed-height header
+  final AlignmentGeometry headerAlignment;
+  final AlignmentGeometry? leftHeaderAlignment;
+  final AlignmentGeometry? rightHeaderAlignment;
+
   @override
-  State<TwoPaneShell> createState() => _TwoPaneShellState();
+  State<TwoPaneFourSlot> createState() => _TwoPaneFourSlotState();
 }
 
-class _TwoPaneShellState extends State<TwoPaneShell> {
+class _TwoPaneFourSlotState extends State<TwoPaneFourSlot> {
   late double _leftWidth;
-
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  /// Shared max header height (including padding). Both headers listen to this.
+  final ValueNotifier<double> _headerMaxHeight = ValueNotifier<double>(0);
 
   @override
   void initState() {
     super.initState();
-    _leftWidth = widget.initialLeftWidth.clamp(
-      widget.minLeftWidth, widget.maxLeftWidth,
-    );
+    _leftWidth =
+        widget.initialLeftWidth.clamp(widget.minLeftWidth, widget.maxLeftWidth);
+  }
+
+  @override
+  void dispose() {
+    _headerMaxHeight.dispose();
+    super.dispose();
   }
 
   @override
@@ -51,56 +99,86 @@ class _TwoPaneShellState extends State<TwoPaneShell> {
         final totalW = constraints.maxWidth;
         final isCollapsed = totalW < widget.collapseBreakpoint;
 
-        // Drawer mode on narrow viewports
         if (isCollapsed) {
+          // Drawer mode (left stack in Drawer, right stack vertical)
           final scale = _computeScaleForRight(totalW);
-          return Scaffold(
-            key: _scaffoldKey,
-            drawer: Drawer(
-              width: widget.initialLeftWidth
-                  .clamp(widget.minLeftWidth, widget.maxLeftWidth),
-              child: SafeArea(child: widget.leftPane),
-            ),
-            body: Column(
-              children: [
-                // Top bar with hamburger + breadcrumb
-                Material(
-                  color: Theme.of(context).colorScheme.surface,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-                    child: Row(
-                      children: [
+
+          final rightHeader = widget.equaliseInCollapsedMode
+              ? _EqualisedHeader(
+                  child: Row(
+                    children: [
+                      if (widget.injectHamburgerInCollapsedHeader)
                         IconButton(
                           icon: const Icon(Icons.menu),
                           tooltip: 'Open list',
                           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                         ),
-                        Expanded(child: widget.breadcrumb),
-                      ],
-                    ),
+                      Expanded(child: widget.rightHeader),
+                    ],
                   ),
+                  padding: widget.headerPadding,
+                  alignment: widget.rightHeaderAlignment ?? widget.headerAlignment,
+                  sharedMax: _headerMaxHeight,
+                )
+              : Padding(
+                  padding: widget.headerPadding,
+                  child: Row(
+                    children: [
+                      if (widget.injectHamburgerInCollapsedHeader)
+                        IconButton(
+                          icon: const Icon(Icons.menu),
+                          tooltip: 'Open list',
+                          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                        ),
+                      Expanded(child: widget.rightHeader),
+                    ],
+                  ),
+                );
+
+          return Scaffold(
+            key: _scaffoldKey,
+            drawer: Drawer(
+              width: widget.initialLeftWidth
+                  .clamp(widget.minLeftWidth, widget.maxLeftWidth),
+              child: widget.drawerSafeArea
+                  ? SafeArea(
+                      child: _LeftStack(
+                        widget: widget,
+                        sharedMax: widget.equaliseInCollapsedMode
+                            ? _headerMaxHeight
+                            : null,
+                      ),
+                    )
+                  : _LeftStack(
+                      widget: widget,
+                      sharedMax:
+                          widget.equaliseInCollapsedMode ? _headerMaxHeight : null,
+                    ),
+            ),
+            body: Column(
+              children: [
+                Material(
+                  color: Theme.of(context).colorScheme.surface,
+                  child: rightHeader,
                 ),
-                const Divider(height: 1),
-                Expanded(
-                  child: _maybeScaled(scale, child: widget.child),
-                ),
+                if (widget.showDividerBelowHeaders) const Divider(height: 1),
+                Expanded(child: _maybeScaled(scale, child: widget.rightContent)),
               ],
             ),
           );
         }
 
         // Side-by-side mode with resizable left pane
-        // Clamp left width if window changed drastically.
-        _leftWidth = _leftWidth.clamp(
-          widget.minLeftWidth, widget.maxLeftWidth,
-        );
+        _leftWidth =
+            _leftWidth.clamp(widget.minLeftWidth, widget.maxLeftWidth);
 
-        final rightW = totalW - _leftWidth - 1; // minus divider
+        final rightW = totalW - _leftWidth - 1; // divider thickness
         final scale = _computeScaleForRight(rightW);
 
         return Scaffold(
           body: Row(
             children: [
+              // Left pane
               ConstrainedBox(
                 constraints: BoxConstraints(
                   minWidth: widget.minLeftWidth,
@@ -108,7 +186,19 @@ class _TwoPaneShellState extends State<TwoPaneShell> {
                 ),
                 child: SizedBox(
                   width: _leftWidth,
-                  child: widget.leftPane,
+                  child: Column(
+                    children: [
+                      _EqualisedHeader(
+                        child: widget.leftHeader,
+                        padding: widget.headerPadding,
+                        alignment: widget.headerAlignment,
+                        sharedMax: _headerMaxHeight,
+                      ),
+                      if (widget.showDividerBelowHeaders)
+                        const Divider(height: 1),
+                      Expanded(child: widget.leftContent),
+                    ],
+                  ),
                 ),
               ),
 
@@ -126,9 +216,15 @@ class _TwoPaneShellState extends State<TwoPaneShell> {
               Expanded(
                 child: Column(
                   children: [
-                    widget.breadcrumb,
-                    const Divider(height: 1),
-                    Expanded(child: _maybeScaled(scale, child: widget.child)),
+                    _EqualisedHeader(
+                      child: widget.rightHeader,
+                      padding: widget.headerPadding,
+                      alignment: widget.rightHeaderAlignment ?? widget.headerAlignment,
+                      sharedMax: _headerMaxHeight,
+                    ),
+                    if (widget.showDividerBelowHeaders)
+                      const Divider(height: 1),
+                    Expanded(child: _maybeScaled(scale, child: widget.rightContent)),
                   ],
                 ),
               ),
@@ -144,16 +240,14 @@ class _TwoPaneShellState extends State<TwoPaneShell> {
     if (rightWidth >= widget.minRightWidth) return 1.0;
 
     // Linearly scale down to ~0.9 between minRightWidth and tightBreakpoint,
-    // and to ~0.85 if extremely tight. Tweak to taste.
-    final floor = 0.85;
-    final gentle = 0.90;
+    // and to ~0.85 if extremely tight.
+    const floor = 0.85;
+    const gentle = 0.90;
 
     if (rightWidth <= widget.tightBreakpoint) {
-      // Map [0 .. tightBreakpoint] -> [floor .. gentle]
       final t = (rightWidth / widget.tightBreakpoint).clamp(0.0, 1.0);
       return floor + (gentle - floor) * t;
     }
-    // Map [tightBreakpoint .. minRightWidth] -> [gentle .. 1.0]
     final t = ((rightWidth - widget.tightBreakpoint) /
             (widget.minRightWidth - widget.tightBreakpoint))
         .clamp(0.0, 1.0);
@@ -173,6 +267,37 @@ class _TwoPaneShellState extends State<TwoPaneShell> {
   }
 }
 
+/// Collapsed-mode left stack used inside Drawer or left pane.
+/// If [sharedMax] is provided, header is equalised; otherwise it uses natural height.
+class _LeftStack extends StatelessWidget {
+  const _LeftStack({required this.widget, this.sharedMax});
+  final TwoPaneFourSlot widget;
+  final ValueNotifier<double>? sharedMax;
+
+  @override
+  Widget build(BuildContext context) {
+    final header = sharedMax == null
+        ? Padding(
+            padding: widget.headerPadding,
+            child: widget.leftHeader,
+          )
+        : _EqualisedHeader(
+            child: widget.leftHeader,
+            padding: widget.headerPadding,
+            alignment: widget.headerAlignment,
+            sharedMax: sharedMax!,
+          );
+
+    return Column(
+      children: [
+        header,
+        if (widget.showDividerBelowHeaders) const Divider(height: 1),
+        Expanded(child: widget.leftContent),
+      ],
+    );
+  }
+}
+
 /// A thin draggable vertical handle with hover feedback.
 class _DragHandle extends StatelessWidget {
   const _DragHandle({required this.onDrag});
@@ -186,7 +311,7 @@ class _DragHandle extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onHorizontalDragUpdate: (d) => onDrag(d.delta.dx),
         child: Container(
-          width: 8, // fat hit area, but we render a 1px line inside
+          width: 8,
           color: Colors.transparent,
           child: Center(
             child: Container(
@@ -198,5 +323,84 @@ class _DragHandle extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Equalises header height across peers:
+/// - Measures its own (padded) height after layout,
+/// - Updates [sharedMax] to the maximum seen,
+/// - Rebuilds with a fixed SizedBox(height: sharedMax.value) to hard-equalise.
+///
+/// Notes:
+/// - We measure including [padding], so both sides should use the same padding.
+/// - [alignment] controls how the header content sits within the equalised box.
+class _EqualisedHeader extends StatefulWidget {
+  const _EqualisedHeader({
+    required this.child,
+    required this.padding,
+    required this.alignment,
+    required this.sharedMax,
+  });
+
+  final Widget child;
+  final EdgeInsets padding;
+  final AlignmentGeometry alignment;
+  final ValueNotifier<double> sharedMax;
+
+  @override
+  State<_EqualisedHeader> createState() => _EqualisedHeaderState();
+}
+
+class _EqualisedHeaderState extends State<_EqualisedHeader> {
+  // We listen to sharedMax so this header rebuilds when the maximum changes.
+  late final VoidCallback _listener;
+
+  @override
+  void initState() {
+    super.initState();
+    _listener = () => setState(() {});
+    widget.sharedMax.addListener(_listener);
+    // First layout pass may be unconstrained; schedule a measure.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _reportHeight());
+  }
+
+  @override
+  void didUpdateWidget(covariant _EqualisedHeader oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.sharedMax != widget.sharedMax) {
+      oldWidget.sharedMax.removeListener(_listener);
+      widget.sharedMax.addListener(_listener);
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) => _reportHeight());
+  }
+
+  @override
+  void dispose() {
+    widget.sharedMax.removeListener(_listener);
+    super.dispose();
+  }
+
+  void _reportHeight() {
+    final box = context.findRenderObject() as RenderBox?;
+    final h = (box?.hasSize ?? false) ? box!.size.height : 0.0;
+    if (h > 0 && h > widget.sharedMax.value) {
+      widget.sharedMax.value = h;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final target = widget.sharedMax.value > 0 ? widget.sharedMax.value : null;
+
+    final content = Padding(
+      padding: widget.padding,
+      child: Align(
+        alignment: widget.alignment,
+        child: widget.child,
+      ),
+    );
+
+    // If we already know the shared max, clamp to it; otherwise natural height.
+    return target == null ? content : SizedBox(height: target, child: content);
   }
 }
