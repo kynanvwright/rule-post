@@ -27,7 +27,7 @@ export { createUserWithProfile } from "./create_user";
 export { deleteUser } from "./delete_user";
 export { listTeamUsers } from "./list_team_users";
 export { closeEnquiry } from "./close_enquiry";
-export { committeeResponseInstantPublisher } from "./rc_response_instant_publish"; 
+export { committeeResponseInstantPublisher } from "./rc_response_instant_publish";
 export {
   onEnquiryIsPublishedUpdated,
   onResponseIsPublishedUpdated,
