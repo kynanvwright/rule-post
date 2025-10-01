@@ -9,7 +9,7 @@ const db = getFirestore();
 
 type publishPayload = {
   enquiryID: string,
-  responseID: string,
+  responseID?: string,
  };
 
 export const committeeResponseInstantPublisher = onCall(
@@ -38,18 +38,42 @@ export const committeeResponseInstantPublisher = onCall(
       console.log("[committeeResponseInstantPublisher] No matching enquiry.");
       return;
     }
-    const responseDoc = await db
-      .collection("enquiries")
-      .doc(enquiryID)
-      .collection("responses")
-      .doc(responseID)
-      .get();
-    if (!responseDoc.exists) {
-      console.log("[committeeResponseInstantPublisher] No matching response.");
-      return;
+    const enquiryRef = enquiryDoc.ref;
+    let responseRef: FirebaseFirestore.DocumentReference;
+    let responseSnap: FirebaseFirestore.DocumentSnapshot;
+
+    if (responseID) {
+    // Path: explicit response
+    responseRef = enquiryRef.collection("responses").doc(responseID);
+    responseSnap = await responseRef.get();
+
+    if (!responseSnap.exists) {
+        console.log("[committeeResponseInstantPublisher] No matching response.");
+        return;
+    }
+    } else {
+        // Path: find latest unpublished RC response
+        const committeeSnap = await enquiryRef
+            .collection("responses")
+            .where("fromRC", "==", true)
+            .where("isPublished", "==", false)
+            .get();
+
+        if (committeeSnap.empty) {
+            console.log("[committeeResponseInstantPublisher] No unpublished RC responses.");
+            return;
+        }
+        if (committeeSnap.size !== 1) {
+            console.log("[committeeResponseInstantPublisher] Too many unpublished RC responses.");
+            return;
+        }
+
+    // docs[0] is already a QueryDocumentSnapshot (a kind of DocumentSnapshot)
+    const doc0 = committeeSnap.docs[0];
+    responseRef = doc0.ref;
+    responseSnap = doc0; // already a snapshot; no extra get() needed
     }
 
-    const enquiryRef = enquiryDoc.ref;
 
     try {
       await db.runTransaction(async (tx) => {
@@ -73,7 +97,7 @@ export const committeeResponseInstantPublisher = onCall(
         return;
         }
 
-        tx.update(responseDoc.ref, {
+        tx.update(responseRef, {
         isPublished: true,
         roundNumber: roundNumber + 1,
         responseNumber: 0,
