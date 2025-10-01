@@ -7,6 +7,7 @@ import '../widgets/fancy_attachment_tile.dart';
 import '../widgets/new_post_button.dart';
 import '../../riverpod/post_alias.dart';
 import '../../riverpod/user_detail.dart';
+import '../../api/close_enquiry_api.dart';
 
 /// -------------------- NO SELECTION --------------------
 class NoSelectionPage extends StatelessWidget {
@@ -123,7 +124,39 @@ class EnquiryDetailPage extends StatelessWidget {
                 ),
 
               // ADMIN PANEL
-              showAdminPanel: isRC || isAdmin,
+              adminPanel: isRC || isAdmin 
+              ? AdminButtonsCollapsibleCard(
+              titleColour: Colors.red,
+              boldTitle: true,
+              actions: [
+                AdminAction(
+                  label: 'End Stage',
+                  icon: Icons.skip_next,
+                  tooltip: 'Finish this enquiry stage and skip to the next',
+                  onPressed: () {
+                    // TODO: call your function
+                  },
+                ),
+                AdminAction(
+                  label: 'Close Enquiry',
+                  icon: Icons.lock,
+                  onPressed: () async {
+                    try {
+                      final closedEnquiryId = await closeEnquiry(enquiryId);
+                      if (closedEnquiryId != null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Enquiry closed')),
+                        );
+                      }
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed to close enquiry')),
+                      );
+                    }
+                  },
+                ),
+              ],
+            ) : null,
             );
           },
         );
@@ -272,7 +305,7 @@ class _DetailScaffold extends StatelessWidget {
     this.commentary,
     this.attachments = const <Widget>[],
     this.footer,
-    this.showAdminPanel = false,
+    this.adminPanel,
   });
 
   final List<String> headerLines;
@@ -282,7 +315,7 @@ class _DetailScaffold extends StatelessWidget {
   final Widget? commentary;        // null => hide section
   final List<Widget> attachments;  // empty => hide section
   final Widget? footer;            // usually Children card; null => hide
-  final bool showAdminPanel;        // only shows for admins; null => hide
+  final Widget? adminPanel;        // only shows for admins; null => hide
 
   @override
   Widget build(BuildContext context) {
@@ -364,29 +397,9 @@ class _DetailScaffold extends StatelessWidget {
           ],
 
           // ADMIN PANEL
-          if (showAdminPanel) ...[
+          if (adminPanel != null) ...[
             const SizedBox(height: 12),
-            AdminButtonsCollapsibleCard(
-              titleColour: Colors.red,
-              boldTitle: true,
-              actions: [
-                AdminAction(
-                  label: 'End Stage',
-                  icon: Icons.skip_next,
-                  tooltip: 'Finish this enquiry stage and skip to the next',
-                  onPressed: () {
-                    // TODO: call your function
-                  },
-                ),
-                AdminAction(
-                  label: 'Close Enquiry',
-                  icon: Icons.lock,
-                  onPressed: () {
-                    // TODO
-                  },
-                ),
-              ],
-            ),
+            adminPanel!,
             const SizedBox(height: 12),
           ],
         ],
@@ -598,7 +611,6 @@ class _SectionCard extends StatelessWidget {
     this.title,
     this.trailing,
     this.padding = const EdgeInsets.all(16),
-    this.titleStyle,
     required this.child,
   });
 
@@ -606,7 +618,6 @@ class _SectionCard extends StatelessWidget {
   final Widget? trailing;
   final EdgeInsetsGeometry padding;
   final Widget child;
-  final TextStyle? titleStyle;
 
   @override
   Widget build(BuildContext context) {
@@ -623,7 +634,7 @@ class _SectionCard extends StatelessWidget {
               Row(
                 children: [
                   if (title != null)
-                    Text(title!, style: titleStyle ?? theme.textTheme.titleMedium),
+                    Text(title!, style: theme.textTheme.titleMedium),
                   const Spacer(),
                   if (trailing != null) trailing!,
                 ],
@@ -868,21 +879,19 @@ class AdminButtonsCollapsibleCard extends StatefulWidget {
 
 class _AdminButtonsCollapsibleCardState
     extends State<AdminButtonsCollapsibleCard> {
-  bool _expanded = false;
   bool _armed = false;
 
   @override
   void initState() {
     super.initState();
-    _expanded = widget.initiallyExpanded;
   }
 
   @override
   Widget build(BuildContext context) {
     final base = Theme.of(context).textTheme.titleMedium;
     final titleStyle = base?.copyWith(
-      color: widget.titleColour ?? base?.color,
-      fontWeight: widget.boldTitle ? FontWeight.bold : base?.fontWeight,
+      color: widget.titleColour ?? base.color,
+      fontWeight: widget.boldTitle ? FontWeight.bold : base.fontWeight,
     );
 
     final spacing = widget.compact ? 8.0 : 12.0;
@@ -893,20 +902,10 @@ class _AdminButtonsCollapsibleCardState
         child: ExpansionTile(
           initiallyExpanded: widget.initiallyExpanded,
           onExpansionChanged: (v) => setState(() {
-            _expanded = v;
             // Disarm when closing to prevent accidental taps later
             if (!v) _armed = false;
           }),
           title: Text(widget.title, style: titleStyle),
-          subtitle: !_expanded
-              ? null
-              : (widget.requireArming && !_armed
-                  ? Text(widget.armLabel,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(fontStyle: FontStyle.italic))
-                  : null),
           childrenPadding: EdgeInsets.fromLTRB(16, 0, 16, 16),
           children: [
             if (widget.requireArming)

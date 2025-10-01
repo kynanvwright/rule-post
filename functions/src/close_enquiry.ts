@@ -29,5 +29,6 @@ export const closeEnquiry = onCall(
       teamsCanRespond: false,
       teamsCanComment: false,
     });
+    return { ok: true, enquiryID };
   },
 );
