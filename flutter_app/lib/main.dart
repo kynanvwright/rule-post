@@ -165,6 +165,8 @@ Future<void> main() async {
   await FirebaseAppCheck.instance.activate(
     webProvider: ReCaptchaV3Provider('6LeP8ssrAAAAAHuCNAA-tIXVzahLuskzGP7K-Si0'),
   );
+  // Ensure App Check tokens refresh in the background
+  await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
 
   runApp(const ProviderScope(child: MyApp()));
 }
