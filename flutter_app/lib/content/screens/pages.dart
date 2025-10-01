@@ -42,7 +42,6 @@ class EnquiryDetailPage extends StatelessWidget {
 
     return Consumer(
       builder: (context, ref, _) {
-
         return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
           stream: refDoc.snapshots(),
           builder: (context, snap) {
@@ -120,6 +119,10 @@ class EnquiryDetailPage extends StatelessWidget {
                 lockedResponses: lockedResponses,
                 lockedReason: lockedResponseReason
                 ),
+
+              // ADMIN PANEL
+              // showAdminPanel: isRC,
+              showAdminPanel: true,
             );
           },
         );
@@ -268,6 +271,7 @@ class _DetailScaffold extends StatelessWidget {
     this.commentary,
     this.attachments = const <Widget>[],
     this.footer,
+    this.showAdminPanel = false,
   });
 
   final List<String> headerLines;
@@ -277,6 +281,7 @@ class _DetailScaffold extends StatelessWidget {
   final Widget? commentary;        // null => hide section
   final List<Widget> attachments;  // empty => hide section
   final Widget? footer;            // usually Children card; null => hide
+  final bool showAdminPanel;        // only shows for admins; null => hide
 
   @override
   Widget build(BuildContext context) {
@@ -355,6 +360,18 @@ class _DetailScaffold extends StatelessWidget {
           if (footer != null) ...[
             const SizedBox(height: 12),
             footer!,
+          ],
+
+          // ADMIN PANEL
+          if (showAdminPanel) ...[
+            const SizedBox(height: 12),
+            _SectionCard(
+              title: 'Rules Committee Panel',
+              titleStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,),
+              child: Text("Admin stuff"),
+            ),
             const SizedBox(height: 12),
           ],
         ],
@@ -566,6 +583,7 @@ class _SectionCard extends StatelessWidget {
     this.title,
     this.trailing,
     this.padding = const EdgeInsets.all(16),
+    this.titleStyle,
     required this.child,
   });
 
@@ -573,6 +591,7 @@ class _SectionCard extends StatelessWidget {
   final Widget? trailing;
   final EdgeInsetsGeometry padding;
   final Widget child;
+  final TextStyle? titleStyle;
 
   @override
   Widget build(BuildContext context) {
@@ -589,7 +608,7 @@ class _SectionCard extends StatelessWidget {
               Row(
                 children: [
                   if (title != null)
-                    Text(title!, style: theme.textTheme.titleMedium),
+                    Text(title!, style: titleStyle ?? theme.textTheme.titleMedium),
                   const Spacer(),
                   if (trailing != null) trailing!,
                 ],
