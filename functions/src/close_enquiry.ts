@@ -10,25 +10,24 @@ type DeleteUserPayload = { enquiryID: string };
 export const closeEnquiry = onCall(
   { cors: true, enforceAppCheck: true },
   async (req) => {
-
     // 1) Check user is logged in and admin
     const callerUid = req.auth?.uid;
     if (!callerUid)
       throw new HttpsError("unauthenticated", "You must be signed in.");
-    const isAdmin = req.auth?.token.role == 'admin';
+    const isAdmin = req.auth?.token.role == "admin";
     if (!isAdmin) {
       throw new HttpsError("permission-denied", "Admin function only.");
     }
-    
+
     // 2) Enforce cooldown on function call
     await enforceCooldown(cooldownKeyFromCallable(req, "deleteUser"), 30);
 
     // 3) Close enquiry
     const { enquiryID } = req.data as DeleteUserPayload;
     await db.collection("enquiries").doc(enquiryID).update({
-        isOpen: false,
-        teamsCanRespond: false,
-        teamsCanComment: false,
+      isOpen: false,
+      teamsCanRespond: false,
+      teamsCanComment: false,
     });
-  }
+  },
 );

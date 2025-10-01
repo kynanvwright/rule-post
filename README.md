@@ -53,7 +53,7 @@ A website for facilitating America's Cup Rule Enquiries.
 - Search/filter in navigation pane
 - Robust testing
 - Allow RC to close the enquiry in their response
-  - add mechanism for circulating for Docusign
+  - add mechanism for circulating for Docusign?
 
 ## 📌 Future Features
 

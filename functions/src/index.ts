@@ -22,10 +22,11 @@ export {
   committeeResponsePublisher,
 } from "./publishing_and_permissions";
 export { syncCustomClaims } from "./claims_sync";
-export { setEmailNotificationsOn } from "./toggleNotifications";
-export { createUserWithProfile } from "./createUser";
+export { setEmailNotificationsOn } from "./toggle_notifications";
+export { createUserWithProfile } from "./create_user";
 export { deleteUser } from "./delete_user";
 export { listTeamUsers } from "./list_team_users";
+export { closeEnquiry } from "./close_enquiry";
 export {
   onEnquiryIsPublishedUpdated,
   onResponseIsPublishedUpdated,
