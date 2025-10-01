@@ -18,7 +18,9 @@ import 'content/screens/help_screen.dart';
 import 'core/widgets/app_scaffold.dart';
 import 'core/widgets/breadcrumb_bar.dart';
 import 'core/widgets/left_pane_nested.dart';
-import 'core/widgets/two_panel_shell.dart';
+// import 'core/widgets/two_panel_shell.dart';
+import 'core/widgets/two_pane_four_slot_shell.dart';
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // (Optional) Riverpod auth stream — keep if used elsewhere in your app
@@ -102,10 +104,16 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           // Inner shell: TwoPane layout for /enquiries/**
           ShellRoute(
             navigatorKey: _twoPaneShellKey,
-            builder: (context, state, child) => TwoPaneShell(
-              leftPane: LeftPaneNested(state: state),
-              breadcrumb: BreadcrumbBar(state: state),
-              child: child,
+            builder: (context, state, child) => 
+            // TwoPaneShell(
+            //   leftPane: LeftPaneNested(state: state),
+            //   breadcrumb: BreadcrumbBar(state: state),
+            //   child: child,
+            TwoPaneFourSlot(
+              leftHeader: LeftPaneHeader(),
+              leftContent: LeftPaneNested(state: state),
+              rightHeader: BreadcrumbBar(state: state),
+              rightContent: child,
             ),
             routes: [
               GoRoute(

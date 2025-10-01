@@ -5,7 +5,35 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../content/widgets/new_post_button.dart';
 import '../../riverpod/user_detail.dart';
-import 'left_pane_frame.dart';
+// import 'left_pane_frame.dart';
+
+class LeftPaneHeader extends StatelessWidget {
+  const LeftPaneHeader({
+    super.key, 
+    this.title = "Rule Enquiries"
+  });
+    final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(title, style: Theme.of(context).textTheme.titleMedium),
+        const Spacer(),
+        Consumer(
+          builder: (context, ref, _) {
+            final isLoggedIn = ref.watch(isLoggedInProvider);
+            return isLoggedIn
+                ? NewPostButton(type: PostType.enquiry)
+                : const SizedBox.shrink(); // empty widget when logged out
+          },
+        ),
+      ],
+    );
+  }
+}
+
+
 
 class LeftPaneNested extends StatefulWidget {
   const LeftPaneNested({super.key, required this.state});
@@ -23,25 +51,27 @@ class _LeftPaneNestedState extends State<LeftPaneNested> {
   @override
   Widget build(BuildContext context) {
     final qp = widget.state.uri.queryParameters; // keep your filters
-    return LeftPaneFrame(
-      title: 'Rule Enquiries',
-      actions: [
-        // 👇 Wrap with Consumer to read isLoggedInProvider
-        Consumer(
-          builder: (context, ref, _) {
-            final isLoggedIn = ref.watch(isLoggedInProvider);
-            return isLoggedIn
-                ? NewPostButton(type: PostType.enquiry)
-                : const SizedBox.shrink(); // empty widget when logged out
-          },
-        ),
-      ],
-      child: _EnquiriesTree(
+    return 
+    // LeftPaneFrame(
+    //   title: 'Rule Enquiries',
+    //   actions: [
+    //     // 👇 Wrap with Consumer to read isLoggedInProvider
+    //     Consumer(
+    //       builder: (context, ref, _) {
+    //         final isLoggedIn = ref.watch(isLoggedInProvider);
+    //         return isLoggedIn
+    //             ? NewPostButton(type: PostType.enquiry)
+    //             : const SizedBox.shrink(); // empty widget when logged out
+    //       },
+    //     ),
+    //   ],
+    //   child: 
+      _EnquiriesTree(
         initiallyOpenEnquiryId: _enquiryId,
         initiallyOpenResponseId: _responseId,
         initiallySelectedCommentId: _commentId,
         filter: qp,
-      ),
+      // ),
     );
   }
 }

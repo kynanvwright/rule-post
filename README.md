@@ -46,7 +46,7 @@ A website for facilitating America's Cup Rule Enquiries.
 - Email notifications with customisation [partial]
 - Publishing permissions move via schedule or RC acceleration
   - allow alternative stage lengths
-- Identify RC in all of their posts
+- Identify RC in all of their posts [done]
 - Pre-publication editing available after submission (maybe)
 - Search/filter in navigation pane
 - Robust testing
