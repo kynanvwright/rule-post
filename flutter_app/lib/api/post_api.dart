@@ -1,9 +1,13 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import '../core/models/attachments.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 class PostApi {
   PostApi({this.region = 'europe-west8'})
-      : _functions = FirebaseFunctions.instanceFor(region: region);
+      : _functions = FirebaseFunctions.instanceFor(
+        app: Firebase.app(),
+        region: region
+        );
 
   final String region;
   final FirebaseFunctions _functions;
