@@ -192,7 +192,10 @@ class _RowTile extends StatelessWidget {
     return ListTile(
       dense: true,
       contentPadding: EdgeInsets.zero,
-      title: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
+      title: Text(
+        label, 
+        maxLines: 1, 
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
         ),
@@ -203,10 +206,12 @@ class _RowTile extends StatelessWidget {
   }
 }
 
+
 Widget leafInfo(String text) => Padding(
   padding: const EdgeInsets.only(left: 24, bottom: 8),
   child: Text(text, style: const TextStyle(color: Colors.black54)),
 );
+
 
 Query<Map<String, dynamic>> buildEnquiriesQuery(Map<String, String> filter) {
   var q = FirebaseFirestore.instance

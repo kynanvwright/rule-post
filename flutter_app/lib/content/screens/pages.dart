@@ -657,15 +657,29 @@ class _StatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final bg = (color ?? Colors.blueGrey).withValues(alpha: 0.12);
     final fg = color ?? Theme.of(context).colorScheme.onSurfaceVariant;
-    return Chip(
-      label: Text(label),
-      backgroundColor: bg,
-      side: BorderSide(color: (color ?? Colors.black12).withValues(alpha: 0.2)),
-      labelStyle: TextStyle(color: fg),
-      visualDensity: VisualDensity.compact,
+    final borderCol = (color ?? Colors.black12).withValues(alpha: 0.2);
+
+    return Container(
+      constraints: const BoxConstraints(minHeight: 0),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: ShapeDecoration(
+        color: bg,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8), // tweak radius
+          side: BorderSide(color: borderCol),
+        ),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: fg),
+        softWrap: true,
+      ),
     );
   }
 }
+
+
+
 /// -------------------- COLLAPSIBLE TEXT (for comments) --------------------
 class ListTileCollapsibleText extends StatefulWidget {
   const ListTileCollapsibleText(

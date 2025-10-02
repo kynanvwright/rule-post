@@ -71,7 +71,6 @@ class _FancyAttachmentTileState extends State<FancyAttachmentTile> {
     final canPreviewInline = hasUrl && kIsWeb && (isPdf || isWord);
 
     final meta = <String>[];
-    if (ct.isNotEmpty) meta.add(ct);
     if (widget.sizeBytes != null) meta.add(_fmtSize(widget.sizeBytes!));
     final subtitle = meta.join(' • ');
 
@@ -79,7 +78,9 @@ class _FancyAttachmentTileState extends State<FancyAttachmentTile> {
       children: [
         ListTile(
           leading: const Icon(Icons.attach_file),
-          title: Text(widget.name, overflow: TextOverflow.ellipsis),
+          title: Text(
+            widget.name,
+          ),
           subtitle: subtitle.isNotEmpty ? Text(subtitle) : null,
           contentPadding: const EdgeInsets.symmetric(horizontal: 8),
           trailing: Row(
@@ -194,7 +195,7 @@ class _InlineDocIFrame extends StatelessWidget {
     // check if device is a phone
     bool isMobileLayout(BuildContext context) =>
     MediaQuery.of(context).size.width < 600;
-    
+
     // Choose iframe src:
     //  - PDF: open directly; add small viewer params
     //  - Word: use Google Docs Viewer to embed
