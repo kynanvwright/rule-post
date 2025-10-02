@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/cupertino.dart';
 
 /// Ensures we're logged in and tokens are fresh before a backend call.
 /// Throws a FirebaseAuthException with code 'user-not-logged-in' if no user.
@@ -34,9 +35,11 @@ Future<void> _ensureFreshAuth({Duration waitForUser = const Duration(seconds: 3)
   // 3) If App Check is enabled server-side (enforceAppCheck: true), refresh it too
   // Safe to call even if App Check isn't enabled; remove if you don't use App Check.
   try {
-    await FirebaseAppCheck.instance.getToken(true); // true = force refresh
-  } catch (_) {
+    final token = await FirebaseAppCheck.instance.getToken(true); // true = force refresh
+    debugPrint("App Check token: $token");
+  } catch (e) {
     // Swallow if App Check not configured on this platform.
+    debugPrint("App Check fail.");
   }
 }
 
