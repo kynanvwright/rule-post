@@ -69,10 +69,7 @@ class _FancyAttachmentTileState extends State<FancyAttachmentTile> {
     final isPdf = _isPdf(ct, ext);
     final isWord = _isWord(ct, ext);
     final canPreviewInline = hasUrl && kIsWeb && (isPdf || isWord);
-
-    final meta = <String>[];
-    if (widget.sizeBytes != null) meta.add(_fmtSize(widget.sizeBytes!));
-    final subtitle = meta.join(' • ');
+    final subtitle = _fmtSize(widget.sizeBytes!);
 
     return Column(
       children: [
