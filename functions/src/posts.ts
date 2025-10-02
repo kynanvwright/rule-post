@@ -14,7 +14,7 @@ import {
   CallableRequest,
 } from "firebase-functions/v2/https";
 
-import { enforceCooldown, cooldownKeyFromCallable } from "./cooldown";
+import { enforceCooldown, cooldownKeyFromCallable, ns } from "./cooldown";
 import { assignUniqueColoursForEnquiry } from "./post_colours";
 
 const ALLOWED_TYPES = [
@@ -121,23 +121,14 @@ type CreatePostData = {
 export const createPost = onCall<CreatePostData>(
   { enforceAppCheck: true },
   async (req: CallableRequest<CreatePostData>) => {
-    // Log whether App Check + Auth were present
-    console.log("AppCheck present:", !!req.app);
-    console.log("AppCheck object:", req.app); // contains appId and token details
-    console.log("Auth uid:", req.auth?.uid ?? "(none)");
-    // Example: if you want to inspect token fields
-    if (req.app) {
-      console.log("App ID:", req.app.appId);
-      console.log("Token issued at:", req.app.token.issueTime);
-      console.log("Token expire time:", req.app.token.expireTime);
-    }
     // auth check
     if (!req.auth?.uid) {
       throw new HttpsError("unauthenticated", "Sign in required.");
     }
     const authorUid = req.auth.uid;
     // Enforce cooldown (e.g., 60s per caller for createPost)
-    const key = cooldownKeyFromCallable(req, "createPost");
+    const base = ns("createPost");
+    const key = cooldownKeyFromCallable(req, base);
     await enforceCooldown(key, 10);
 
     // ---- Parse + validate inputs ----
