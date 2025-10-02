@@ -297,6 +297,7 @@ export const commentPublisher = onSchedule(
 export const committeeResponsePublisher = onSchedule(
   { region: "europe-west6", schedule: "0 0 * * *", timeZone: ROME_TZ },
   async (): Promise<void> => {
+    const publishedAt = FieldValue.serverTimestamp();
     const nowRome = DateTime.now().setZone(ROME_TZ);
 
     if (!isWorkingDay(nowRome)) {
@@ -360,7 +361,7 @@ export const committeeResponsePublisher = onSchedule(
           const respCol = enquiryRef.collection("responses");
 
           const committeeSnap = await respCol
-            .where("roundNumber", "==", roundNumber)
+            .where("roundNumber", "==", roundNumber + 1)
             .where("fromRC", "==", true)
             .where("isPublished", "==", false)
             .get();
@@ -373,8 +374,9 @@ export const committeeResponsePublisher = onSchedule(
 
           tx.update(committeeDoc.ref, {
             isPublished: true,
-            roundNumber: roundNumber + 1,
-            responseNumber: 0,
+            publishedAt,
+            // roundNumber: roundNumber + 1,
+            // responseNumber: 0,
           });
 
           const nextStageEnds = computeStageEnds(4, { hour: 19, minute: 55 });
