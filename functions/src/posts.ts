@@ -313,7 +313,10 @@ export const createPost = onCall<CreatePostData>(
       }
       // Assign post colour based on team
       if (authorTeam === "RC") {
-        const colourWheelDoc = await db.collection("app_data").doc("colour_wheel").get();
+        const colourWheelDoc = await db
+          .collection("app_data")
+          .doc("colour_wheel")
+          .get();
         if (!colourWheelDoc.exists) {
           console.log("[createPost] No app data at specified address.");
           return;
