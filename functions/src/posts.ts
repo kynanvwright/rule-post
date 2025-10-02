@@ -442,6 +442,13 @@ export const createPost = onCall<CreatePostData>(
               "Comments can only be made on the latest round of responses.",
             );
           }
+          const isRcResponse = responseDoc.get("fromRC");
+          if (isRcResponse) {
+            throw new HttpsError(
+              "failed-precondition",
+              "Comments can only be made on Comeptitor responses.",
+            );
+          }
           publicDoc.colour = postColour;
           // consider blocking comments on RC responses
         }

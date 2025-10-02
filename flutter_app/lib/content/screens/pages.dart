@@ -226,16 +226,18 @@ class ResponseDetailPage extends StatelessWidget {
                 final teamsCanComment = enquiry['teamsCanComment'] ?? false;
                 final userTeam = ref.watch(teamProvider);
                 final isRC = userTeam == 'RC';
-                final lockedComments = isRC || !isOpen || !currentRound || !teamsCanComment;
+                final lockedComments = isRC || fromRC || !isOpen || !currentRound || !teamsCanComment;
                 final lockedCommentReason = !lockedComments
                   ? ''
                     : isRC
                       ? 'Rules Committee may not comment'
-                        : !isOpen
-                          ? 'Enquiry closed'
-                            : !currentRound
-                              ? 'This round is closed'
-                                : 'Comments currently closed';
+                        : fromRC
+                          ? 'No comments on Rules Committee responses'
+                            : !isOpen
+                              ? 'Enquiry closed'
+                                : !currentRound
+                                  ? 'This round is closed'
+                                    : 'Comments currently closed';
 
                 // Record latest visit (runs after this frame to avoid write-in-build)
                 WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -279,11 +281,14 @@ class ResponseDetailPage extends StatelessWidget {
                   )).toList(), // consider making platform dependent
 
                 // CHILDREN: Comments list + New child
-                footer: _ChildrenSection.comments(
-                  enquiryId: enquiryId, 
-                  responseId: responseId,
-                  lockedComments: lockedComments,
-                  lockedReason: lockedCommentReason,),
+                footer: fromRC
+                  ? null
+                  : _ChildrenSection.comments(
+                      enquiryId: enquiryId,
+                      responseId: responseId,
+                      lockedComments: lockedComments,
+                      lockedReason: lockedCommentReason,
+                    ),
                 );
               },
             );
