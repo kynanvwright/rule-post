@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:web/web.dart' as web;      // DOM bindings (no dart:html)
 import 'dart:ui_web' as ui_web;           // platformViewRegistry for web
+import 'dart:async'; // for Timer
+
 
 /// Drop-in attachment tile that supports inline preview for PDFs and Word docs.
 /// - PDFs render directly in an <iframe>.
@@ -174,45 +176,137 @@ String _fmtSize(int bytes) {
 ///
 /// NOTE: Some hosts may block embedding with X-Frame-Options/CSP.
 /// If your storage host blocks embedding, fall back to "Open in new tab".
-class _InlineDocIFrame extends StatelessWidget {
+class _InlineDocIFrame extends StatefulWidget {
   const _InlineDocIFrame({
     required this.url,
     required this.isPdf,
     required this.isWord,
     this.height = 840,
+    this.timeoutMs = 2000, // how long we wait before falling back
   });
 
   final String url;
   final bool isPdf;
   final bool isWord;
   final double height;
+  final int timeoutMs;
+
+  @override
+  State<_InlineDocIFrame> createState() => _InlineDocIFrameState();
+}
+
+class _InlineDocIFrameState extends State<_InlineDocIFrame> {
+  late final String _viewType;
+  web.HTMLIFrameElement? _iframe;
+  bool _loaded = false;
+  bool _failed = false;
+  bool _triedFallback = false;
+
+  Timer? _watchdog; // <- add
+
+  @override
+  void initState() {
+    super.initState();
+
+    _viewType = 'iframe-${widget.url.hashCode}-${DateTime.now().microsecondsSinceEpoch}';
+
+    final initialSrc = widget.isPdf
+        ? '${widget.url}#toolbar=1&navpanes=0&scrollbar=1'
+        : widget.isWord
+            ? 'https://docs.google.com/gview?url=${Uri.encodeComponent(widget.url)}&embedded=true'
+            : widget.url;
+
+    ui_web.platformViewRegistry.registerViewFactory(_viewType, (int _) {
+      final el = web.HTMLIFrameElement()
+        ..src = initialSrc
+        ..style.border = '0'
+        ..style.width = '100%'
+        ..style.height = '100%'
+        ..style.borderRadius = '8px'
+        ..allow = 'fullscreen';
+
+      el.onLoad.listen((_) {
+        _loaded = true;
+        _watchdog?.cancel();          // <- cancel watchdog
+        if (mounted) setState(() {});
+      });
+
+      el.onError.listen((_) {
+        _failed = true;
+        _watchdog?.cancel();          // <- cancel watchdog
+        if (mounted) setState(() {});
+        _maybeFallback();
+      });
+
+      // Watchdog: if no load within X ms, fallback.
+      _watchdog = Timer(Duration(milliseconds: widget.timeoutMs), () {  // <- replace setTimeout
+        if (!_loaded && !_failed) {
+          _maybeFallback();
+        }
+      });
+
+      _iframe = el;
+      return el;
+    });
+  }
+
+  @override
+  void dispose() {
+    _watchdog?.cancel(); // <- be tidy
+    super.dispose();
+  }
+
+  void _maybeFallback() {
+    if (_triedFallback) return;
+    _triedFallback = true;
+
+    if (widget.isPdf && _iframe != null) {
+      final fallback = 'https://docs.google.com/gview?url=${Uri.encodeComponent(widget.url)}&embedded=true';
+      _iframe!.src = fallback;
+    } else {
+      if (mounted) setState(() => _failed = true);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final viewType = 'iframe-${UniqueKey()}';
+    if (_failed && !_loaded) {
+      return _IFrameFallbackPanel(url: widget.url, height: widget.height);
+    }
+    return SizedBox(height: widget.height, child: HtmlElementView(viewType: _viewType));
+  }
+}
 
-    // Choose iframe src:
-    //  - PDF: open directly; add small viewer params
-    //  - Word: use Google Docs Viewer to embed
-    final src = isPdf
-        ? '$url#toolbar=1&navpanes=0&scrollbar=1'
-        : isWord
-            ? 'https://docs.google.com/gview?url=${Uri.encodeComponent(url)}&embedded=true'
-            : url;
+class _IFrameFallbackPanel extends StatelessWidget {
+  const _IFrameFallbackPanel({required this.url, required this.height});
 
-    // Register a one-off factory that returns an HTMLIFrameElement.
-    ui_web.platformViewRegistry.registerViewFactory(viewType, (int _) {
-      final el = web.HTMLIFrameElement()
-        ..src = src
-        ..style.border = '0'
-        ..style.width = '100%'
-        ..style.height = '100%';
-      return el;
-    });
+  final String url;
+  final double height;
 
-    return SizedBox(
+  @override
+  Widget build(BuildContext context) {
+    return Container(
       height: height,
-      child: HtmlElementView(viewType: viewType),
+      alignment: Alignment.center,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        border: Border.all(color: Theme.of(context).dividerColor),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.picture_as_pdf, size: 28),
+          const SizedBox(height: 8),
+          const Text('Preview unavailable.'),
+          const SizedBox(height: 8),
+          FilledButton.icon(
+            icon: const Icon(Icons.open_in_new),
+            label: const Text('Open in new tab'),
+            onPressed: () => launchUrlString(url, mode: LaunchMode.platformDefault),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
-// import 'dart:developer' as dev;
 import 'firebase_options.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -168,21 +167,9 @@ Future<void> main() async {
   // Ensure App Check tokens refresh in the background
   await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
 
-  // await _probeAppCheck();
-
   runApp(const ProviderScope(child: MyApp()));
 }
 
-
-// Future<void> _probeAppCheck() async {
-//   try {
-//     // Force refresh to bypass any caches and surface real errors.
-//     final token = await FirebaseAppCheck.instance.getToken(true);
-//     dev.log('App Check token OK. Length: ${token?.length ?? 0}');
-//   } catch (e, st) {
-//     dev.log('App Check getToken failed: $e', stackTrace: st);
-//   }
-// }
 
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
