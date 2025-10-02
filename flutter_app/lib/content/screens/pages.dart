@@ -84,9 +84,9 @@ class EnquiryDetailPage extends StatelessWidget {
             return _DetailScaffold(
               // HEADER (within a card)
               headerLines: [
-                'Rule Enquiry #$enquiryNumber – $title',
+                title,
               ],
-              subHeaderLines: const [], // enquiries themselves don’t need a subheader
+              subHeaderLines: ['Rule Enquiry #$enquiryNumber'], // enquiries themselves don’t need a subheader
               // META (chips row under header)
               meta: Wrap(
                 spacing: 8,
@@ -248,7 +248,8 @@ class ResponseDetailPage extends StatelessWidget {
                 });   
 
                 return _DetailScaffold(
-                  headerLines: ['RE #$enquiryNumber - Response $roundNumber.$responseNumber'],
+                  headerLines: ['Response $roundNumber.$responseNumber'],
+                  subHeaderLines: ['Rule Enquiry #$enquiryNumber'],
                   meta: Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -418,9 +419,14 @@ class _HeaderBlock extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (final line in headerLines) Text(line, style: t.titleLarge),
+        for (final sub in subHeaderLines) Text(
+          '$sub:', 
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontStyle: FontStyle.italic,
+          ),
+        ),
         if (subHeaderLines.isNotEmpty) const SizedBox(height: 4),
-        for (final sub in subHeaderLines) Text(sub, style: t.titleMedium),
+        for (final line in headerLines) Text(line, style: t.titleLarge),
       ],
     );
   }
