@@ -297,7 +297,6 @@ export const commentPublisher = onSchedule(
 export const committeeResponsePublisher = onSchedule(
   { region: "europe-west6", schedule: "0 0 * * *", timeZone: ROME_TZ },
   async (): Promise<void> => {
-
     const publishedAt = FieldValue.serverTimestamp();
     const nowRome = DateTime.now().setZone(ROME_TZ);
     const nowTs = Timestamp.now();
