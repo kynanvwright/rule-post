@@ -2,8 +2,6 @@ import { getFirestore } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 
-import { enforceCooldown, cooldownKeyFromCallable } from "./cooldown";
-
 const db = getFirestore(); // fine if admin.initializeApp() was called
 
 export const listTeamUsers = onCall(
@@ -18,11 +16,7 @@ export const listTeamUsers = onCall(
       throw new HttpsError("permission-denied", "Team admin only.");
     }
 
-    // 2) Cooldown (10s/caller)
-    const key = cooldownKeyFromCallable(req, "listTeamUsers");
-    await enforceCooldown(key, 10);
-
-    // 3) Query team emails
+    // 2) Query team emails
     const userTeam = req.auth?.token.team;
     if (!userTeam) {
       throw new HttpsError(

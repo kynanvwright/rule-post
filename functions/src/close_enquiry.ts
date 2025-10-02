@@ -1,8 +1,6 @@
 import { getFirestore } from "firebase-admin/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 
-import { enforceCooldown, cooldownKeyFromCallable } from "./cooldown";
-
 const db = getFirestore();
 
 type CloseEnquiryPayload = { enquiryID: string };
@@ -20,10 +18,7 @@ export const closeEnquiry = onCall(
       throw new HttpsError("permission-denied", "Admin/RC function only.");
     }
 
-    // 2) Enforce cooldown on function call
-    await enforceCooldown(cooldownKeyFromCallable(req, "deleteUser"), 30);
-
-    // 3) Close enquiry
+    // 2) Close enquiry
     const { enquiryID } = req.data as CloseEnquiryPayload;
     await db.collection("enquiries").doc(enquiryID).update({
       isOpen: false,

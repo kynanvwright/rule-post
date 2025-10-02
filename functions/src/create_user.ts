@@ -4,8 +4,6 @@ import { defineSecret } from "firebase-functions/params";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { Resend } from "resend";
 
-import { enforceCooldown, cooldownKeyFromCallable } from "./cooldown";
-
 const auth = getAuth(); // ✅ this returns an Auth instance (not callable)
 const db = getFirestore(); // ✅ Firestore instance
 const RESEND_API_KEY = defineSecret("RESEND_API_KEY");
@@ -25,17 +23,12 @@ export const createUserWithProfile = onCall(
       throw new HttpsError("permission-denied", "Team admin only.");
     }
 
-    // 2) Cooldown (10s/caller)
-    const key = cooldownKeyFromCallable(req, "listTeamUsers");
-    await enforceCooldown(key, 10);
-
     const { email } = req.data as CreateUserPayload;
-
     if (!email) {
       throw new HttpsError("invalid-argument", "Missing email");
     }
 
-    // 3) Create the Auth user
+    // 2) Create the Auth user
     let userRecord;
     try {
       userRecord = await auth.createUser({ email });
@@ -64,7 +57,7 @@ export const createUserWithProfile = onCall(
       throw new HttpsError("internal", "Failed to create auth user.");
     }
 
-    // 4) Create Firestore profile doc
+    // 3) Create Firestore profile doc
     try {
       await db
         .collection("user_data")
@@ -97,14 +90,14 @@ export const createUserWithProfile = onCall(
       );
     }
 
-    // 5) Generate password reset link (lets them set their own password)
+    // 4) Generate password reset link (lets them set their own password)
     const link = await auth.generatePasswordResetLink(email, {
       url: "https://rulepost.com", // post-completion redirect
       handleCodeInApp: false, // set true if your app handles OOB codes
       // dynamicLinkDomain: "example.page.link", // if using Firebase Dynamic Links
     });
 
-    // 6) Send email via Resend
+    // 5) Send email via Resend
     const recipientName = getNameFromEmail(email);
     await resend.emails.send({
       from: "Rule Post <no-reply@rulepost.com>",

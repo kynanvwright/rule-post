@@ -3,8 +3,6 @@ import { getFirestore } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 
-import { enforceCooldown, cooldownKeyFromCallable } from "./cooldown";
-
 const auth = getAuth();
 const db = getFirestore();
 
@@ -55,8 +53,6 @@ export const deleteUser = onCall(
     if (!email || typeof email !== "string" || !email.includes("@")) {
       throw new HttpsError("invalid-argument", "Missing or invalid email.");
     }
-
-    await enforceCooldown(cooldownKeyFromCallable(req, "deleteUser"), 10);
 
     const deletedUid = await resolveUidByEmail(email);
 
