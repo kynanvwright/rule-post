@@ -312,21 +312,30 @@ export const createPost = onCall<CreatePostData>(
         enquiryResponseNumber = null;
       }
       // Assign post colour based on team
-      const enquiryMetaDoc = await enquiryDoc.ref
-        .collection("meta")
-        .doc("data")
-        .get();
-      assert(enquiryMetaDoc, "enquiries/{id}/meta/data not found");
-      const map = enquiryMetaDoc.get("teamColourMap") as
-        | Record<string, string>
-        | undefined;
-      if (map) {
-        postColour = map[authorTeam];
+      if (authorTeam === "RC") {
+        const colourWheelDoc = await db.collection("app_data").doc("colour_wheel").get();
+        if (!colourWheelDoc.exists) {
+          console.log("[createPost] No app data at specified address.");
+          return;
+        }
+        postColour = colourWheelDoc.get("grey");
       } else {
-        throw new HttpsError(
-          "failed-precondition",
-          "Team colour map not retrieved/interpreted correctly.",
-        );
+        const enquiryMetaDoc = await enquiryDoc.ref
+          .collection("meta")
+          .doc("data")
+          .get();
+        assert(enquiryMetaDoc, "enquiries/{id}/meta/data not found");
+        const map = enquiryMetaDoc.get("teamColourMap") as
+          | Record<string, string>
+          | undefined;
+        if (map) {
+          postColour = map[authorTeam];
+        } else {
+          throw new HttpsError(
+            "failed-precondition",
+            "Team colour map not retrieved/interpreted correctly.",
+          );
+        }
       }
     }
     const isOpen = true; // future use
