@@ -191,12 +191,16 @@ class _InlineDocIFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     final viewType = 'iframe-${UniqueKey()}';
 
+    // check if device is a phone
+    bool isMobileLayout(BuildContext context) =>
+    MediaQuery.of(context).size.width < 600;
+    
     // Choose iframe src:
     //  - PDF: open directly; add small viewer params
     //  - Word: use Google Docs Viewer to embed
-    final src = isPdf
+    final src = isPdf & !isMobileLayout(context)
         ? '$url#toolbar=1&navpanes=0&scrollbar=1'
-        : isWord
+        : isWord || isMobileLayout(context)
             ? 'https://docs.google.com/gview?url=${Uri.encodeComponent(url)}&embedded=true'
             : url;
 
