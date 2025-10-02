@@ -14,7 +14,6 @@ import {
   CallableRequest,
 } from "firebase-functions/v2/https";
 
-import { enforceCooldown, cooldownKeyFromCallable, ns } from "./cooldown";
 import { assignUniqueColoursForEnquiry } from "./post_colours";
 
 const ALLOWED_TYPES = [
@@ -126,10 +125,6 @@ export const createPost = onCall<CreatePostData>(
       throw new HttpsError("unauthenticated", "Sign in required.");
     }
     const authorUid = req.auth.uid;
-    // Enforce cooldown (e.g., 60s per caller for createPost)
-    const base = ns("createPost");
-    const key = cooldownKeyFromCallable(req, base);
-    await enforceCooldown(key, 10);
 
     // ---- Parse + validate inputs ----
     const data = (req.data ?? {}) as CreatePostData;

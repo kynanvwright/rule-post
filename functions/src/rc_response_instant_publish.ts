@@ -1,7 +1,6 @@
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 
-import { enforceCooldown, cooldownKeyFromCallable } from "./cooldown";
 import { computeStageEnds } from "./publishing_and_permissions";
 
 const db = getFirestore();
@@ -24,10 +23,7 @@ export const committeeResponseInstantPublisher = onCall(
       throw new HttpsError("permission-denied", "Admin/RC function only.");
     }
 
-    // 2) Enforce cooldown on function call
-    await enforceCooldown(cooldownKeyFromCallable(req, "deleteUser"), 30);
-
-    // 3) Get enquiry and response from Firestore
+    // 2) Get enquiry and response from Firestore
     const { enquiryID, responseID } = req.data as publishPayload;
     const enquiryDoc = await db.collection("enquiries").doc(enquiryID).get();
     if (!enquiryDoc.exists) {
