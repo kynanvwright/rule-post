@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../api/post_api.dart';
+import 'create_post_wrapper.dart';
 import '../../core/models/attachments.dart' show TempAttachment;
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -101,27 +101,17 @@ class _NewPostButtonState extends State<NewPostButton> {
             );
             if (payload == null) return;
 
-            final messenger = ScaffoldMessenger.of(context);
-            final api = PostApi();
+            await onCreatePostPressed(
+              context,
+              postType: widget.type.apiName,
+              title: payload.title,
+              postText: payload.text,
+              attachments: (payload.attachments == null || payload.attachments!.isEmpty)
+                  ? null
+                  : payload.attachments,
+              parentIds: widget.parentIds,
+            );
 
-            try {
-              await api.createPost(
-                postType: widget.type.apiName,
-                title: payload.title,
-                postText: payload.text,
-                attachments: (payload.attachments == null || payload.attachments!.isEmpty)
-                    ? null
-                    : payload.attachments,
-                parentIds: widget.parentIds,
-              );
-              messenger.showSnackBar(
-                SnackBar(content: Text('New ${widget.type.labelSingular} created')),
-              );
-            } catch (e) {
-              messenger.showSnackBar(
-                SnackBar(content: Text('Failed to create ${widget.type.labelSingular}: $e')),
-              );
-            }
           },
         ),
       ),

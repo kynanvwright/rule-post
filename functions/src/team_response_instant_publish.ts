@@ -84,7 +84,6 @@ export const teamResponseInstantPublisher = onCall(
       teamsCanComment: true,
       stageEnds: Timestamp.fromDate(newStageEnds),
     });
-  
 
     await writer.close();
     console.log(
