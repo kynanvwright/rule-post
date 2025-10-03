@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// A single admin action (button) definition.
-/// `tooltip` is shown in the confirmation dialog before running.
+typedef ConfirmGuard = Future<bool> Function(BuildContext context);
+
 class AdminAction {
   const AdminAction({
     required this.label,
@@ -9,6 +9,7 @@ class AdminAction {
     this.icon,
     this.tooltip,
     this.enabled = true,
+    this.confirmGuard, // if provided, used instead of the default dialo
   });
 
   final String label;
@@ -16,6 +17,7 @@ class AdminAction {
   final IconData? icon;
   final String? tooltip;
   final bool enabled;
+  final ConfirmGuard? confirmGuard;
 }
 
 class AdminCard extends StatefulWidget {
@@ -102,30 +104,32 @@ class _GuardedActionButton extends StatelessWidget {
     // If the button is disabled, do nothing
     if (!action.enabled) return;
 
-    final proceed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        icon: const Icon(Icons.warning_amber_rounded),
-        title: Text(action.label),
-        content: Text(
-          (action.tooltip?.trim().isNotEmpty ?? false)
-              ? action.tooltip!.trim()
-              : "Are you sure you want to run “${action.label}”?",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+    final ok = action.confirmGuard != null
+      ? await action.confirmGuard!(context)
+      : await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            icon: const Icon(Icons.warning_amber_rounded),
+            title: Text(action.label),
+            content: Text(
+              (action.tooltip?.trim().isNotEmpty ?? false)
+                  ? action.tooltip!.trim()
+                  : "Are you sure you want to run “${action.label}”?",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Proceed'),
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Proceed'),
-          ),
-        ],
-      ),
-    );
+        ) ?? false;
 
-    if (proceed == true) {
+    if (ok) {
       action.onPressed();
     }
   }
