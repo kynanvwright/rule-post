@@ -4,7 +4,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 Future<int?> publishCompetitorResponses(String enquiryId) async {
   try {
     final functions = FirebaseFunctions.instanceFor(region: 'europe-west8');
-    final callable = functions.httpsCallable('publishCompetitorResponses');
+    final callable = functions.httpsCallable('teamResponseInstantPublisher');
 
     final result = await callable.call(<String, dynamic>{
       'enquiryID': enquiryId.trim,
