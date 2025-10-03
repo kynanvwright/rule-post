@@ -6,18 +6,18 @@ Future<String?> closeEnquiry(String enquiryId) async {
     final functions = FirebaseFunctions.instanceFor(region: 'europe-west8');
     final callable = functions.httpsCallable('closeEnquiry');
 
-    final result = await callable.call(<String, dynamic>{
-      'enquiryId': enquiryId,
+    // Match the backend key exactly: enquiryID (capital D)
+    final result = await callable.call<Map<String, dynamic>>({
+      'enquiryID': enquiryId.trim(),
     });
 
-    final data = result.data as Map<String, dynamic>;
+    final data = result.data;
     if (data['ok'] == true) {
-      return data['closedId'] as String;
-    } else {
-      return null;
+      // Match backend return field name
+      return data['enquiryID'] as String;
     }
+    return null;
   } on FirebaseFunctionsException catch (e) {
-    // Backend threw HttpsError
     debugPrint('❌ Cloud Function error: ${e.code} – ${e.message}');
     rethrow;
   } catch (e) {
