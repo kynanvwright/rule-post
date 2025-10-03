@@ -19,7 +19,7 @@ export const committeeResponseInstantPublisher = onCall(
       throw new HttpsError("unauthenticated", "You must be signed in.");
     const isAdmin = req.auth?.token.role == "admin";
     const isRC = req.auth?.token.team == "RC";
-    if (!isAdmin || !isRC) {
+    if (!isAdmin && !isRC) {
       throw new HttpsError("permission-denied", "Admin/RC function only.");
     }
 
