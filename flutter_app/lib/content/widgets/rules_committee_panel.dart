@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// A single admin action (button) definition.
+/// `tooltip` is shown in the confirmation dialog before running.
 class AdminAction {
   const AdminAction({
     required this.label,
@@ -23,8 +24,6 @@ class AdminCard extends StatefulWidget {
     this.title = 'Rules Committee Panel',
     required this.actions,
     this.initiallyExpanded = false,
-    this.requireArming = true,
-    this.armLabel = 'Enable admin actions',
     this.compact = false,
     this.buttonMinWidth = 140,
     this.buttonMinHeight = 40,
@@ -36,10 +35,6 @@ class AdminCard extends StatefulWidget {
   final List<AdminAction> actions;
   final bool initiallyExpanded;
 
-  /// When true, shows a switch that must be turned on before buttons activate.
-  final bool requireArming;
-  final String armLabel;
-
   final bool compact;
   final double buttonMinWidth;
   final double buttonMinHeight;
@@ -47,19 +42,10 @@ class AdminCard extends StatefulWidget {
   final bool boldTitle;
 
   @override
-  State<AdminCard> createState() =>
-      _AdminCardState();
+  State<AdminCard> createState() => _AdminCardState();
 }
 
-class _AdminCardState
-    extends State<AdminCard> {
-  bool _armed = false;
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
+class _AdminCardState extends State<AdminCard> {
   @override
   Widget build(BuildContext context) {
     final base = Theme.of(context).textTheme.titleMedium;
@@ -71,53 +57,100 @@ class _AdminCardState
     final spacing = widget.compact ? 8.0 : 12.0;
 
     return Card(
-      child: Theme( // tighten ExpansionTile padding a bit
+      child: Theme( // Tighten ExpansionTile divider look
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
           initiallyExpanded: widget.initiallyExpanded,
-          onExpansionChanged: (v) => setState(() {
-            // Disarm when closing to prevent accidental taps later
-            if (!v) _armed = false;
-          }),
           title: Text(widget.title, style: titleStyle),
-          childrenPadding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+          childrenPadding: const EdgeInsets.all(16),
           children: [
-            if (widget.requireArming)
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(widget.armLabel),
-                value: _armed,
-                onChanged: (v) => setState(() => _armed = v),
-              ),
-            Wrap(
-              spacing: spacing,
-              runSpacing: spacing,
-              children: widget.actions.map((a) {
-                final btn = FilledButton.icon(
-                  onPressed:
-                      (a.enabled && (!widget.requireArming || _armed))
-                          ? a.onPressed
-                          : null,
-                  icon: Icon(a.icon ?? Icons.settings),
-                  label: Text(a.label),
-                );
-
-                final wrapped = a.tooltip == null
-                    ? btn
-                    : Tooltip(message: a.tooltip!, child: btn);
-
-                return ConstrainedBox(
-                  constraints: BoxConstraints(
+            // Vertical list of guarded admin actions
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (int i = 0; i < widget.actions.length; i++) ...[
+                  _GuardedActionButton(
+                    action: widget.actions[i],
                     minWidth: widget.buttonMinWidth,
                     minHeight: widget.buttonMinHeight,
                   ),
-                  child: wrapped,
-                );
-              }).toList(),
+                  if (i != widget.actions.length - 1)
+                    SizedBox(height: spacing),
+                ],
+              ],
             ),
           ],
         ),
       ),
     );
+  }
+}
+
+/// A full-width button that shows a warning/confirmation dialog before running.
+class _GuardedActionButton extends StatelessWidget {
+  const _GuardedActionButton({
+    required this.action,
+    required this.minWidth,
+    required this.minHeight,
+  });
+
+  final AdminAction action;
+  final double minWidth;
+  final double minHeight;
+
+  Future<void> _confirmAndRun(BuildContext context) async {
+    // If the button is disabled, do nothing
+    if (!action.enabled) return;
+
+    final proceed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.warning_amber_rounded),
+        title: Text(action.label),
+        content: Text(
+          (action.tooltip?.trim().isNotEmpty ?? false)
+              ? action.tooltip!.trim()
+              : "Are you sure you want to run “${action.label}”?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Proceed'),
+          ),
+        ],
+      ),
+    );
+
+    if (proceed == true) {
+      action.onPressed();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final btn = ConstrainedBox(
+      constraints: BoxConstraints(
+        minWidth: minWidth,
+        minHeight: minHeight,
+      ),
+      child: SizedBox(
+        width: double.infinity, // full width in the column
+        child: FilledButton.icon(
+          onPressed: action.enabled ? () => _confirmAndRun(context) : null,
+          icon: Icon(action.icon ?? Icons.settings),
+          label: Text(action.label),
+        ),
+      ),
+    );
+
+    // Keep hover tooltip if provided (useful on desktop),
+    // dialog still appears on click to guard the action.
+    return (action.tooltip == null || action.tooltip!.isEmpty)
+        ? btn
+        : Tooltip(message: action.tooltip!, child: btn);
   }
 }

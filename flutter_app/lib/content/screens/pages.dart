@@ -131,9 +131,19 @@ class EnquiryDetailPage extends StatelessWidget {
               boldTitle: true,
               actions: [
                 AdminAction(
-                  label: 'Publish Response',
+                  label: 'Publish Competitor Responses',
                   icon: Icons.publish,
-                  tooltip: 'Finish this enquiry stage and skip to the next',
+                  tooltip: teamsCanRespond ? 'Publish all submitted responses' : 'Locked: No pending responses',
+                  enabled: teamsCanRespond,
+                  onPressed: () {
+                    // TODO: call your function
+                  },
+                ),
+                AdminAction(
+                  label: 'Publish RC Response',
+                  icon: Icons.publish,
+                  tooltip: teamsCanRespond ? 'Locked: Wait for Competitors to respond' : 'Finish this enquiry stage and skip to the next',
+                  enabled: !teamsCanRespond,
                   onPressed: () {
                     // TODO: call your function
                   },
@@ -141,6 +151,7 @@ class EnquiryDetailPage extends StatelessWidget {
                 AdminAction(
                   label: 'Close Enquiry',
                   icon: Icons.lock,
+                  tooltip: 'End enquiry and lock all submissions',
                   onPressed: () async {
                     try {
                       final closedEnquiryId = await closeEnquiry(enquiryId);
