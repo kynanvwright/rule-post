@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+
 typedef ConfirmGuard = Future<bool> Function(BuildContext context);
 
 class AdminAction {
@@ -9,7 +10,7 @@ class AdminAction {
     this.icon,
     this.tooltip,
     this.enabled = true,
-    this.confirmGuard, // if provided, used instead of the default dialo
+    this.confirmGuard, // if provided, used instead of the default dialog
   });
 
   final String label;
@@ -18,6 +19,126 @@ class AdminAction {
   final String? tooltip;
   final bool enabled;
   final ConfirmGuard? confirmGuard;
+
+  
+  factory AdminAction.publishCompetitorResponses({
+    required String enquiryId,
+    required Future<int?> Function() run,
+    required bool teamsCanRespond,
+    required context,
+  }) => AdminAction(
+          label: 'Publish Competitor Responses',
+          icon: Icons.publish,
+          tooltip: teamsCanRespond ? 'Publish all submitted responses' : 'Locked: No pending responses',
+          enabled: teamsCanRespond,
+          onPressed: () async {
+            try {
+              final functionSuccess = await run();
+              if (functionSuccess != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Published $functionSuccess Competitor responses')),
+                );
+              }
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Failed to publish Competitor responses')),
+              );
+            }
+          },
+          // customise later, showing relevant info for action
+          // confirmGuard: (ctx) async {
+          //   return await showDialog<bool>(
+          //     context: ctx,
+          //     builder: (_) => AlertDialog(
+          //       title: const Text('Are you sure?'),
+          //       content: const Text('This will run the action immediately.'),
+          //       actions: [
+          //         TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          //         FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Proceed')),
+          //       ],
+          //     ),
+          //   ) ?? false;
+          // }
+        );
+
+  factory AdminAction.publishRCResponse({
+    required String enquiryId,
+    required Future<bool> Function() run,
+    required bool teamsCanRespond,
+    required context,
+  }) => AdminAction(
+          label: 'Publish RC Response',
+          icon: Icons.publish,
+          tooltip: teamsCanRespond ? 'Locked: Wait for Competitors to respond' : 'Finish this enquiry stage and skip to the next',
+          enabled: !teamsCanRespond,
+          onPressed: () async {
+            try {
+              final functionSuccess = await run();
+              if (functionSuccess) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Published RC response')),
+                );
+              }
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Failed to publish RC response')),
+              );
+            }
+          },
+          // customise later, showing relevant info for action
+          // confirmGuard: (ctx) async {
+          //   return await showDialog<bool>(
+          //     context: ctx,
+          //     builder: (_) => AlertDialog(
+          //       title: const Text('Are you sure?'),
+          //       content: const Text('This will run the action immediately.'),
+          //       actions: [
+          //         TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          //         FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Proceed')),
+          //       ],
+          //     ),
+          //   ) ?? false;
+          // }
+        );
+
+  factory AdminAction.closeEnquiry({
+    required String enquiryId,
+    required Future<String?> Function() run,
+    required context,
+  }) => AdminAction(
+          label: 'Close Enquiry',
+          icon: Icons.lock,
+          tooltip: 'End enquiry and lock all submissions',
+          onPressed: () async {
+            try {
+              final closedEnquiryId = await run();
+              if (closedEnquiryId != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Enquiry closed')),
+                );
+              }
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Failed to close enquiry')),
+              );
+            }
+          },
+          // // customise later, showing relevant info for action
+          // confirmGuard: (ctx) async {
+          //   return await showDialog<bool>(
+          //     context: ctx,
+          //     builder: (_) => AlertDialog(
+          //       title: const Text('Are you sure?'),
+          //       content: const Text('This will run the action immediately.'),
+          //       actions: [
+          //         TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          //         FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Proceed')),
+          //       ],
+          //     ),
+          //   ) ?? false;
+          // }
+
+        );
 }
 
 class AdminCard extends StatefulWidget {

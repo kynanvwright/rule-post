@@ -9,6 +9,8 @@ import '../widgets/rules_committee_panel.dart';
 import '../../riverpod/post_alias.dart';
 import '../../riverpod/user_detail.dart';
 import '../../api/close_enquiry_api.dart';
+import '../../api/publish_competitor_responses.dart';
+import '../../api/publish_rc_response.dart';
 
 /// -------------------- NO SELECTION --------------------
 class NoSelectionPage extends StatelessWidget {
@@ -130,43 +132,20 @@ class EnquiryDetailPage extends StatelessWidget {
               titleColour: Colors.red,
               boldTitle: true,
               actions: [
-                AdminAction(
-                  label: 'Publish Competitor Responses',
-                  icon: Icons.publish,
-                  tooltip: teamsCanRespond ? 'Publish all submitted responses' : 'Locked: No pending responses',
-                  enabled: teamsCanRespond,
-                  onPressed: () {
-                    // TODO: call your function
-                  },
-                ),
-                AdminAction(
-                  label: 'Publish RC Response',
-                  icon: Icons.publish,
-                  tooltip: teamsCanRespond ? 'Locked: Wait for Competitors to respond' : 'Finish this enquiry stage and skip to the next',
-                  enabled: !teamsCanRespond,
-                  onPressed: () {
-                    // TODO: call your function
-                  },
-                ),
-                AdminAction(
-                  label: 'Close Enquiry',
-                  icon: Icons.lock,
-                  tooltip: 'End enquiry and lock all submissions',
-                  onPressed: () async {
-                    try {
-                      final closedEnquiryId = await closeEnquiry(enquiryId);
-                      if (closedEnquiryId != null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Enquiry closed')),
-                        );
-                      }
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Failed to close enquiry')),
-                      );
-                    }
-                  },
-                ),
+                AdminAction.publishCompetitorResponses(
+                  enquiryId: enquiryId, 
+                  run: () => publishCompetitorResponses(enquiryId),
+                  teamsCanRespond: teamsCanRespond,
+                  context: context),
+                AdminAction.publishRCResponse(
+                  enquiryId: enquiryId, 
+                  run: () => publishRcResponse(enquiryId),
+                  teamsCanRespond: teamsCanRespond,
+                  context: context),
+                AdminAction.closeEnquiry(
+                  enquiryId: enquiryId, 
+                  run: () => closeEnquiry(enquiryId),
+                  context: context),
               ],
             ) : null,
             );
