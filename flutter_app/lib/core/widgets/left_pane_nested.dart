@@ -10,6 +10,8 @@ import '../../content/widgets/new_post_button.dart';
 import '../../riverpod/user_detail.dart';
 import 'two_panel_shell.dart';
 
+final filterDefault = 'open';
+
 /// ─────────────────────────────────────────────────────────────────────────
 /// Left header: title + status chips + debounced search + "New" button
 /// ─────────────────────────────────────────────────────────────────────────
@@ -25,20 +27,46 @@ class LeftPaneHeader extends ConsumerStatefulWidget {
 }
 
 class _LeftPaneHeaderState extends ConsumerState<LeftPaneHeader> {
+  // ---- tweakables (easy to adjust) -----------------------------------------
+  static const double _kControlHeight = 40;      // overall height of both
+  static const double _kRadius = 8;              // corner radius
+  static const double _kHorzPad = 12;            // horizontal padding inside filter
+  static const double _kGap = 12;                // space between filter and search
+  static const Duration _kDebounce = Duration(milliseconds: 300);
+
   final _searchCtrl = TextEditingController();
   Timer? _debounce;
 
+  // Options
+  static const _statusOptions = ['all', 'open', 'closed'];
+
   String _statusFromUri(BuildContext context) =>
-      GoRouterState.of(context).uri.queryParameters['status'] ?? 'all';
+      GoRouterState.of(context).uri.queryParameters['status'] ?? filterDefault;
   String _qFromUri(BuildContext context) =>
       GoRouterState.of(context).uri.queryParameters['q'] ?? '';
+
+  String _statusLabel(String v) => switch (v) {
+        'open' => 'Open',
+        'closed' => 'Closed',
+        _ => 'All',
+      };
+
+  IconData _statusIcon(String v) => switch (v) {
+        'open' => Icons.lock_open,
+        'closed' => Icons.lock,
+        _ => Icons.filter_alt,
+      };
 
   @override
   void initState() {
     super.initState();
-    // Initialise from URL after first build (so context has router state)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _searchCtrl.text = _qFromUri(context);
+      final currentStatus = _statusFromUri(context);
+      final q = _qFromUri(context);
+      if (!['all', 'open', 'closed'].contains(currentStatus)) {
+        _updateQuery(context, status: 'open'); // your new default
+      }
+      _searchCtrl.text = q;
       setState(() {});
     });
   }
@@ -64,28 +92,57 @@ class _LeftPaneHeaderState extends ConsumerState<LeftPaneHeader> {
     context.go(Uri(path: s.path, queryParameters: params).toString());
   }
 
-  // Put this near the top of _LeftPaneHeaderState
-  static const _statusOptions = ['all', 'open', 'closed'];
-  String _statusLabel(String v) => switch (v) {
-    'open' => 'Open',
-    'closed' => 'Closed',
-    _ => 'All',
-  };
-  IconData _statusIcon(String v) => switch (v) {
-    'open' => Icons.lock_open,
-    'closed' => Icons.lock,
-    _ => Icons.filter_alt,
-  };
+  // Measure the longest label in the current text style so the button width is stable.
+  double _filterFixedWidth(BuildContext context) {
+    final theme = Theme.of(context);
+    final style = theme.textTheme.bodyMedium ??
+        const TextStyle(fontSize: 14); // fallback if theme is null
+
+    // Find the longest label text.
+    final longest = _statusOptions
+        .map(_statusLabel)
+        .reduce((a, b) => a.length >= b.length ? a : b);
+
+    // Measure text width.
+    final tp = TextPainter(
+      text: TextSpan(text: longest, style: style),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout();
+
+    final textW = tp.width;
+
+    // Add space for icons + gaps + padding:
+    //  leading icon (20) + gap (6) + trailing arrow (24) + outer padding (left+right)
+    const double leadingIcon = 20;
+    const double trailingIcon = 24;
+    const double innerGap = 6;
+    final double paddings = _kHorzPad * 2;
+
+    return textW + leadingIcon + trailingIcon + innerGap + paddings + 8;
+  }
 
   @override
   Widget build(BuildContext context) {
     final isLoggedIn = ref.watch(isLoggedInProvider);
     final selectedStatus = _statusFromUri(context);
+    final scheme = Theme.of(context).colorScheme;
+
+    final borderColor = scheme.outline; // matches TextField's outline tone
+    final onVariant = scheme.onSurfaceVariant;
+
+    // One border style to use for both controls
+    final border = OutlineInputBorder(
+      borderSide: BorderSide(color: borderColor, width: 1.2),
+      borderRadius: BorderRadius.circular(_kRadius),
+    );
+
+    final filterWidth = _filterFixedWidth(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Top row: title + "New" button
+        // Title row
         Row(
           children: [
             Text(widget.title, style: Theme.of(context).textTheme.titleMedium),
@@ -94,86 +151,114 @@ class _LeftPaneHeaderState extends ConsumerState<LeftPaneHeader> {
           ],
         ),
         const SizedBox(height: 8),
-        // Filters + Search
+        // Controls row
         Row(
           children: [
-            // Filter menu button (compact)
-            PopupMenuButton<String>(
-              tooltip: 'Filter',
-              onSelected: (v) => _updateQuery(context, status: v),
-              itemBuilder: (context) => _statusOptions.map((v) {
-                final selected = v == selectedStatus;
-                return PopupMenuItem<String>(
-                  value: v,
-                  child: Row(
-                    children: [
-                      Icon(_statusIcon(v), size: 20),
-                      const SizedBox(width: 8),
-                      Text(_statusLabel(v)),
-                      const Spacer(),
-                      if (selected) const Icon(Icons.check, size: 18),
-                    ],
-                  ),
-                );
-              }).toList(),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: Theme.of(context).colorScheme.outline, // soft grey tone
-                    width: 1.2,
-                  ),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(_statusIcon(selectedStatus),
-                        color: Theme.of(context).colorScheme.onSurfaceVariant),
-                    const SizedBox(width: 6),
-                    Text(
-                      _statusLabel(selectedStatus),
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant),
+            // Filter (PopupMenu) with fixed width & same visual language as TextField
+            SizedBox(
+              height: _kControlHeight,
+              width: filterWidth,
+              child: PopupMenuButton<String>(
+                tooltip: 'Filter',
+                onSelected: (v) => _updateQuery(context, status: v),
+                itemBuilder: (context) => _statusOptions.map((v) {
+                  final selected = v == selectedStatus;
+                  return PopupMenuItem<String>(
+                    value: v,
+                    child: Row(
+                      children: [
+                        Icon(_statusIcon(v), size: 20),
+                        const SizedBox(width: 8),
+                        Text(_statusLabel(v)),
+                        const Spacer(),
+                        if (selected) const Icon(Icons.check, size: 18),
+                      ],
                     ),
-                    const Icon(Icons.arrow_drop_down),
-                  ],
+                  );
+                }).toList(),
+                // Use 'child' to render a custom-styled button matching the TextField
+                child: Ink(
+                  decoration: ShapeDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    shape: border, // OutlineInputBorder as ShapeBorder
+                  ),
+                  child: Padding(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: _kHorzPad), // match TF
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Icon(_statusIcon(selectedStatus), color: onVariant, size: 20),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            _statusLabel(selectedStatus),
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(color: onVariant),
+                          ),
+                        ),
+                        const Icon(Icons.arrow_drop_down, size: 24),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: _kGap),
+            // Search (TextField) with the same height & border styling
             Expanded(
-              child: TextField(
-                controller: _searchCtrl,
-                decoration: const InputDecoration(
-                  hintText: 'Search title…',
-                  isDense: true,
-                  prefixIcon: Icon(Icons.search),
-                  border: OutlineInputBorder(),
+              child: SizedBox(
+                height: _kControlHeight,
+                child: TextField(
+                  controller: _searchCtrl,
+                  textInputAction: TextInputAction.search,
+                  onChanged: (val) {
+                    _debounce?.cancel();
+                    _debounce = Timer(_kDebounce, () {
+                      _updateQuery(context, q: val.trim());
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Search…',
+                    isDense: true, // keeps vertical density tight
+                    prefixIcon: const Icon(Icons.search),
+                    // Make the clear button live inside the field so heights stay identical
+                    suffixIcon: (_searchCtrl.text.isNotEmpty)
+                        ? IconButton(
+                            tooltip: 'Clear',
+                            onPressed: () {
+                              _searchCtrl.clear();
+                              setState(() {}); // refresh suffixIcon visibility
+                              _updateQuery(context, q: '');
+                            },
+                            icon: const Icon(Icons.clear),
+                          )
+                        : null,
+                    border: border,
+                    enabledBorder: border,
+                    focusedBorder: border.copyWith(
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 1.4,
+                      ),
+                    ),
+                    // Padding tuned to hit the same total height as the filter
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: _kHorzPad, vertical: 10),
+                  ),
                 ),
-                onChanged: (val) {
-                  _debounce?.cancel();
-                  _debounce = Timer(const Duration(milliseconds: 300), () {
-                    _updateQuery(context, q: val.trim());
-                  });
-                },
               ),
             ),
-            if (_searchCtrl.text.isNotEmpty)
-              IconButton(
-                tooltip: 'Clear',
-                onPressed: () {
-                  _searchCtrl.clear();
-                  _updateQuery(context, q: '');
-                },
-                icon: const Icon(Icons.clear),
-              ),
           ],
         ),
       ],
     );
   }
 }
+
 
 /// ─────────────────────────────────────────────────────────────────────────
 /// LeftPaneNested entry point (unchanged API)
@@ -429,7 +514,8 @@ Query<Map<String, dynamic>> buildEnquiriesQuery(Map<String, String> filter) {
         toFirestore: (v, _) => v,
       );
 
-  switch (filter['status']) {
+  final status = filter['status'] ?? filterDefault; // default filter
+  switch (status) {
     case 'open':
       q = q.where('isOpen', isEqualTo: true);
       break;
