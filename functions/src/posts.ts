@@ -475,7 +475,7 @@ export const createPost = onCall<CreatePostData>(
       const draftDoc: Record<string, unknown> = {
         createdAt: now,
         postType,
-        parentIds: data.parentIds,
+        parentIds,
       };
       tx.set(draftRef, draftDoc);
 
