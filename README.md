@@ -122,6 +122,7 @@ A website for facilitating America's Cup Rule Enquiries.
 - make sure that top bar on both sides of two-panel shall have same height
 - Enforce overall enquiry timeline even if RC responds late
   - notify Competitors that they have slightly less time than is ideal
+- Document attachment is now really slow, look into this and streamline
 
 ## Other Notes
 - Check how it looks on various devices

@@ -1,9 +1,69 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{db}/documents {
+    // ───────────────────────────────────────────────────────────────
+    // Helpers
+    // ───────────────────────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Return user's team claim, or null if missing
+    function userTeam() {
+      return isSignedIn() && request.auth.token.team != null
+        ? request.auth.token.team
+        : null;
+    }
+
+    function isPublished() {
+      // strict true avoids null/undefined edge-cases
+      return resource.data.isPublished == true;
+    }
+
+    function isDraft() {
+      // treat anything not strictly true as "draft"
+      return !(resource.data.isPublished == true);
+    }
+
+    function equalAndNotNull(a, b) {
+      return a != null && b != null && a == b;
+    }
+
+    // Read author team from locked meta (single-doc checks only!)
+    function enquiryAuthorTeam(id) {
+      return exists(/databases/$(db)/documents/enquiries/$(id)/meta/data)
+        ? get(/databases/$(db)/documents/enquiries/$(id)/meta/data).data.authorTeam
+        : null;
+    }
+
+    function responseAuthorTeam(id, responseId) {
+      return exists(/databases/$(db)/documents/enquiries/$(id)/responses/$(responseId)/meta/data)
+        ? get(/databases/$(db)/documents/enquiries/$(id)/responses/$(responseId)/meta/data).data.authorTeam
+        : null;
+    }
+
+    function commentAuthorTeam(id, responseId, commentId) {
+      return exists(/databases/$(db)/documents/enquiries/$(id)/responses/$(responseId)/comments/$(commentId)/meta/data)
+        ? get(/databases/$(db)/documents/enquiries/$(id)/responses/$(responseId)/comments/$(commentId)/meta/data).data.authorTeam
+        : null;
+    }
+
+    // Author match (team) for a given doc level
+    function enquiryAuthorCanEdit(id) {
+      return equalAndNotNull(userTeam(), enquiryAuthorTeam(id));
+    }
+
+    function responseAuthorCanEdit(id, responseId) {
+      return equalAndNotNull(userTeam(), responseAuthorTeam(id, responseId));
+    }
+
+    function commentAuthorCanEdit(id, responseId, commentId) {
+      return equalAndNotNull(userTeam(), commentAuthorTeam(id, responseId, commentId));
+    }
 
     match /enquiries/{id} {
-      allow read: if resource.data.isPublished == true;
+      allow read: if isPublished()
+               || (isDraft() && enquiryAuthorCanEdit(id));
       allow write: if false;
     
       match /meta/{doc} {
@@ -11,7 +71,8 @@ service cloud.firestore {
       }
       
       match /responses/{responseId} {
-      	allow read: if resource.data.isPublished == true;
+      	allow read: if resource.data.isPublished == true
+                 || (resource.data.isPublished != true && responseAuthorCanEdit(id, responseId));
       	allow write: if false;
         
         match /meta/{doc} {
@@ -19,7 +80,8 @@ service cloud.firestore {
       	}
         
         match /comments/{commentId} {
-      		allow read: if resource.data.isPublished == true;
+      		allow read: if resource.data.isPublished == true
+                   || (resource.data.isPublished != true && commentAuthorCanEdit(id, responseId, commentId));
       		allow write: if false;
         
           match /meta/{doc} {
