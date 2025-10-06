@@ -31,7 +31,7 @@ class _LeftPaneHeaderState extends ConsumerState<LeftPaneHeader> {
   static const double _kControlHeight = 40;      // overall height of both
   static const double _kRadius = 8;              // corner radius
   static const double _kHorzPad = 12;            // horizontal padding inside filter
-  static const double _kGap = 12;                // space between filter and search
+  // static const double _kGap = 12;                // space between filter and search
   static const Duration _kDebounce = Duration(milliseconds: 300);
 
   final _searchCtrl = TextEditingController();
@@ -92,172 +92,294 @@ class _LeftPaneHeaderState extends ConsumerState<LeftPaneHeader> {
     context.go(Uri(path: s.path, queryParameters: params).toString());
   }
 
-  // Measure the longest label in the current text style so the button width is stable.
-  double _filterFixedWidth(BuildContext context) {
-    final theme = Theme.of(context);
-    final style = theme.textTheme.bodyMedium ??
-        const TextStyle(fontSize: 14); // fallback if theme is null
+@override
+Widget build(BuildContext context) {
+  final isLoggedIn = ref.watch(isLoggedInProvider);
+  final selectedStatus = _statusFromUri(context);
 
-    // Find the longest label text.
-    final longest = _statusOptions
-        .map(_statusLabel)
-        .reduce((a, b) => a.length >= b.length ? a : b);
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      // Title + controls that auto-wrap when crowded
+      OverflowBar(
+        alignment: MainAxisAlignment.spaceBetween, // spread left vs right group
+        overflowAlignment: OverflowBarAlignment.start,
+        spacing: 12,          // gap within a line
+        overflowSpacing: 8,   // gap between wrapped lines
+        children: [
+          // Left: title (allow ellipsis on narrow widths)
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Text(
+              widget.title,
+              style: Theme.of(context).textTheme.titleMedium,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
+            ),
+          ),
 
-    // Measure text width.
-    final tp = TextPainter(
-      text: TextSpan(text: longest, style: style),
-      textDirection: TextDirection.ltr,
-      maxLines: 1,
-    )..layout();
+          // Right: group the controls so they behave as one "block"
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              if (isLoggedIn) NewPostButton(type: PostType.enquiry),
+              _ControlsDropdown(
+                selectedStatus: selectedStatus,
+                statusOptions: _statusOptions,
+                statusIcon: _statusIcon,
+                statusLabel: _statusLabel,
+                initialQuery: _searchCtrl.text,
+                onStatusChanged: (v) => _updateQuery(context, status: v),
+                onQueryChanged: (val) {
+                  _debounce?.cancel();
+                  _debounce = Timer(_kDebounce, () {
+                    _updateQuery(context, q: val.trim());
+                  });
+                },
+                onClearQuery: () {
+                  _searchCtrl.clear();
+                  setState(() {}); // refresh suffix visibility if you mirror it
+                  _updateQuery(context, q: '');
+                },
+                height: _kControlHeight,
+                radius: _kRadius,
+                horizontalPad: _kHorzPad,
+              ),
+            ],
+          ),
+        ],
+      ),
+    ],
+  );
+}
 
-    final textW = tp.width;
 
-    // Add space for icons + gaps + padding:
-    //  leading icon (20) + gap (6) + trailing arrow (24) + outer padding (left+right)
-    const double leadingIcon = 20;
-    const double trailingIcon = 24;
-    const double innerGap = 6;
-    final double paddings = _kHorzPad * 2;
+}
 
-    return textW + leadingIcon + trailingIcon + innerGap + paddings + 8;
+class _ControlsDropdown extends StatefulWidget {
+  const _ControlsDropdown({
+    required this.selectedStatus,
+    required this.statusOptions,
+    required this.statusIcon,
+    required this.statusLabel,
+    required this.initialQuery,
+    required this.onStatusChanged,
+    required this.onQueryChanged,
+    required this.onClearQuery,
+    required this.height,
+    required this.radius,
+    required this.horizontalPad,
+  });
+
+  final String selectedStatus;
+  final List<String> statusOptions;
+  final IconData Function(String) statusIcon;
+  final String Function(String) statusLabel;
+
+  final String initialQuery;
+  final ValueChanged<String> onStatusChanged;
+  final ValueChanged<String> onQueryChanged;
+  final VoidCallback onClearQuery;
+
+  final double height;
+  final double radius;
+  final double horizontalPad;
+
+  @override
+  State<_ControlsDropdown> createState() => _ControlsDropdownState();
+}
+
+class _ControlsDropdownState extends State<_ControlsDropdown> {
+  final _menuController = MenuController();
+  late final TextEditingController _localSearchCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _localSearchCtrl = TextEditingController(text: widget.initialQuery);
+  }
+
+  @override
+  void dispose() {
+    _localSearchCtrl.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLoggedIn = ref.watch(isLoggedInProvider);
-    final selectedStatus = _statusFromUri(context);
+    // Anchor button styled like your NewPostButton
     final scheme = Theme.of(context).colorScheme;
-
-    final borderColor = scheme.outline; // matches TextField's outline tone
     final onVariant = scheme.onSurfaceVariant;
+    final bg = scheme.primary;
+    final fg = scheme.onPrimary;
+    final overlay = scheme.primary.withValues(alpha: 0.08);
 
-    // One border style to use for both controls
-    final border = OutlineInputBorder(
-      borderSide: BorderSide(color: borderColor, width: 1.2),
-      borderRadius: BorderRadius.circular(_kRadius),
+    final anchor = FilledButton(
+      style: ButtonStyle(
+        backgroundColor: WidgetStatePropertyAll(bg),
+        foregroundColor: WidgetStatePropertyAll(fg),
+        overlayColor: WidgetStatePropertyAll(overlay),
+        padding: WidgetStatePropertyAll(
+          EdgeInsets.symmetric(horizontal: widget.horizontalPad),
+        ),
+        minimumSize: WidgetStatePropertyAll(
+          Size(0, widget.height),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: const [
+          Icon(Icons.filter_alt, size: 20),
+        ],
+      ),
+      onPressed: () {
+        _menuController.isOpen
+            ? _menuController.close()
+            : _menuController.open();
+      },
     );
 
-    final filterWidth = _filterFixedWidth(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Title row
-        Row(
-          children: [
-            Text(widget.title, style: Theme.of(context).textTheme.titleMedium),
-            const Spacer(),
-            if (isLoggedIn) NewPostButton(type: PostType.enquiry),
-          ],
-        ),
-        const SizedBox(height: 8),
-        // Controls row
-        Row(
-          children: [
-            // Filter (PopupMenu) with fixed width & same visual language as TextField
-            SizedBox(
-              height: _kControlHeight,
-              width: filterWidth,
-              child: PopupMenuButton<String>(
-                tooltip: 'Filter',
-                onSelected: (v) => _updateQuery(context, status: v),
-                itemBuilder: (context) => _statusOptions.map((v) {
-                  final selected = v == selectedStatus;
-                  return PopupMenuItem<String>(
-                    value: v,
-                    child: Row(
-                      children: [
-                        Icon(_statusIcon(v), size: 20),
-                        const SizedBox(width: 8),
-                        Text(_statusLabel(v)),
-                        const Spacer(),
-                        if (selected) const Icon(Icons.check, size: 18),
-                      ],
-                    ),
-                  );
-                }).toList(),
-                // Use 'child' to render a custom-styled button matching the TextField
-                child: Ink(
-                  decoration: ShapeDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    shape: border, // OutlineInputBorder as ShapeBorder
+    // The dropdown content (card with filter + search)
+    final menuCard = ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 280, maxWidth: 360),
+      child: Card(
+        margin: EdgeInsets.zero,
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header row shows icons as “legend”
+              Row(
+                children: [
+                  Icon(Icons.filter_alt, size: 18, color: onVariant),
+                  const SizedBox(width: 6),
+                  Text('Filter', style: Theme.of(context).textTheme.labelLarge),
+                  const Spacer(),
+                  IconButton(
+                    tooltip: 'Close',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => _menuController.close(),
+                    icon: const Icon(Icons.close),
                   ),
-                  child: Padding(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: _kHorzPad), // match TF
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Icon(_statusIcon(selectedStatus), color: onVariant, size: 20),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            _statusLabel(selectedStatus),
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(color: onVariant),
-                          ),
-                        ),
-                        const Icon(Icons.arrow_drop_down, size: 24),
-                      ],
-                    ),
-                  ),
-                ),
+                ],
               ),
-            ),
-            SizedBox(width: _kGap),
-            // Search (TextField) with the same height & border styling
-            Expanded(
-              child: SizedBox(
-                height: _kControlHeight,
-                child: TextField(
-                  controller: _searchCtrl,
-                  textInputAction: TextInputAction.search,
-                  onChanged: (val) {
-                    _debounce?.cancel();
-                    _debounce = Timer(_kDebounce, () {
-                      _updateQuery(context, q: val.trim());
-                    });
+              const SizedBox(height: 8),
+              // Status filter as radio list
+              ...widget.statusOptions.map((opt) {
+                final selected = opt == widget.selectedStatus;
+                return RadioListTile<String>(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  value: opt,
+                  groupValue: widget.selectedStatus,
+                  onChanged: (v) {
+                    if (v == null) return;
+                    widget.onStatusChanged(v);
+                    setState(() {}); // just to reflect selection instantly
                   },
-                  decoration: InputDecoration(
-                    hintText: 'Search…',
-                    isDense: true, // keeps vertical density tight
-                    prefixIcon: const Icon(Icons.search),
-                    // Make the clear button live inside the field so heights stay identical
-                    suffixIcon: (_searchCtrl.text.isNotEmpty)
-                        ? IconButton(
-                            tooltip: 'Clear',
-                            onPressed: () {
-                              _searchCtrl.clear();
-                              setState(() {}); // refresh suffixIcon visibility
-                              _updateQuery(context, q: '');
-                            },
-                            icon: const Icon(Icons.clear),
-                          )
-                        : null,
-                    border: border,
-                    enabledBorder: border,
-                    focusedBorder: border.copyWith(
-                      borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.primary,
-                        width: 1.4,
-                      ),
-                    ),
-                    // Padding tuned to hit the same total height as the filter
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: _kHorzPad, vertical: 10),
+                  title: Row(
+                    children: [
+                      Icon(widget.statusIcon(opt), size: 18),
+                      const SizedBox(width: 8),
+                      Text(widget.statusLabel(opt)),
+                      if (selected) ...[
+                        const Spacer(),
+                        const Icon(Icons.check, size: 16),
+                      ],
+                    ],
                   ),
+                );
+              }),
+              const Divider(height: 20),
+              // Search section
+              Row(
+                children: [
+                  Icon(Icons.search, size: 18, color: onVariant),
+                  const SizedBox(width: 6),
+                  Text('Search', style: Theme.of(context).textTheme.labelLarge),
+                ],
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _localSearchCtrl,
+                textInputAction: TextInputAction.search,
+                onChanged: (val) => widget.onQueryChanged(val),
+                onSubmitted: (val) => widget.onQueryChanged(val),
+                decoration: InputDecoration(
+                  hintText: 'Type to search…',
+                  isDense: true,
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _localSearchCtrl.text.isNotEmpty
+                      ? IconButton(
+                          tooltip: 'Clear',
+                          onPressed: () {
+                            _localSearchCtrl.clear();
+                            widget.onClearQuery();
+                            setState(() {});
+                          },
+                          icon: const Icon(Icons.clear),
+                        )
+                      : null,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(widget.radius),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              // Footer actions
+              Row(
+                children: [
+                  TextButton.icon(
+                    onPressed: () {
+                      // Reset to defaults
+                      widget.onStatusChanged('all');
+                      _localSearchCtrl.clear();
+                      widget.onClearQuery();
+                      setState(() {});
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Reset'),
+                  ),
+                  const Spacer(),
+                  FilledButton.icon(
+                    onPressed: () => _menuController.close(),
+                    icon: const Icon(Icons.check),
+                    label: const Text('Done'),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+
+    // Use MenuAnchor when available (Flutter Material 3). It keeps the menu open while interacting.
+    return MenuAnchor(
+      controller: _menuController,
+      alignmentOffset: const Offset(0, 8),
+      menuChildren: [
+        // Wrap in IntrinsicWidth so the card sizes to content
+        IntrinsicWidth(child: menuCard),
       ],
+      builder: (context, controller, child) {
+        return InkWell(
+          onTap: () {
+            controller.isOpen ? controller.close() : controller.open();
+          },
+          borderRadius: BorderRadius.circular(widget.radius),
+          child: anchor,
+        );
+      },
     );
   }
 }
+
 
 
 /// ─────────────────────────────────────────────────────────────────────────

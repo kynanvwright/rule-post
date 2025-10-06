@@ -13,7 +13,7 @@ class TwoPaneFourSlot extends StatefulWidget {
 
     // Layout controls (same spirit as before)
     this.initialLeftWidth = 320,
-    this.minLeftWidth = 240,
+    this.minLeftWidth = 300,
     this.maxLeftWidth = 520,
     this.collapseBreakpoint = 820, // below this, left becomes a drawer
     this.tightBreakpoint = 600,    // below this, we gently scale content

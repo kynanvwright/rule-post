@@ -86,6 +86,7 @@ A website for facilitating America's Cup Rule Enquiries.
 - In navigation pane, allow final RC response to be labelled 'interpretation' or 'amendment'
 - Add subheaders to navigation pane for rounds
 - Add symbols with colour-coding for colour-blind folks
+- Make left pane collapsible
 
 ### 📧 Notifications & Alerts
 - Add (toggleable) email alerts to users for when:
