@@ -466,6 +466,19 @@ export const createPost = onCall<CreatePostData>(
       tx.set(docRef, publicDoc);
       tx.set(docRef.collection("meta").doc("data"), metaDoc);
 
+      // generate documents for draft retrieval
+      const draftRef = db
+        .collection("drafts")
+        .doc(authorTeam)
+        .collection(postType)
+        .doc();
+      const draftDoc: Record<string, unknown> = {
+        createdAt: now,
+        postType,
+        parentIds: data.parentIds,
+      };
+      tx.set(draftRef, draftDoc);
+
       return { id: postId };
     });
 
