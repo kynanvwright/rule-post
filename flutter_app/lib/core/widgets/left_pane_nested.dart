@@ -495,6 +495,7 @@ class _EnquiriesTree extends StatelessWidget {
               title: _RowTile(
                 label: 'RE #$n - $title',
                 selected: selected && initiallyOpenResponseId == null,
+                showSubtitle: data['isPublished'] == false,
                 onTap: () {
                   TwoPaneScope.of(context)?.closeDrawer();
                   context.go('/enquiries/$id');
@@ -594,9 +595,10 @@ class _ResponsesBranch extends StatelessWidget {
 /// Row tile shared style
 /// ─────────────────────────────────────────────────────────────────────────
 class _RowTile extends StatelessWidget {
-  const _RowTile({required this.label, this.selected = false, this.onTap});
+  const _RowTile({required this.label, this.selected = false, this.showSubtitle = false, this.onTap});
   final String label;
   final bool selected;
+  final bool showSubtitle;
   final VoidCallback? onTap;
 
   @override
@@ -612,6 +614,12 @@ class _RowTile extends StatelessWidget {
           fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
         ),
       ),
+      subtitle: showSubtitle
+          ? const Text(
+              '(Unpublished)',
+              style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+            )
+          : null,
       onTap: onTap,
       selected: selected,
     );
@@ -636,7 +644,8 @@ Query<Map<String, dynamic>> buildEnquiriesQuery(Map<String, String> filter) {
         toFirestore: (v, _) => v,
       );
 
-  final status = filter['status'] ?? filterDefault; // default filter
+  final status = filter['status'] ?? filterDefault;
+
   switch (status) {
     case 'open':
       q = q.where('isOpen', isEqualTo: true);
@@ -648,8 +657,9 @@ Query<Map<String, dynamic>> buildEnquiriesQuery(Map<String, String> filter) {
       break;
   }
 
-  // Always keep a stable default order.
   q = q.orderBy('enquiryNumber', descending: true);
   return q;
 }
+
+
 
