@@ -469,8 +469,8 @@ export const createPost = onCall<CreatePostData>(
       // generate documents for draft retrieval
       const draftRef = db
         .collection("drafts")
-        .doc(authorTeam)
-        .collection(postType)
+        .doc("posts")
+        .collection(authorTeam)
         .doc();
       const draftDoc: Record<string, unknown> = {
         createdAt: now,
