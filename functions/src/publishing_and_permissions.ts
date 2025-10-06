@@ -1,5 +1,6 @@
 // import * as admin from "firebase-admin";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
+import { logger } from "firebase-functions";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { DateTime } from "luxon";
 
@@ -96,22 +97,43 @@ export const enquiryPublisher = onSchedule(
     }
 
     const writer = db.bulkWriter();
-    let updated = 0;
+    let published = 0;
+    let draftsQueued = 0;
 
-    snap.docs.forEach((doc) => {
+    for (const doc of snap.docs) {
+      // --- 1. Queue publish update ---
       writer.update(doc.ref, {
         isPublished: true,
         publishedAt,
         stageEnds: Timestamp.fromDate(stageEndsDate),
       });
-      updated += 1;
-    });
+      published += 1;
+
+      // --- 2. Get team from meta subdoc ---
+      const metaSnap = await doc.ref.collection("meta").doc("data").get();
+      const team = metaSnap.exists ? metaSnap.get("authorTeam") : undefined;
+
+      if (!team) {
+        logger.warn(
+          `[enquiryPublisher] No team found for ${doc.id}, skipping draft delete.`,
+        );
+        continue;
+      }
+
+      // --- 3. Queue draft delete ---
+      const draftRef = db
+        .collection("drafts")
+        .doc("posts")
+        .collection(team)
+        .doc(doc.id);
+      writer.delete(draftRef);
+      draftsQueued += 1;
+    }
 
     await writer.close();
 
-    console.log(
-      `[enquiryPublisher] Updated ${updated} enquiries. stageEnds=` +
-        stageEndsDate.toISOString(),
+    logger.info(
+      `[enquiryPublisher] Published ${published} enquiries; queued ${draftsQueued} draft deletions.`,
     );
   },
 );
@@ -166,6 +188,25 @@ export const teamResponsePublisher = onSchedule(
             responseNumber: i + 1,
             publishedAt,
           });
+          // --- Draft delete ---
+          const metaSnap = await sorted[i].ref
+            .collection("meta")
+            .doc("data")
+            .get();
+          const team = metaSnap.exists ? metaSnap.get("authorTeam") : undefined;
+          if (!team) {
+            logger.warn(
+              `[teamResponsePublisher] No team found for ${sorted[i].id}, skipping draft delete.`,
+            );
+            continue;
+          }
+          const draftRef = db
+            .collection("drafts")
+            .doc("posts")
+            .collection(team)
+            .doc(sorted[i].id);
+          writer.delete(draftRef);
+
           totalResponsesPublished += 1;
         }
       }
@@ -178,6 +219,25 @@ export const teamResponsePublisher = onSchedule(
             responseNumber: i + 1,
             publishedAt,
           });
+          // --- Draft delete ---
+          const metaSnap = await docs[i].ref
+            .collection("meta")
+            .doc("data")
+            .get();
+          const team = metaSnap.exists ? metaSnap.get("authorTeam") : undefined;
+          if (!team) {
+            logger.warn(
+              `[teamResponsePublisher] No team found for ${docs[i].id}, skipping draft delete.`,
+            );
+            continue;
+          }
+          const draftRef = db
+            .collection("drafts")
+            .doc("posts")
+            .collection(team)
+            .doc(docs[i].id);
+          writer.delete(draftRef);
+
           totalResponsesPublished += 1;
         }
       }
@@ -257,13 +317,30 @@ export const commentPublisher = onSchedule(
           continue;
         }
 
-        unpublishedCommentsSnap.docs.forEach((c) => {
+        for (const c of unpublishedCommentsSnap.docs) {
+          // --- 1. Publish comments ---
           writer.update(c.ref, {
             isPublished: true,
             publishedAt: FieldValue.serverTimestamp(),
           });
           totalCommentsPublished += 1;
-        });
+
+          // --- 2. Draft deletion ---
+          const metaSnap = await c.ref.collection("meta").doc("data").get();
+          const team = metaSnap.exists ? metaSnap.get("authorTeam") : undefined;
+          if (!team) {
+            logger.warn(
+              `[commentPublisher] No team found for ${c.id}, skipping draft delete.`,
+            );
+            continue;
+          }
+          const draftRef = db
+            .collection("drafts")
+            .doc("posts")
+            .collection(team)
+            .doc(c.id);
+          writer.delete(draftRef);
+        }
       }
 
       const stageEnds = enquiry.stageEnds as
@@ -377,6 +454,25 @@ export const committeeResponsePublisher = onSchedule(
             // roundNumber: roundNumber + 1,
             // responseNumber: 0,
           });
+
+          // Delete response draft
+          const metaSnap = await committeeDoc.ref
+            .collection("meta")
+            .doc("data")
+            .get();
+          const team = metaSnap.exists ? metaSnap.get("authorTeam") : undefined;
+          if (!team) {
+            logger.warn(
+              `[committeeResponsePublisher] No team found for ${committeeDoc.id}.`,
+            );
+          } else {
+            const draftRef = db
+              .collection("drafts")
+              .doc("posts")
+              .collection(team)
+              .doc(committeeDoc.id);
+            tx.delete(draftRef);
+          }
 
           const nextStageEnds = computeStageEnds(4, { hour: 19, minute: 55 });
 

@@ -1,4 +1,5 @@
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
+import { logger } from "firebase-functions";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 
 import { computeStageEnds } from "./publishing_and_permissions";
@@ -98,6 +99,21 @@ export const committeeResponseInstantPublisher = onCall(
           roundNumber: roundNumber + 1,
           responseNumber: 0,
         });
+        // Delete response draft
+        const metaSnap = await responseRef.collection("meta").doc("data").get();
+        const team = metaSnap.exists ? metaSnap.get("authorTeam") : undefined;
+        if (!team) {
+          logger.warn(
+            `[committeeResponseInstantPublisher] No team found for ${responseSnap.id}.`,
+          );
+        } else {
+          const draftRef = db
+            .collection("drafts")
+            .doc("posts")
+            .collection(team)
+            .doc(responseSnap.id);
+          tx.delete(draftRef);
+        }
 
         const nextStageEnds = computeStageEnds(4, { hour: 19, minute: 55 });
 

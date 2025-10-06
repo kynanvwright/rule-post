@@ -1,4 +1,5 @@
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
+import { logger } from "firebase-functions";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 
 import { computeStageEnds } from "./publishing_and_permissions";
@@ -61,6 +62,24 @@ export const teamResponseInstantPublisher = onCall(
           responseNumber: i + 1,
           publishedAt,
         });
+        // --- Draft delete ---
+        const metaSnap = await sorted[i].ref
+          .collection("meta")
+          .doc("data")
+          .get();
+        const team = metaSnap.exists ? metaSnap.get("authorTeam") : undefined;
+        if (!team) {
+          logger.warn(
+            `[teamResponsePublisher] No team found for ${sorted[i].id}, skipping draft delete.`,
+          );
+          continue;
+        }
+        const draftRef = db
+          .collection("drafts")
+          .doc("posts")
+          .collection(team)
+          .doc(sorted[i].id);
+        writer.delete(draftRef);
         totalResponsesPublished += 1;
       }
     }
@@ -73,6 +92,21 @@ export const teamResponseInstantPublisher = onCall(
           responseNumber: i + 1,
           publishedAt,
         });
+        // --- Draft delete ---
+        const metaSnap = await docs[i].ref.collection("meta").doc("data").get();
+        const team = metaSnap.exists ? metaSnap.get("authorTeam") : undefined;
+        if (!team) {
+          logger.warn(
+            `[teamResponseInstantPublisher] No team found for ${docs[i].id}, skipping draft delete.`,
+          );
+          continue;
+        }
+        const draftRef = db
+          .collection("drafts")
+          .doc("posts")
+          .collection(team)
+          .doc(docs[i].id);
+        writer.delete(draftRef);
         totalResponsesPublished += 1;
       }
     }
