@@ -15,7 +15,7 @@ Future<void> onCreatePostPressed(
   List<String>? parentIds,
 }) async {
   try {
-    final newId = await showProgressFlow<String>(
+    await showProgressFlow<String>(
       context: context,
       steps: const [
         'Checking user authentication…',
@@ -45,7 +45,8 @@ Future<void> onCreatePostPressed(
 
     // Optional follow-up (post dialog)
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Created post: $newId')),
+      // SnackBar(content: Text('Created post: $newId')),
+      SnackBar(content: Text('Created $postType')),
     );
   } catch (e) {
     // Failure already shown in the dialog; optionally log or map errors:
