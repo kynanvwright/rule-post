@@ -34,7 +34,4 @@ export {
   onCommentIsPublishedUpdated,
   sendPublishDigest,
 } from "./send_email_on_publish";
-export {
-  findDrafts,
-  hasDrafts,
-} from "./find_my_drafts";
+export { findDrafts, hasDrafts } from "./find_my_drafts";
