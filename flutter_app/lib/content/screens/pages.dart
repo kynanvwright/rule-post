@@ -575,6 +575,14 @@ class _ChildrenSection extends ConsumerWidget {
                 final titleSnippet = title.isEmpty
                     ? null
                     : (title.length > 140 ? '${title.substring(0, 140)}…' : title);
+                final commentCount = d['commentCount'] ?? '';
+                final trailingText = Text(
+                  (enquiryId == ''
+                  ? ''
+                    : '($commentCount comments) ') +
+                  (t == null 
+                  ? '' 
+                    : _fmtRelativeTime(t)));
 
                 tile = ListTile(
                   title: !isPublished
@@ -583,7 +591,7 @@ class _ChildrenSection extends ConsumerWidget {
                   ? Text('Response $roundNumber.$responseNumber (Rules Committee)')
                   : Text('Response $roundNumber.$responseNumber'),
                   subtitle: titleSnippet == null ? null : Text(titleSnippet),
-                  trailing: Text(t == null ? '' : _fmtRelativeTime(t)),
+                  trailing: trailingText,
                   onTap: () => context.go('/enquiries/$enquiryId/responses/$responseId'),
                 );
               } else if (segments.contains('comments')) {
