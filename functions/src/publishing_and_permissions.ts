@@ -322,7 +322,7 @@ export const commentPublisher = onSchedule(
           writer.update(c.ref, {
             isPublished: true,
             publishedAt: FieldValue.serverTimestamp(),
-            commentNumber: i+1,
+            commentNumber: i + 1,
           });
           totalCommentsPublished += 1;
 
