@@ -255,18 +255,16 @@ class ResponseDetailPage extends StatelessWidget {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      if (enquiry.containsKey('isOpen'))
-                        _StatusChip(isOpen ? 'Enquiry in progress' : 'Enquiry closed',
-                          color: isOpen ? Colors.green : Colors.red),
-                      if (enquiry.containsKey('roundNumber') && response.containsKey('roundNumber')) ...[
-                        _StatusChip(currentRound ? 'Round in progress' : 'Round closed',
-                          color: currentRound ? Colors.green : Colors.red),
-                      if (response.containsKey('teamsCanComment') && teamsCanComment)
+                      if (enquiry.containsKey('isOpen') && !isOpen)
+                        _StatusChip('Enquiry closed', color: Colors.red)
+                      else if (enquiry.containsKey('roundNumber') && response.containsKey('roundNumber') && !currentRound)
+                        _StatusChip('Round closed', color: Colors.red)
+                      else if (enquiry.containsKey('teamsCanComment'))
                         _StatusChip(teamsCanComment ? 'Competitors may comment' : 'Comments closed', 
                         color: teamsCanComment ? Colors.green : Colors.red),
+                      
                       if (response.containsKey('fromRC') && fromRC)
                         const _StatusChip('Rules Committee Response', color: Colors.blue),
-                      ],
                     ],
                   ),
                 // SUMMARY
