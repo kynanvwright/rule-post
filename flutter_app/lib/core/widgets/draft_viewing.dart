@@ -116,7 +116,11 @@ Stream<List<DocView>> combinedResponsesStream({
   final db = FirebaseFirestore.instance;
 
   // Helper: apply status filter + stable sort
-  List<DocView> _sortPosts(List<DocView> items) {
+  List<DocView> _sortPosts(
+    List<DocView> items, {
+    bool ascendingRound = true,
+    bool ascendingResponse = true,
+  }) {
     final all = [...items]; // copy to avoid mutating input
     all.sort((a, b) {
       final aData = a.data();
@@ -127,23 +131,26 @@ Stream<List<DocView>> combinedResponsesStream({
       final aResponse = (aData['responseNumber'] ?? 99) as num;
       final bResponse = (bData['responseNumber'] ?? 99) as num;
 
-      // 1️⃣ Primary: isOpen (true first)
-      final openCompare = bRound.compareTo(aRound);
-      if (openCompare != 0) return openCompare;
+      // 1️⃣ Primary: roundNumber
+      final roundCompare = ascendingRound
+          ? aRound.compareTo(bRound)
+          : bRound.compareTo(aRound);
+      if (roundCompare != 0) return roundCompare;
 
-      // 2️⃣ Secondary: enquiryNumber (descending)
-      return bResponse.compareTo(aResponse);
+      // 2️⃣ Secondary: responseNumber
+      return ascendingResponse
+          ? aResponse.compareTo(bResponse)
+          : bResponse.compareTo(aResponse);
     });
     return all;
   }
+
   // 1) Public, published enquiries
   final public$ = db
       .collection('enquiries')
       .doc(enquiryId)
       .collection('responses')
       .where('isPublished', isEqualTo: true)
-      .orderBy('roundNumber', descending: false)
-      .orderBy('responseNumber', descending: false)
       .withConverter<Map<String, dynamic>>(
         fromFirestore: (s, _) => s.data() ?? {},
         toFirestore: (v, _) => v,
@@ -225,23 +232,24 @@ Stream<List<DocView>> combinedCommentsStream({
   final db = FirebaseFirestore.instance;
 
   // Helper: apply status filter + stable sort
-  List<DocView> _sortPosts(List<DocView> items) {
+  List<DocView> _sortPosts(
+    List<DocView> items, {
+    bool ascending = true,
+  }) {
     final all = [...items]; // copy to avoid mutating input
     all.sort((a, b) {
       final aData = a.data();
       final bData = b.data();
 
-      final aRound = (aData['roundNumber'] ?? 99) as num;
-      final bRound = (bData['roundNumber'] ?? 99) as num;
-      final aResponse = (aData['responseNumber'] ?? 99) as num;
-      final bResponse = (bData['responseNumber'] ?? 99) as num;
+      final aComment = (aData['commentNumber'] ?? 99) as num;
+      final bComment = (bData['commentNumber'] ?? 99) as num;
 
-      // 1️⃣ Primary: isOpen (true first)
-      final openCompare = bRound.compareTo(aRound);
-      if (openCompare != 0) return openCompare;
+      // 1️⃣ Primary: roundNumber
+      final compare = ascending
+          ? aComment.compareTo(bComment)
+          : bComment.compareTo(aComment);
 
-      // 2️⃣ Secondary: enquiryNumber (descending)
-      return bResponse.compareTo(aResponse);
+      return compare;
     });
     return all;
   }
@@ -254,8 +262,6 @@ Stream<List<DocView>> combinedCommentsStream({
       .doc(responseId)
       .collection('comments')
       .where('isPublished', isEqualTo: true)
-      .orderBy('roundNumber', descending: false)
-      .orderBy('responseNumber', descending: false)
       .withConverter<Map<String, dynamic>>(
         fromFirestore: (s, _) => s.data() ?? {},
         toFirestore: (v, _) => v,

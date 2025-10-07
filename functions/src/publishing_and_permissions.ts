@@ -317,11 +317,12 @@ export const commentPublisher = onSchedule(
           continue;
         }
 
-        for (const c of unpublishedCommentsSnap.docs) {
+        for (const [i, c] of unpublishedCommentsSnap.docs.entries()) {
           // --- 1. Publish comments ---
           writer.update(c.ref, {
             isPublished: true,
             publishedAt: FieldValue.serverTimestamp(),
+            commentNumber: i+1,
           });
           totalCommentsPublished += 1;
 
