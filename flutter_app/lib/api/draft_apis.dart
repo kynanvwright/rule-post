@@ -36,7 +36,7 @@ Future<bool> hasDrafts() async {
     final result = await callable.call();
     final bool foundDrafts = result.data as bool;
 
-    debugPrint('✅ User created: ${result.data}');
+    debugPrint('✅ Drafts searched and match result is: $foundDrafts');
     return foundDrafts;
   } on FirebaseFunctionsException catch (e) {
     debugPrint('❌ Cloud Function error: ${e.code} – ${e.message}');
