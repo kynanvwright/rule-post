@@ -60,6 +60,7 @@ class EnquiryDetailPage extends StatelessWidget {
 
             // Optional status flags. Only show if present.
             final isOpen = data['isOpen'] ?? false;
+            final isPublished = data['isPublished'] ?? false;
             final teamsCanRespond = data['teamsCanRespond'] ?? false;
             final teamsCanComment = data['teamsCanComment'] ?? false;
             final fromRC = data['fromRC'] ?? false;
@@ -67,14 +68,16 @@ class EnquiryDetailPage extends StatelessWidget {
             final userTeam = ref.watch(teamProvider);
             final isAdmin = userRole == 'admin';
             final isRC = userTeam == 'RC';
-            final lockedResponses = (isRC && teamsCanRespond) || (!isRC && (!isOpen || !teamsCanRespond));
+            final lockedResponses = !isPublished || (isRC && teamsCanRespond) || (!isRC && (!isOpen || !teamsCanRespond));
             final lockedResponseReason = !lockedResponses
               ? ''
-                : isRC
-                  ? 'Competitor response window currently open'
-                    : !data['isOpen']
-                      ? 'Enquiry closed'
-                        : 'Responses currently closed';
+                : !isPublished
+                  ? "Can't respond to unpublished enquiry"
+                    : isRC
+                      ? 'Competitor response window currently open'
+                        : !data['isOpen']
+                          ? 'Enquiry closed'
+                            : 'Responses currently closed';
 
             // Record latest visit (runs after this frame to avoid write-in-build)
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -210,6 +213,7 @@ class ResponseDetailPage extends StatelessWidget {
                 final attachments =
                     (response['attachments'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
                 final fromRC = response['fromRC'] ?? false;
+                final isPublished = response['isPublished'] ?? false;
 
                 // --- enquiry fields ---
                 final enquiryNumber = (enquiry['enquiryNumber'] ?? 'x').toString();
@@ -218,18 +222,20 @@ class ResponseDetailPage extends StatelessWidget {
                 final teamsCanComment = enquiry['teamsCanComment'] ?? false;
                 final userTeam = ref.watch(teamProvider);
                 final isRC = userTeam == 'RC';
-                final lockedComments = isRC || fromRC || !isOpen || !currentRound || !teamsCanComment;
+                final lockedComments = !isPublished || isRC || fromRC || !isOpen || !currentRound || !teamsCanComment;
                 final lockedCommentReason = !lockedComments
                   ? ''
-                    : isRC
-                      ? 'Rules Committee may not comment'
-                        : fromRC
-                          ? 'No comments on Rules Committee responses'
-                            : !isOpen
-                              ? 'Enquiry closed'
-                                : !currentRound
-                                  ? 'This round is closed'
-                                    : 'Comments currently closed';
+                    : !isPublished
+                      ? "Can't comment on unpublished response"
+                        : isRC
+                          ? 'Rules Committee may not comment'
+                            : fromRC
+                              ? 'No comments on Rules Committee responses'
+                                : !isOpen
+                                  ? 'Enquiry closed'
+                                    : !currentRound
+                                      ? 'This round is closed'
+                                        : 'Comments currently closed';
 
                 // Record latest visit (runs after this frame to avoid write-in-build)
                 WidgetsBinding.instance.addPostFrameCallback((_) {
