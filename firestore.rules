@@ -94,5 +94,11 @@ service cloud.firestore {
     match /appData/{doc} {
       allow read, write: if false;
     }
+    
+    match /drafts/posts {
+    	match /{collectionID}/{doc} {
+      	allow read: if userTeam() == collectionID;
+      }
+    }
   }
 }

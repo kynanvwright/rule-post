@@ -471,7 +471,7 @@ export const createPost = onCall<CreatePostData>(
         .collection("drafts")
         .doc("posts")
         .collection(authorTeam)
-        .doc();
+        .doc(postId);
       const draftDoc: Record<string, unknown> = {
         createdAt: now,
         postType,

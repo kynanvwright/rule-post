@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher_string.dart';
 
 import '../../content/widgets/new_post_button.dart';
 import '../../riverpod/user_detail.dart';
+import '../widgets/draft_viewing.dart';
 import 'two_panel_shell.dart';
 
 final filterDefault = 'open';
@@ -428,10 +429,12 @@ class _EnquiriesTree extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final listQuery = buildEnquiriesQuery(filter);
+    // final listQuery = buildEnquiriesQuery(filter);
+    final teamId = 'NZL';
+    final rawQ = (filter['q'] ?? '').trim().toLowerCase();
 
-    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: listQuery.snapshots(),
+    return StreamBuilder<List<DocView>>(
+      stream: combinedEnquiriesStream(teamId: teamId, filter: filter),
       builder: (context, snap) {
         if (snap.hasError) {
           final error = snap.error.toString();
@@ -463,22 +466,18 @@ class _EnquiriesTree extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final docsSnap = snap.data!.docs;
-        final rawQ = (filter['q'] ?? '').trim().toLowerCase();
+        // keep your client-side search
+        List<DocView> docs = snap.data!;
+        if (rawQ.isNotEmpty) {
+          docs = docs.where((d) {
+            final data = d.data();
+            final title = (data['title'] ?? '').toString().toLowerCase();
+            final numStr = (data['enquiryNumber'] ?? '').toString().toLowerCase();
+            return title.contains(rawQ) || numStr.contains(rawQ);
+          }).toList();
+        }
 
-        final docs = rawQ.isEmpty
-            ? docsSnap
-            : docsSnap.where((d) {
-                final data = d.data();
-                final title = (data['title'] ?? '').toString().toLowerCase();
-                // Optional: also search enquiry number string
-                final numStr = (data['enquiryNumber'] ?? '').toString().toLowerCase();
-                return title.contains(rawQ) || numStr.contains(rawQ);
-              }).toList();
-
-
-        if (docs.isEmpty) return const Center(child: Text('No matching enquiries'));
-
+        // ⬇️ YOUR EXISTING LIST BUILDER — unchanged
         return ListView.builder(
           itemCount: docs.length,
           itemBuilder: (context, i) {
