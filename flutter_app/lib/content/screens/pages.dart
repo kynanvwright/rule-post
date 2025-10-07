@@ -554,7 +554,7 @@ class _ChildrenSection extends ConsumerWidget {
             itemBuilder: (context, i) {
               final d = docs[i].data();
               final id = docs[i].id;
-              final t = (d['publishedAt'] as Timestamp?)?.toDate();
+              // final t = (d['publishedAt'] as Timestamp?)?.toDate();
               final title = (d['title'] ?? '').toString().trim();
               final text = (d['postText'] ?? '').toString().trim();
               final roundNumber = (d['roundNumber'] ?? 'x').toString().trim();
@@ -576,13 +576,7 @@ class _ChildrenSection extends ConsumerWidget {
                     ? null
                     : (title.length > 140 ? '${title.substring(0, 140)}…' : title);
                 final commentCount = d['commentCount'] ?? 0;
-                final trailingText = Text(
-                  (commentCount == 0
-                  ? ''
-                    : '($commentCount comments) ') +
-                  (t == null 
-                  ? '' 
-                    : _fmtRelativeTime(t)));
+                final trailingText = Text('$commentCount comments');
 
                 tile = ListTile(
                   title: !isPublished
@@ -839,14 +833,14 @@ class MetaChips extends StatelessWidget {
 }
 
 /// -------------------- UTIL --------------------
-String _fmtRelativeTime(DateTime dt) {
-  final now = DateTime.now();
-  final diff = now.difference(dt);
-  if (diff.inSeconds < 60) return '${diff.inSeconds}s ago';
-  if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-  if (diff.inHours < 24) return '${diff.inHours}h ago';
-  return '${diff.inDays}d ago';
-}
+// String _fmtRelativeTime(DateTime dt) {
+//   final now = DateTime.now();
+//   final diff = now.difference(dt);
+//   if (diff.inSeconds < 60) return '${diff.inSeconds}s ago';
+//   if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+//   if (diff.inHours < 24) return '${diff.inHours}h ago';
+//   return '${diff.inDays}d ago';
+// }
 
 Color parseHexColour(String hex) {
   final s = hex.replaceFirst('#', '');
