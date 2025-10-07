@@ -342,6 +342,13 @@ export const commentPublisher = onSchedule(
             .doc(c.id);
           writer.delete(draftRef);
         }
+        // Record number of comments published against that response
+        const publishedCommentsSnap = await commentsCol
+          .where("isPublished", "==", true)
+          .get();
+        writer.update(respDoc.ref, {
+          commentCount: publishedCommentsSnap.size,
+        });
       }
 
       const stageEnds = enquiry.stageEnds as
