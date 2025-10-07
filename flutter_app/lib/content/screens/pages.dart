@@ -575,9 +575,9 @@ class _ChildrenSection extends ConsumerWidget {
                 final titleSnippet = title.isEmpty
                     ? null
                     : (title.length > 140 ? '${title.substring(0, 140)}…' : title);
-                final commentCount = d['commentCount'] ?? '';
+                final commentCount = d['commentCount'] ?? 0;
                 final trailingText = Text(
-                  (enquiryId == ''
+                  (commentCount == 0
                   ? ''
                     : '($commentCount comments) ') +
                   (t == null 
