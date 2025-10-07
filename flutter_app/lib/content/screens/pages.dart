@@ -579,10 +579,10 @@ class _ChildrenSection extends ConsumerWidget {
                     : (title.length > 140 ? '${title.substring(0, 140)}…' : title);
 
                 tile = ListTile(
-                  title: fromRC 
-                  ? Text('Response $roundNumber.$responseNumber (Rules Committee)') 
-                  : !isPublished
+                  title: !isPublished
                   ? Text('Response $roundNumber.$responseNumber (Draft)') 
+                  : fromRC 
+                  ? Text('Response $roundNumber.$responseNumber (Rules Committee)')
                   : Text('Response $roundNumber.$responseNumber'),
                   subtitle: titleSnippet == null ? null : Text(titleSnippet),
                   trailing: Text(t == null ? '' : _fmtRelativeTime(t)),
