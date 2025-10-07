@@ -123,6 +123,7 @@ A website for facilitating America's Cup Rule Enquiries.
 - Enforce overall enquiry timeline even if RC responds late
   - notify Competitors that they have slightly less time than is ideal
 - Document attachment is now really slow, look into this and streamline
+- Padding doesn't look even in left header pane
 
 ## Other Notes
 - Check how it looks on various devices

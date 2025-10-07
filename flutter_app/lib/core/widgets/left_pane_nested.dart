@@ -93,70 +93,68 @@ class _LeftPaneHeaderState extends ConsumerState<LeftPaneHeader> {
     context.go(Uri(path: s.path, queryParameters: params).toString());
   }
 
-@override
-Widget build(BuildContext context) {
-  final isLoggedIn = ref.watch(isLoggedInProvider);
-  final selectedStatus = _statusFromUri(context);
+  @override
+  Widget build(BuildContext context) {
+    final isLoggedIn = ref.watch(isLoggedInProvider);
+    final selectedStatus = _statusFromUri(context);
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      // Title + controls that auto-wrap when crowded
-      OverflowBar(
-        alignment: MainAxisAlignment.spaceBetween, // spread left vs right group
-        overflowAlignment: OverflowBarAlignment.start,
-        spacing: 12,          // gap within a line
-        overflowSpacing: 8,   // gap between wrapped lines
-        children: [
-          // Left: title (allow ellipsis on narrow widths)
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Text(
-              widget.title,
-              style: Theme.of(context).textTheme.titleMedium,
-              overflow: TextOverflow.ellipsis,
-              softWrap: false,
-            ),
-          ),
-
-          // Right: group the controls so they behave as one "block"
-          Wrap(
-            spacing: 12,
-            runSpacing: 8,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              if (isLoggedIn) NewPostButton(type: PostType.enquiry),
-              _ControlsDropdown(
-                selectedStatus: selectedStatus,
-                statusOptions: _statusOptions,
-                statusIcon: _statusIcon,
-                statusLabel: _statusLabel,
-                initialQuery: _searchCtrl.text,
-                onStatusChanged: (v) => _updateQuery(context, status: v),
-                onQueryChanged: (val) {
-                  _debounce?.cancel();
-                  _debounce = Timer(_kDebounce, () {
-                    _updateQuery(context, q: val.trim());
-                  });
-                },
-                onClearQuery: () {
-                  _searchCtrl.clear();
-                  setState(() {}); // refresh suffix visibility if you mirror it
-                  _updateQuery(context, q: '');
-                },
-                height: _kControlHeight,
-                radius: _kRadius,
-                horizontalPad: _kHorzPad,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Title + controls that auto-wrap when crowded
+        OverflowBar(
+          alignment: MainAxisAlignment.spaceBetween, // spread left vs right group
+          overflowAlignment: OverflowBarAlignment.start,
+          spacing: 12,          // gap within a line
+          overflowSpacing: 8,   // gap between wrapped lines
+          children: [
+            // Left: title (allow ellipsis on narrow widths)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Text(
+                widget.title,
+                style: Theme.of(context).textTheme.titleMedium,
+                overflow: TextOverflow.ellipsis,
+                softWrap: false,
               ),
-            ],
-          ),
-        ],
-      ),
-    ],
-  );
-}
+            ),
 
-
+            // Right: group the controls so they behave as one "block"
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                if (isLoggedIn) NewPostButton(type: PostType.enquiry),
+                _ControlsDropdown(
+                  selectedStatus: selectedStatus,
+                  statusOptions: _statusOptions,
+                  statusIcon: _statusIcon,
+                  statusLabel: _statusLabel,
+                  initialQuery: _searchCtrl.text,
+                  onStatusChanged: (v) => _updateQuery(context, status: v),
+                  onQueryChanged: (val) {
+                    _debounce?.cancel();
+                    _debounce = Timer(_kDebounce, () {
+                      _updateQuery(context, q: val.trim());
+                    });
+                  },
+                  onClearQuery: () {
+                    _searchCtrl.clear();
+                    setState(() {}); // refresh suffix visibility if you mirror it
+                    _updateQuery(context, q: '');
+                  },
+                  height: _kControlHeight,
+                  radius: _kRadius,
+                  horizontalPad: _kHorzPad,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 }
 
 class _ControlsDropdown extends StatefulWidget {
