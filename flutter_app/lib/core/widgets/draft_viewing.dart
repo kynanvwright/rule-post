@@ -4,8 +4,9 @@ import 'package:flutter/foundation.dart';
 
 class DocView {
   final String id;
+  final DocumentReference<Map<String, dynamic>> reference;
   final Map<String, dynamic> _data;
-  DocView(this.id, this._data);
+  DocView(this.id, this.reference, this._data);
   Map<String, dynamic> data() => _data;
 }
 
@@ -42,7 +43,7 @@ Stream<List<DocView>> combinedEnquiriesStream({
         toFirestore: (v, _) => v,
       )
       .snapshots()
-      .map((snap) => snap.docs.map((d) => DocView(d.id, d.data())).toList())
+      .map((snap) => snap.docs.map((d) => DocView(d.id, d.reference, d.data())).toList())
       .map(_filterAndSort); // pre-filter/sort so we can short-circuit later
   if (teamId == null) {
       debugPrint('[combinedEnquiriesStream] ⏭ Not logged in — skipping draftDocStreams.');
@@ -83,7 +84,7 @@ Stream<List<DocView>> combinedEnquiriesStream({
       return docRef
           .snapshots()
           // if readable: map to DocView (or null when deleted)
-          .map<DocView?>((ds) => ds.exists ? DocView(ds.id, ds.data()!) : null)
+          .map<DocView?>((ds) => ds.exists ? DocView(ds.id, ds.reference, ds.data()!) : null)
           // if NOT readable (permission-denied), just emit null instead of error
           .onErrorReturn(null)
           // ensure CombineLatest has an initial value for this stream
@@ -102,6 +103,228 @@ Stream<List<DocView>> combinedEnquiriesStream({
         for (final d in pub) byId[d.id] = d;
         for (final d in mine) byId[d.id] = d;
         return _filterAndSort(byId.values.toList());
+      },
+    );
+  });
+}
+
+Stream<List<DocView>> combinedResponsesStream({
+  // required Map<String, String> filter,
+  required String enquiryId,
+  String? teamId,
+}) {
+  final db = FirebaseFirestore.instance;
+
+  // Helper: apply status filter + stable sort
+  List<DocView> _sortPosts(List<DocView> items) {
+    final all = [...items]; // copy to avoid mutating input
+    all.sort((a, b) {
+      final aData = a.data();
+      final bData = b.data();
+
+      final aRound = (aData['roundNumber'] ?? 99) as num;
+      final bRound = (bData['roundNumber'] ?? 99) as num;
+      final aResponse = (aData['responseNumber'] ?? 99) as num;
+      final bResponse = (bData['responseNumber'] ?? 99) as num;
+
+      // 1️⃣ Primary: isOpen (true first)
+      final openCompare = bRound.compareTo(aRound);
+      if (openCompare != 0) return openCompare;
+
+      // 2️⃣ Secondary: enquiryNumber (descending)
+      return bResponse.compareTo(aResponse);
+    });
+    return all;
+  }
+  // 1) Public, published enquiries
+  final public$ = db
+      .collection('enquiries')
+      .doc(enquiryId)
+      .collection('responses')
+      .where('isPublished', isEqualTo: true)
+      .orderBy('roundNumber', descending: false)
+      .orderBy('responseNumber', descending: false)
+      .withConverter<Map<String, dynamic>>(
+        fromFirestore: (s, _) => s.data() ?? {},
+        toFirestore: (v, _) => v,
+      )
+      .snapshots()
+      .map((snap) => snap.docs.map((d) => DocView(d.id, d.reference, d.data())).toList())
+      .map(_sortPosts); // pre-filter/sort so we can short-circuit later
+  if (teamId == null) {
+      debugPrint('[combinedResponsesStream] ⏭ Not logged in — skipping draftDocStreams.');
+    return public$;
+  }
+
+  // 2) Team draft IDs
+  final draftIds$ = db
+      .collection('drafts')
+      .doc('posts')
+      .collection(teamId)
+      .where("postType", isEqualTo: "response")
+      .snapshots()
+      .map((snap) => snap.docs.map((d) => d.id).toList());
+
+  // 3) If there are no draft IDs, just return public$.
+  //    Otherwise, fetch those draft docs and merge.
+  return draftIds$.switchMap((ids) {
+    debugPrint('[combinedResponsesStream] draftIds = $ids');
+    
+    if (ids.isEmpty) {
+      // Short-circuit: no per-doc listeners, no combineLatest—cheap!
+      debugPrint('[combinedResponsesStream] ⏭ No drafts found — skipping draftDocStreams.');
+      return public$;
+    }
+
+    // Stream the user’s draft enquiry docs
+    debugPrint('[combinedResponsesStream] 🟢 Found ${ids.length} draft(s) — building streams.');
+    final draftDocStreams = ids.map((id) {
+      final docRef = db
+          .collection('enquiries')
+          .doc(enquiryId)
+          .collection('responses')
+          .doc(id)
+          .withConverter<Map<String, dynamic>>(
+            fromFirestore: (s, _) => s.data() ?? {},
+            toFirestore: (v, _) => v,
+          );
+
+      return docRef
+          .snapshots()
+          // if readable: map to DocView (or null when deleted)
+          .map<DocView?>((ds) => ds.exists ? DocView(ds.id, ds.reference, ds.data()!) : null)
+          // if NOT readable (permission-denied), just emit null instead of error
+          .onErrorReturn(null)
+          // ensure CombineLatest has an initial value for this stream
+          .startWith(null);
+    }).toList();
+
+    final teamDrafts$ = CombineLatestStream.list(draftDocStreams)
+        .map((list) => list.whereType<DocView>().toList());
+
+    // Merge public + drafts, de-dupe by id, then filter/sort once.
+    return CombineLatestStream.combine2<List<DocView>, List<DocView>, List<DocView>>(
+      public$,
+      teamDrafts$,
+      (pub, mine) {
+        final byId = <String, DocView>{};
+        for (final d in pub) byId[d.id] = d;
+        for (final d in mine) byId[d.id] = d;
+        return _sortPosts(byId.values.toList());
+      },
+    );
+  });
+}
+
+Stream<List<DocView>> combinedCommentsStream({
+  // required Map<String, String> filter,
+  required String enquiryId,
+  required String responseId,
+  String? teamId,
+}) {
+  final db = FirebaseFirestore.instance;
+
+  // Helper: apply status filter + stable sort
+  List<DocView> _sortPosts(List<DocView> items) {
+    final all = [...items]; // copy to avoid mutating input
+    all.sort((a, b) {
+      final aData = a.data();
+      final bData = b.data();
+
+      final aRound = (aData['roundNumber'] ?? 99) as num;
+      final bRound = (bData['roundNumber'] ?? 99) as num;
+      final aResponse = (aData['responseNumber'] ?? 99) as num;
+      final bResponse = (bData['responseNumber'] ?? 99) as num;
+
+      // 1️⃣ Primary: isOpen (true first)
+      final openCompare = bRound.compareTo(aRound);
+      if (openCompare != 0) return openCompare;
+
+      // 2️⃣ Secondary: enquiryNumber (descending)
+      return bResponse.compareTo(aResponse);
+    });
+    return all;
+  }
+
+  // 1) Public, published enquiries
+  final public$ = db
+      .collection('enquiries')
+      .doc(enquiryId)
+      .collection('responses')
+      .doc(responseId)
+      .collection('comments')
+      .where('isPublished', isEqualTo: true)
+      .orderBy('roundNumber', descending: false)
+      .orderBy('responseNumber', descending: false)
+      .withConverter<Map<String, dynamic>>(
+        fromFirestore: (s, _) => s.data() ?? {},
+        toFirestore: (v, _) => v,
+      )
+      .snapshots()
+      .map((snap) => snap.docs.map((d) => DocView(d.id, d.reference, d.data())).toList())
+      .map(_sortPosts); // pre-filter/sort so we can short-circuit later
+  if (teamId == null) {
+      debugPrint('[combinedCommentsStream] ⏭ Not logged in — skipping draftDocStreams.');
+    return public$;
+  }
+
+  // 2) Team draft IDs
+  final draftIds$ = db
+      .collection('drafts')
+      .doc('posts')
+      .collection(teamId)
+      .where("postType", isEqualTo: "comment")
+      .snapshots()
+      .map((snap) => snap.docs.map((d) => d.id).toList());
+
+  // 3) If there are no draft IDs, just return public$.
+  //    Otherwise, fetch those draft docs and merge.
+  return draftIds$.switchMap((ids) {
+    debugPrint('[combinedCommentsStream] draftIds = $ids');
+    
+    if (ids.isEmpty) {
+      // Short-circuit: no per-doc listeners, no combineLatest—cheap!
+      debugPrint('[combinedCommentsStream] ⏭ No drafts found — skipping draftDocStreams.');
+      return public$;
+    }
+
+    // Stream the user’s draft enquiry docs
+    debugPrint('[combinedCommentsStream] 🟢 Found ${ids.length} draft(s) — building streams.');
+    final draftDocStreams = ids.map((id) {
+      final docRef = db
+          .collection('enquiries')
+          .doc(enquiryId)
+          .collection('responses')
+          .doc(responseId)
+          .collection('comments')
+          .doc(id)
+          .withConverter<Map<String, dynamic>>(
+            fromFirestore: (s, _) => s.data() ?? {},
+            toFirestore: (v, _) => v,
+          );
+
+      return docRef
+          .snapshots()
+          // if readable: map to DocView (or null when deleted)
+          .map<DocView?>((ds) => ds.exists ? DocView(ds.id, ds.reference, ds.data()!) : null)
+          // if NOT readable (permission-denied), just emit null instead of error
+          .onErrorReturn(null)
+          // ensure CombineLatest has an initial value for this stream
+          .startWith(null);
+    }).toList();
+
+    final teamDrafts$ = CombineLatestStream.list(draftDocStreams)
+        .map((list) => list.whereType<DocView>().toList());
+
+    // Merge public + drafts, de-dupe by id, then filter/sort once.
+    return CombineLatestStream.combine2<List<DocView>, List<DocView>, List<DocView>>(
+      public$,
+      teamDrafts$,
+      (pub, mine) {
+        final byId = <String, DocView>{};
+        for (final d in pub) byId[d.id] = d;
+        for (final d in mine) byId[d.id] = d;
+        return _sortPosts(byId.values.toList());
       },
     );
   });

@@ -11,6 +11,7 @@ import '../../riverpod/user_detail.dart';
 import '../../api/close_enquiry_api.dart';
 import '../../api/publish_competitor_responses.dart';
 import '../../api/publish_rc_response.dart';
+import '../../core/widgets/draft_viewing.dart';
 
 /// -------------------- NO SELECTION --------------------
 class NoSelectionPage extends StatelessWidget {
@@ -436,12 +437,14 @@ class _HeaderBlock extends StatelessWidget {
 }
 
 /// -------------------- CHILDREN SECTION (Responses / Comments) --------------------
-class _ChildrenSection extends StatelessWidget {
+class _ChildrenSection extends ConsumerWidget {
   const _ChildrenSection._({
     required this.title,
     required this.builder,
     required this.newChildButton,
   });
+
+  final Stream<List<DocView>> Function(BuildContext, WidgetRef) builder;
 
   factory _ChildrenSection.responses({
     required String enquiryId,
@@ -466,14 +469,12 @@ class _ChildrenSection extends StatelessWidget {
           },
         ),
       ),
-      builder: (context) {
-        final q = FirebaseFirestore.instance
-            .collection('enquiries')
-            .doc(enquiryId)
-            .collection('responses')
-            .where('isPublished', isEqualTo: true)
-            .orderBy('publishedAt', descending: false);
-        return q.snapshots().map((s) => s.docs);
+      builder: (context, ref) {
+        final teamId = ref.watch(teamProvider);
+        return combinedResponsesStream(
+          enquiryId: enquiryId,
+          teamId: teamId, // null => only public; non-null => merge team drafts
+        );
       },
     );
   }
@@ -483,6 +484,7 @@ class _ChildrenSection extends StatelessWidget {
     required String responseId,
     bool lockedComments = false,
     String lockedReason = '',
+    // Map<String, String> filter = const {},
   }) {
     return _ChildrenSection._(
       title: 'Comments',
@@ -502,31 +504,27 @@ class _ChildrenSection extends StatelessWidget {
           },
         ),
       ),
-      builder: (context) {
-        final q = FirebaseFirestore.instance
-            .collection('enquiries')
-            .doc(enquiryId)
-            .collection('responses')
-            .doc(responseId)
-            .collection('comments')
-            .where('isPublished', isEqualTo: true)
-            .orderBy('publishedAt', descending: false);
-        return q.snapshots().map((s) => s.docs);
+      builder: (context, ref) {
+        final teamId = ref.watch(teamProvider);
+        return combinedCommentsStream(
+          enquiryId: enquiryId,
+          responseId: responseId,
+          teamId: teamId, // null => only public; non-null => merge team drafts
+        );
       },
     );
   }
 
   final String title;
   final Widget newChildButton;
-  final Stream<List<QueryDocumentSnapshot<Map<String, dynamic>>>> Function(BuildContext) builder;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return _SectionCard(
       title: title,
       trailing: newChildButton,
-      child: StreamBuilder<List<QueryDocumentSnapshot<Map<String, dynamic>>>>(
-        stream: builder(context),
+      child: StreamBuilder<List<DocView>>(
+        stream: builder(context, ref),
         builder: (context, snap) {
           if (snap.hasError) {
             debugPrint('Firestore stream error: ${snap.error}');
@@ -564,6 +562,7 @@ class _ChildrenSection extends StatelessWidget {
               final roundNumber = (d['roundNumber'] ?? 'x').toString().trim();
               final responseNumber = (d['responseNumber'] ?? 'x').toString().trim();
               final fromRC = d['fromRC'] ?? false;
+              final isPublished = d['isPublished'] ?? false;
 
               final segments = docs[i].reference.path.split('/');
               final teamColourHex = d['colour'];
@@ -582,6 +581,8 @@ class _ChildrenSection extends StatelessWidget {
                 tile = ListTile(
                   title: fromRC 
                   ? Text('Response $roundNumber.$responseNumber (Rules Committee)') 
+                  : !isPublished
+                  ? Text('Response $roundNumber.$responseNumber (Draft)') 
                   : Text('Response $roundNumber.$responseNumber'),
                   subtitle: titleSnippet == null ? null : Text(titleSnippet),
                   trailing: Text(t == null ? '' : _fmtRelativeTime(t)),
@@ -589,7 +590,7 @@ class _ChildrenSection extends StatelessWidget {
                 );
               } else if (segments.contains('comments')) {
                 tile = ListTileCollapsibleText(
-                  text,
+                  isPublished ? text : '(Draft) $text',
                   maxLines: 3,
                 );
               }
