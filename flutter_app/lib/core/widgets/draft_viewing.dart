@@ -10,8 +10,8 @@ class DocView {
 }
 
 Stream<List<DocView>> combinedEnquiriesStream({
-  required String teamId,
   required Map<String, String> filter,
+  String? teamId,
 }) {
   final db = FirebaseFirestore.instance;
 
@@ -44,6 +44,10 @@ Stream<List<DocView>> combinedEnquiriesStream({
       .snapshots()
       .map((snap) => snap.docs.map((d) => DocView(d.id, d.data())).toList())
       .map(_filterAndSort); // pre-filter/sort so we can short-circuit later
+  if (teamId == null) {
+      debugPrint('[combinedEnquiriesStream] ⏭ Not logged in — skipping draftDocStreams.');
+    return public$;
+  }
 
   // 2) Team draft IDs
   final draftIds$ = db

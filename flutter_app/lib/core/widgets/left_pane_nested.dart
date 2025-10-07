@@ -414,7 +414,7 @@ class _LeftPaneNestedState extends State<LeftPaneNested> {
 /// ─────────────────────────────────────────────────────────────────────────
 /// Enquiries list (applies filters + search)
 /// ─────────────────────────────────────────────────────────────────────────
-class _EnquiriesTree extends StatelessWidget {
+class _EnquiriesTree extends ConsumerWidget {
   const _EnquiriesTree({
     required this.initiallyOpenEnquiryId,
     required this.initiallyOpenResponseId,
@@ -428,9 +428,8 @@ class _EnquiriesTree extends StatelessWidget {
   final Map<String, String> filter;
 
   @override
-  Widget build(BuildContext context) {
-    // final listQuery = buildEnquiriesQuery(filter);
-    final teamId = 'NZL';
+  Widget build(BuildContext context, WidgetRef ref) {
+    final teamId = ref.watch(teamProvider);
     final rawQ = (filter['q'] ?? '').trim().toLowerCase();
 
     return StreamBuilder<List<DocView>>(
