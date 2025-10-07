@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../api/post_api.dart'; // where your PostApi lives
-import 'progress_dialog.dart'; // where you put showProgressFlow
+
+import '../../api/post_api.dart';
 import '../../core/models/attachments.dart';
+import 'progress_dialog.dart';
 
 final _postApi = PostApi(region: 'europe-west8');
 
@@ -22,7 +23,7 @@ Future<void> onCreatePostPressed(
         'Saving post to database…',
       ],
       successTitle: 'Post created',
-      successMessage: 'Your post is now live.',
+      successMessage: 'Your post is saved and scheduled for publication.',
       failureTitle: 'Couldn’t create post',
       failureMessage: 'Please check details and try again.',
       autoCloseOnSuccess: true,
