@@ -363,7 +363,7 @@ class _DetailScaffold extends StatelessWidget {
                     ),
                   ],
                 ),
-                if (meta != null) ...[
+                if (meta is Wrap && (meta as Wrap).children.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   meta!,
                 ],
@@ -736,52 +736,52 @@ class _StatusCard extends StatelessWidget {
     final stageTexts = _getStageTexts(stageMap);
 
     return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Stage title ────────────────────────────────
-          Text(
-            stageTexts[0],
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: fg,
-              // fontWeight: FontWeight.w600,
-            ),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Stage title ────────────────────────────────
+        Text(
+          stageTexts[0],
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: fg,
+            // fontWeight: FontWeight.w600,
           ),
+        ),
 
-          const SizedBox(height: 6),
+        const SizedBox(height: 6),
 
-          // ── Start / End datetimes ──────────────────────
+        // ── Start / End datetimes ──────────────────────
+        Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            const Icon(Icons.schedule, size: 16),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                '${_fmt(stageMap['stageStarts'])}  →  ${_fmt(stageMap['stageEnds'])}',
+                style: dateStyle,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+        if (stageTexts[1] != '')... [
+          const SizedBox(height: 8),
+          // ── Next stage ─────────────────────────────────
           Row(
-            mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              const Icon(Icons.schedule, size: 16),
+              const Icon(Icons.arrow_forward, size: 16),
               const SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  '${_fmt(stageMap['stageStarts'])}  →  ${_fmt(stageMap['stageEnds'])}',
-                  style: dateStyle,
-                  overflow: TextOverflow.ellipsis,
+              Text(
+                'Next Stage: ${stageTexts[1]}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                 ),
               ),
             ],
           ),
-          if (stageTexts[1] != '')... [
-            const SizedBox(height: 8),
-            // ── Next stage ─────────────────────────────────
-            Row(
-              children: [
-                const Icon(Icons.arrow_forward, size: 16),
-                const SizedBox(width: 6),
-                Text(
-                  'Next: ${stageTexts[1]}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                  ),
-                ),
-              ],
-            ),
-          ],
         ],
-      ); 
+      ],
+    ); 
   }
   
   List<String>_getStageTexts(Map<String, dynamic> stageMap) {
