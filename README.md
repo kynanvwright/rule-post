@@ -124,6 +124,8 @@ A website for facilitating America's Cup Rule Enquiries.
   - notify Competitors that they have slightly less time than is ideal
 - Document attachment is now really slow, look into this and streamline
 - Padding doesn't look even in left header pane
+- Response/Comment lists temporarily persist on navigation then disappear
+- Fix stage ends to be on the hour and cloud functions to run at 1 minute past
 
 ## Other Notes
 - Check how it looks on various devices

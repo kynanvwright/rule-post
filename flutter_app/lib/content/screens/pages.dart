@@ -64,6 +64,8 @@ class EnquiryDetailPage extends StatelessWidget {
             final isPublished = data['isPublished'] ?? false;
             final teamsCanRespond = data['teamsCanRespond'] ?? false;
             final teamsCanComment = data['teamsCanComment'] ?? false;
+            final stageStarts = (data['stageStarts'] as Timestamp?)?.toDate();
+            final stageEnds = (data['stageEnds'] as Timestamp?)?.toDate();
             final fromRC = data['fromRC'] ?? false;
             final userRole = ref.watch(roleProvider);
             final userTeam = ref.watch(teamProvider);
@@ -95,24 +97,32 @@ class EnquiryDetailPage extends StatelessWidget {
               ],
               subHeaderLines: ['Rule Enquiry #$enquiryNumber'], // enquiries themselves don’t need a subheader
               // META (chips row under header)
-              meta: Wrap(
+              meta: 
+              Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
                   if (data.containsKey('isOpen') && !isOpen) 
-                    _StatusChip('Closed', color: Colors.red)
-                  else if (data.containsKey('teamsCanRespond') && teamsCanRespond)
-                    _StatusChip('Competitors may respond', color: Colors.green)
-                  else if (data.containsKey('teamsCanComment') && teamsCanComment)
-                      _StatusChip('Competitors may comment on responses', color: Colors.green)
-                  else if (data.containsKey('teamsCanRespond') && data.containsKey('teamsCanComment') && !teamsCanRespond && !teamsCanComment)
-                      _StatusChip('Under review by Rules Committee', color: Colors.orange),
+                    _StatusChip('Closed', color: Colors.red),
+                  // else if (data.containsKey('teamsCanRespond') && teamsCanRespond)
+                  //   _StatusChip('Competitors may respond', color: Colors.green)
+                  // else if (data.containsKey('teamsCanComment') && teamsCanComment)
+                  //     _StatusChip('Competitors may comment on responses', color: Colors.green)
+                  // else if (data.containsKey('teamsCanRespond') && data.containsKey('teamsCanComment') && !teamsCanRespond && !teamsCanComment)
+                  //     _StatusChip('Under review by Rules Committee', color: Colors.orange),
                    
                   if (data.containsKey('fromRC') && fromRC) 
                     _StatusChip('Rules Committee Enquiry', color: Colors.blue),
                   
                 ],
               ),
+              stageMap: {
+                'teamsCanRespond': teamsCanRespond, 
+                'teamsCanComment': teamsCanComment, 
+                'isOpen': isOpen, 
+                'isPublished': isPublished, 
+                'stageStarts': stageStarts, 
+                'stageEnds': stageEnds},
 
               // COMMENTARY
               commentary: postText.isEmpty ? null : SelectableText(postText),
@@ -267,6 +277,7 @@ class ResponseDetailPage extends StatelessWidget {
                         const _StatusChip('Rules Committee Response', color: Colors.blue),
                     ],
                   ),
+                  
                 // SUMMARY
                 summary: summary.isEmpty ? null : SelectableText(summary),
                 // COMMENTARY
@@ -301,23 +312,26 @@ class ResponseDetailPage extends StatelessWidget {
 class _DetailScaffold extends StatelessWidget {
   const _DetailScaffold({
     required this.headerLines,
-    required this.meta,
+    this.meta,
     this.subHeaderLines = const <String>[],
     this.summary,
     this.commentary,
     this.attachments = const <Widget>[],
     this.footer,
     this.adminPanel,
+    this.stageMap,
   });
 
   final List<String> headerLines;
   final List<String> subHeaderLines;
-  final Widget meta;               // usually MetaChips (+ optional status chips)
-  final Widget? summary;        // null => hide section
-  final Widget? commentary;        // null => hide section
-  final List<Widget> attachments;  // empty => hide section
-  final Widget? footer;            // usually Children card; null => hide
-  final Widget? adminPanel;        // only shows for admins; null => hide
+  final Widget? meta;                   // usually MetaChips (+ optional status chips)
+  final Widget? summary;                // null => hide section
+  final Widget? commentary;             // null => hide section
+  final List<Widget> attachments;       // empty => hide section
+  final Widget? footer;                 // usually Children card; null => hide
+  final Widget? adminPanel;             // only shows for admins; null => hide
+  final Map<String, dynamic>? stageMap; // isOpen, teamsCanRespond, teamsCanComment, stageStarts, stageEnds
+
 
   @override
   Widget build(BuildContext context) {
@@ -345,11 +359,25 @@ class _DetailScaffold extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                meta,
+                if (meta != null) ...[
+                  const SizedBox(height: 12),
+                  meta!,
+                ],
               ],
             ),
           ),
+
+          // STAGE CARD (optional)
+          if (stageMap != null && stageMap!['isOpen']) ...[
+            const SizedBox(height: 12),
+            _SectionCard(
+              title: 'Enquiry Stage',
+              child: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: _StatusCard(stageMap: stageMap!)
+              ),
+            ),
+          ],
 
           // CONTENT CARD (optional)
           if (summary != null) ...[
@@ -688,6 +716,104 @@ class _StatusChip extends StatelessWidget {
   }
 }
 
+class _StatusCard extends StatelessWidget {
+  const _StatusCard({
+    required this.stageMap,
+  });
+  final Map<String, dynamic> stageMap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final fg = theme.colorScheme.onSurfaceVariant;
+    final dateStyle = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+    );
+    final stageTexts = _getStageTexts(stageMap);
+
+    return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Stage title ────────────────────────────────
+          Text(
+            stageTexts[0],
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: fg,
+              // fontWeight: FontWeight.w600,
+            ),
+          ),
+
+          const SizedBox(height: 6),
+
+          // ── Start / End datetimes ──────────────────────
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              const Icon(Icons.schedule, size: 16),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  '${_fmt(stageMap['stageStarts'])}  →  ${_fmt(stageMap['stageEnds'])}',
+                  style: dateStyle,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          if (stageTexts[1] != '')... [
+            const SizedBox(height: 8),
+            // ── Next stage ─────────────────────────────────
+            Row(
+              children: [
+                const Icon(Icons.arrow_forward, size: 16),
+                const SizedBox(width: 6),
+                Text(
+                  'Next: ${stageTexts[1]}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ); 
+  }
+  
+  List<String>_getStageTexts(Map<String, dynamic> stageMap) {
+    // return current and next stage descriptions
+    if (stageMap['isOpen'] == false) {
+      return ['',''];
+    } else if (stageMap['isPublished'] == false) {
+      return ['Unpublished','Competitors may respond'];
+    } else if (stageMap['teamsCanRespond']) {
+      return ['Competitors may respond','Competitors may comment on responses'];
+    } else if (stageMap['teamsCanComment']) {
+      return ['Competitors may comment on responses','Under Rules Committee review'];
+    } else {
+      return ['Under Rules Committee review',''];
+    }
+  }
+
+  String _fmt(DateTime? dt) {
+    if (dt == null) return '';
+    // Add 5 minutes because stage ends are usually 5 minutes earlier than required by rules
+    if (dt.minute == 55) {
+      dt = dt.add(const Duration(minutes: 5));
+    }
+    // Show in local time with short readable format
+    return '${dt.day.toString().padLeft(2, '0')} '
+        '${_month(dt.month)} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+
+  String _month(int m) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return months[m - 1];
+  }
+}
 
 
 /// -------------------- COLLAPSIBLE TEXT (for comments) --------------------
