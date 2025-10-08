@@ -110,6 +110,8 @@ class EnquiryDetailPage extends StatelessWidget {
                   //     _StatusChip('Competitors may comment on responses', color: Colors.green)
                   // else if (data.containsKey('teamsCanRespond') && data.containsKey('teamsCanComment') && !teamsCanRespond && !teamsCanComment)
                   //     _StatusChip('Under review by Rules Committee', color: Colors.orange),
+                  if (data.containsKey('isPublished') && !isPublished) 
+                    _StatusChip('Unpublished', color: Colors.orange),
                    
                   if (data.containsKey('fromRC') && fromRC) 
                     _StatusChip('Rules Committee Enquiry', color: Colors.blue),
@@ -267,6 +269,8 @@ class ResponseDetailPage extends StatelessWidget {
                     children: [
                       if (enquiry.containsKey('isOpen') && !isOpen)
                         _StatusChip('Enquiry closed', color: Colors.red)
+                      else if (response.containsKey('isPublished') && !isPublished) 
+                        _StatusChip('Unpublished', color: Colors.orange)
                       else if (enquiry.containsKey('roundNumber') && response.containsKey('roundNumber') && !currentRound)
                         _StatusChip('Round closed', color: Colors.red)
                       else if (enquiry.containsKey('teamsCanComment'))
@@ -368,7 +372,7 @@ class _DetailScaffold extends StatelessWidget {
           ),
 
           // STAGE CARD (optional)
-          if (stageMap != null && stageMap!['isOpen']) ...[
+          if (stageMap != null && stageMap!['isOpen'] && stageMap!['isPublished']) ...[
             const SizedBox(height: 12),
             _SectionCard(
               title: 'Enquiry Stage',
@@ -784,8 +788,8 @@ class _StatusCard extends StatelessWidget {
     // return current and next stage descriptions
     if (stageMap['isOpen'] == false) {
       return ['',''];
-    } else if (stageMap['isPublished'] == false) {
-      return ['Unpublished','Competitors may respond'];
+    // } else if (stageMap['isPublished'] == false) {
+    //   return ['Unpublished','Competitors may respond'];
     } else if (stageMap['teamsCanRespond']) {
       return ['Competitors may respond','Competitors may comment on responses'];
     } else if (stageMap['teamsCanComment']) {
