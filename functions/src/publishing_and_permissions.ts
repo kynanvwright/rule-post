@@ -105,6 +105,7 @@ export const enquiryPublisher = onSchedule(
       writer.update(doc.ref, {
         isPublished: true,
         publishedAt,
+        stageStarts: publishedAt,
         stageEnds: Timestamp.fromDate(stageEndsDate),
       });
       published += 1;
@@ -247,6 +248,7 @@ export const teamResponsePublisher = onSchedule(
       writer.update(enquiryRef, {
         teamsCanRespond: false,
         teamsCanComment: true,
+        stageStarts: publishedAt,
         stageEnds: Timestamp.fromDate(newStageEnds),
       });
     }
@@ -263,6 +265,7 @@ export const commentPublisher = onSchedule(
   { region: "europe-west6", schedule: "0 0,12 * * *", timeZone: ROME_TZ },
   async (): Promise<void> => {
     const nowRome = DateTime.now().setZone(ROME_TZ);
+    const publishedAt = FieldValue.serverTimestamp();
 
     if (!isWorkingDay(nowRome)) {
       console.log(
@@ -362,6 +365,7 @@ export const commentPublisher = onSchedule(
         writer.update(enquiryRef, {
           teamsCanRespond: false,
           teamsCanComment: false,
+          stageStarts: publishedAt,
           stageEnds: Timestamp.fromDate(newStageEndsDate),
         });
       }
@@ -487,6 +491,7 @@ export const committeeResponsePublisher = onSchedule(
             roundNumber: FieldValue.increment(1),
             teamsCanRespond: true,
             teamsCanComment: false,
+            stageStarts: publishedAt,
             stageEnds: Timestamp.fromDate(nextStageEnds),
           });
 

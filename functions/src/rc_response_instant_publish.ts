@@ -121,6 +121,7 @@ export const committeeResponseInstantPublisher = onCall(
           roundNumber: FieldValue.increment(1),
           teamsCanRespond: true,
           teamsCanComment: false,
+          stageStarts: FieldValue.serverTimestamp(),
           stageEnds: Timestamp.fromDate(nextStageEnds),
         });
       });

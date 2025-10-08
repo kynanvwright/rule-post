@@ -116,6 +116,7 @@ export const teamResponseInstantPublisher = onCall(
     writer.update(enquiryRef, {
       teamsCanRespond: false,
       teamsCanComment: true,
+      stageStarts: publishedAt,
       stageEnds: Timestamp.fromDate(newStageEnds),
     });
 
