@@ -7,136 +7,105 @@ import { computeStageEnds } from "./publishing_and_permissions";
 
 const db = getFirestore();
 
-type publishPayload = {
-  enquiryID: string;
-};
+type publishPayload = { enquiryID: string };
 
 export const teamResponseInstantPublisher = onCall(
   { cors: true, enforceAppCheck: true },
   async (req) => {
-    // 1) Check user is logged in and admin
+    // 1) AuthZ
     const callerUid = req.auth?.uid;
     if (!callerUid)
       throw new HttpsError("unauthenticated", "You must be signed in.");
-    const isAdmin = req.auth?.token.role == "admin";
-    const isRC = req.auth?.token.team == "RC";
+    const isAdmin = req.auth?.token.role === "admin";
+    const isRC = req.auth?.token.team === "RC";
     if (!isAdmin && !isRC) {
       throw new HttpsError("permission-denied", "Admin/RC function only.");
     }
 
-    // 2) Get enquiry and response from Firestore
+    // 2) Fetch enquiry
     const { enquiryID } = req.data as publishPayload;
     const enquiryDoc = await db.collection("enquiries").doc(enquiryID).get();
     if (!enquiryDoc.exists) {
-      console.log("[teamResponseInstantPublisher] No matching enquiry.");
-      return;
+      logger.warn("[teamResponseInstantPublisher] No matching enquiry.");
+      return { ok: false, num_published: 0 };
     }
+
     const enquiryRef = enquiryDoc.ref;
     const writer = db.bulkWriter();
-    let totalResponsesPublished = 0;
     const publishedAt = FieldValue.serverTimestamp();
 
-    // Try ordered; if that fails, fall back and sort in-memory to keep numbering stable.
-    let unpublishedSnap: FirebaseFirestore.QuerySnapshot;
+    // 3) Get unpublished team responses, ordered if possible
+    let docs: FirebaseFirestore.QueryDocumentSnapshot[] = [];
     try {
-      unpublishedSnap = await enquiryRef
+      const snap = await enquiryRef
         .collection("responses")
         .where("isPublished", "==", false)
         .where("fromRC", "==", false)
         .orderBy("createdAt", "asc")
         .get();
+      docs = snap.docs;
     } catch {
-      unpublishedSnap = await enquiryRef
+      const snap = await enquiryRef
         .collection("responses")
         .where("isPublished", "==", false)
         .where("fromRC", "==", false)
         .get();
-      // optional: enforce deterministic numbering
-      const sorted = [...unpublishedSnap.docs].sort(
+      docs = [...snap.docs].sort(
         (a, b) =>
           (a.get("createdAt")?.toMillis?.() ?? 0) -
           (b.get("createdAt")?.toMillis?.() ?? 0),
       );
-      for (let i = 0; i < sorted.length; i++) {
-        writer.update(sorted[i].ref, {
-          isPublished: true,
-          responseNumber: i + 1,
-          publishedAt,
-        });
-        // --- Token + URL population for this doc’s attachments
-        const raw = sorted[i].get("attachments");
-        const attachments = Array.isArray(raw) ? (raw as Attachment[]) : [];
-        if (attachments.length > 0) {
-          const updatedAttachments = await publishAttachments(attachments);
-          writer.update(sorted[i].ref, { attachments: updatedAttachments });
-        }
-        // --- Draft delete ---
-        const metaSnap = await sorted[i].ref
-          .collection("meta")
-          .doc("data")
-          .get();
-        const team = metaSnap.exists ? metaSnap.get("authorTeam") : undefined;
-        if (!team) {
-          logger.warn(
-            `[teamResponsePublisher] No team found for ${sorted[i].id}, skipping draft delete.`,
-          );
-          continue;
-        }
-        const draftRef = db
-          .collection("drafts")
-          .doc("posts")
-          .collection(team)
-          .doc(sorted[i].id);
-        writer.delete(draftRef);
-        totalResponsesPublished += 1;
-      }
     }
 
-    if (!unpublishedSnap.empty) {
-      const docs = unpublishedSnap.docs; // already ordered if try succeeded
-      for (let i = 0; i < docs.length; i++) {
-        writer.update(docs[i].ref, {
-          isPublished: true,
-          responseNumber: i + 1,
-          publishedAt,
-        });
-        // --- Token + URL population for this doc’s attachments
-        const raw = docs[i].get("attachments");
-        const attachments = Array.isArray(raw) ? (raw as Attachment[]) : [];
-        if (attachments.length > 0) {
-          const updatedAttachments = await publishAttachments(attachments);
-          writer.update(docs[i].ref, { attachments: updatedAttachments });
-        }
-        // --- Draft delete ---
-        const metaSnap = await docs[i].ref.collection("meta").doc("data").get();
-        const team = metaSnap.exists ? metaSnap.get("authorTeam") : undefined;
-        if (!team) {
-          logger.warn(
-            `[teamResponseInstantPublisher] No team found for ${docs[i].id}, skipping draft delete.`,
-          );
-          continue;
-        }
-        const draftRef = db
-          .collection("drafts")
-          .doc("posts")
-          .collection(team)
-          .doc(docs[i].id);
-        writer.delete(draftRef);
-        totalResponsesPublished += 1;
+    // 4) Single processing loop
+    let totalResponsesPublished = 0;
+    for (let i = 0; i < docs.length; i++) {
+      const doc = docs[i];
+
+      writer.update(doc.ref, {
+        isPublished: true,
+        responseNumber: i + 1,
+        publishedAt,
+      });
+
+      // Attachments (populate token/URL once)
+      const raw = doc.get("attachments");
+      const attachments = Array.isArray(raw) ? (raw as Attachment[]) : [];
+      if (attachments.length > 0) {
+        const updatedAttachments = await publishAttachments(attachments);
+        writer.update(doc.ref, { attachments: updatedAttachments });
       }
+
+      // Delete draft (idempotent if already gone)
+      const metaSnap = await doc.ref.collection("meta").doc("data").get();
+      const team = metaSnap.exists ? metaSnap.get("authorTeam") : undefined;
+      if (!team) {
+        logger.warn(
+          `[teamResponseInstantPublisher] No team for ${doc.id}, skipping draft delete.`,
+        );
+        continue; // don't count if we couldn't attribute a team/draft
+      }
+      const draftRef = db
+        .collection("drafts")
+        .doc("posts")
+        .collection(team)
+        .doc(doc.id);
+      writer.delete(draftRef);
+
+      totalResponsesPublished += 1;
     }
 
-    // single DRY update per enquiry
+    // 5) Advance stage
     const newStageEnds = computeStageEnds(5, { hour: 11, minute: 55 });
     writer.update(enquiryRef, {
       teamsCanRespond: false,
       teamsCanComment: true,
-      stageStarts: publishedAt,
+      stageStarts: publishedAt, // when publishing started
       stageEnds: Timestamp.fromDate(newStageEnds),
     });
 
     await writer.close();
-    console.log(
+    logger.info(
       `[teamResponseInstantPublisher] Published ${totalResponsesPublished} responses.`,
     );
     return { ok: true, num_published: totalResponsesPublished };
