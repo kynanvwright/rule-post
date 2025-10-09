@@ -554,19 +554,23 @@ class _ChildrenSection extends ConsumerWidget {
       title: title,
       trailing: newChildButton,
       child: StreamBuilder<List<DocView>>(
+        key: ValueKey<Object?>(
+          // anything that changes when the query changes
+          (title, ref.watch(teamProvider), builder(context, ref).runtimeType), // or just '$title|$teamId'
+        ),
         stream: builder(context, ref),
         builder: (context, snap) {
+          if (!snap.hasData || snap.connectionState != ConnectionState.active) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
           if (snap.hasError) {
             debugPrint('Firestore stream error: ${snap.error}');
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: 8),
               child: Text('Failed to load items'),
-            );
-          }
-          if (!snap.hasData) {
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(child: CircularProgressIndicator()),
             );
           }
           final docs = snap.data!;
