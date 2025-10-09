@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto"; // no extra npm dep needed
+// import { randomUUID } from "node:crypto"; // no extra npm dep needed
 
 import { File } from "@google-cloud/storage";
 import {
@@ -103,7 +103,7 @@ type TempAttachmentIn = {
 // What we store on the public enquiry doc
 type FinalisedAttachment = {
   name: string;
-  url: string; // tokenised download URL
+  path: string; // tokenised download URL
   size?: number;
   contentType?: string;
 };
@@ -258,17 +258,17 @@ export const createPost = onCall<CreatePostData>(
       const file = bucket.file(finalPath);
 
       // Add a download token and persist contentType
-      const token = randomUUID();
+      // const token = randomUUID();
       await file.setMetadata({
         contentType,
-        metadata: { firebaseStorageDownloadTokens: token },
+        // metadata: { firebaseStorageDownloadTokens: token },
       });
 
-      const url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(
-        finalPath,
-      )}?alt=media&token=${token}`;
+      // const url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(
+      //   finalPath,
+      // )}?alt=media}`;
 
-      finalised.push({ name, url, size, contentType });
+      finalised.push({ name, path: finalPath, size, contentType });
     }
 
     // ---- Write Firestore docs ----

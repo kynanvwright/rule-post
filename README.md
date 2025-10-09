@@ -123,6 +123,8 @@ A website for facilitating America's Cup Rule Enquiries.
 - Enforce overall enquiry timeline even if RC responds late
   - notify Competitors that they have slightly less time than is ideal
 - Document attachment is now really slow, look into this and streamline
+  - add a loading message to let people know that it may take a while
+  - could improve by skipping the temporary upload
 - Padding doesn't look even in left header pane
 - Response/Comment lists temporarily persist on navigation then disappear
 - Fix stage ends to be on the hour and cloud functions to run at 1 minute past

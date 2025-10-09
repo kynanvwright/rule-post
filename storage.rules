@@ -45,18 +45,35 @@ service firebase.storage {
         /databases/(default)/documents/enquiries/$(eid)/responses/$(rid)
       ).data.isPublished == true;
     }
+    
+    function enquiryAuthorTeam(enquiryId) {
+      return firestore.get(
+        /databases/(default)/documents/enquiries/$(enquiryId)/meta/data).data.authorTeam;
+    }
+
+    function responseAuthorTeam(eid, rid) {
+      return firestore.get(
+        /databases/(default)/documents/enquiries/$(eid)/responses/$(rid)
+      	).data.authorTeam;
+    }
+    
+    function userTeam() {
+      return request.auth != null && request.auth.token.team != null
+        ? request.auth.token.team
+        : null;
+    }
 
 
     // Enquiry-level attachments (e.g., PDFs attached to the enquiry itself)
     match /enquiries/{enquiryId}/{filePath=**} {
       allow write: if false; // Admin SDK bypasses rules
-      allow read: if isEnquiryPublished(enquiryId);
+      allow read: if isEnquiryPublished(enquiryId) || enquiryAuthorTeam(enquiryId)==userTeam();
     }
 
     // Response-level attachments
     match /enquiries/{enquiryId}/responses/{responseId}/{filePath=**} {
       allow write: if false;
-      allow read: if isResponsePublished(enquiryId, responseId);
+      allow read: if isResponsePublished(enquiryId, responseId) || responseAuthorTeam(enquiryId)==userTeam();
     }
   }
 }

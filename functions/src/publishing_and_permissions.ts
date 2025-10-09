@@ -5,6 +5,7 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import { DateTime } from "luxon";
 
 import { ROME_TZ } from "./config";
+import { Attachment, publishAttachments } from "./make_attachments_public";
 import { isWorkingDay } from "./working_day";
 
 const db = getFirestore();
@@ -109,6 +110,14 @@ export const enquiryPublisher = onSchedule(
         stageEnds: Timestamp.fromDate(stageEndsDate),
       });
       published += 1;
+
+      // 2) Token + URL population for this doc’s attachments
+      const raw = doc.get("attachments");
+      const attachments = Array.isArray(raw) ? (raw as Attachment[]) : [];
+      if (attachments.length > 0) {
+        const updatedAttachments = await publishAttachments(attachments);
+        writer.update(doc.ref, { attachments: updatedAttachments });
+      }
 
       // --- 2. Get team from meta subdoc ---
       const metaSnap = await doc.ref.collection("meta").doc("data").get();

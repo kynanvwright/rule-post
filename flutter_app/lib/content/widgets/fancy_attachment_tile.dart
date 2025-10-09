@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:web/web.dart' as web;      // DOM bindings (no dart:html)
 import 'dart:ui_web' as ui_web;           // platformViewRegistry for web
 
@@ -17,6 +18,7 @@ class FancyAttachmentTile extends StatefulWidget {
     super.key,
     required this.name,
     this.url,
+    this.path,
     this.sizeBytes,
     this.contentType,
     this.initialExpanded = false,
@@ -34,6 +36,7 @@ class FancyAttachmentTile extends StatefulWidget {
     return FancyAttachmentTile(
       name: (m['name'] ?? m['fileName'] ?? 'file').toString(),
       url: (m['url'] ?? m['downloadUrl'])?.toString(),
+      path: (m['path'])?.toString(),
       sizeBytes: dynamicSize is int ? dynamicSize : null,
       contentType: (m['contentType'] ?? m['mime'])?.toString(),
       initialExpanded: initialExpanded,
@@ -43,6 +46,7 @@ class FancyAttachmentTile extends StatefulWidget {
 
   final String name;
   final String? url;
+  final String? path;
   final int? sizeBytes;
   final String? contentType;
   final bool initialExpanded;
@@ -63,68 +67,95 @@ class _FancyAttachmentTileState extends State<FancyAttachmentTile> {
 
   @override
   Widget build(BuildContext context) {
-    final hasUrl = widget.url != null && widget.url!.isNotEmpty;
-    final ct = (widget.contentType ?? '').toLowerCase();
-    final ext = _ext(widget.name);
-    final isPdf = _isPdf(ct, ext);
-    final isWord = _isWord(ct, ext);
-    final canPreviewInline = hasUrl && kIsWeb && (isPdf || isWord);
-    final subtitle = _fmtSize(widget.sizeBytes!);
+    return FutureBuilder<String?>(
+      future: _resolveUrl(),
+      builder: (context, snap) {
+        final resolvedUrl = snap.data ?? '';
+        final hasUrl = resolvedUrl.isNotEmpty;
 
-    return Column(
-      children: [
-        ListTile(
-          leading: const Icon(Icons.attach_file),
-          title: Text(
-            widget.name,
-          ),
-          subtitle: subtitle.isNotEmpty ? Text(subtitle) : null,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                tooltip: 'Download',
-                icon: const Icon(Icons.download),
-                onPressed: hasUrl ? () => _openUrl(widget.url!) : null,
-              ),
-              IconButton(
-                tooltip: canPreviewInline
-                    ? (_expanded ? 'Hide preview' : 'Show preview')
-                    : 'Open',
-                icon: Icon(canPreviewInline
-                    ? (_expanded ? Icons.expand_less : Icons.expand_more)
-                    : Icons.open_in_new),
-                onPressed: hasUrl
-                    ? () {
-                        if (canPreviewInline) {
-                          setState(() => _expanded = !_expanded);
-                        } else {
-                          _openUrl(widget.url!);
-                        }
-                      }
-                    : null,
-              ),
-            ],
-          ),
-        ),
-        if (_expanded && canPreviewInline)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: _InlineDocIFrame(
-                url: widget.url!,
-                isPdf: isPdf,
-                isWord: isWord,
-                height: widget.previewHeight,
+        final ct = (widget.contentType ?? '').toLowerCase();
+        final ext = _ext(widget.name);
+        final isPdf = _isPdf(ct, ext);
+        final isWord = _isWord(ct, ext);
+        final canPreviewInline = hasUrl && kIsWeb && (isPdf || isWord);
+        final subtitle = (widget.sizeBytes != null) ? _fmtSize(widget.sizeBytes!) : '';
+
+        // Loading state
+        if (snap.connectionState == ConnectionState.waiting && !hasUrl) {
+          return const ListTile(
+            leading: SizedBox(
+              width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            title: Text('Loading attachment…'),
+            contentPadding: EdgeInsets.symmetric(horizontal: 8),
+          );
+        }
+
+        return Column(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.attach_file),
+              title: Text(widget.name),
+              subtitle: subtitle.isNotEmpty ? Text(subtitle) : null,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: 'Download',
+                    icon: const Icon(Icons.download),
+                    onPressed: hasUrl ? () => _openUrl(resolvedUrl) : null,
+                  ),
+                  IconButton(
+                    tooltip: canPreviewInline
+                        ? (_expanded ? 'Hide preview' : 'Show preview')
+                        : 'Open',
+                    icon: Icon(canPreviewInline
+                        ? (_expanded ? Icons.expand_less : Icons.expand_more)
+                        : Icons.open_in_new),
+                    onPressed: hasUrl
+                        ? () {
+                            if (canPreviewInline) {
+                              setState(() => _expanded = !_expanded);
+                            } else {
+                              _openUrl(resolvedUrl);
+                            }
+                          }
+                        : null,
+                  ),
+                ],
               ),
             ),
-          ),
-        const Divider(height: 1),
-      ],
+            if (_expanded && canPreviewInline)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: _InlineDocIFrame(
+                    url: resolvedUrl,
+                    isPdf: isPdf,
+                    isWord: isWord,
+                    height: widget.previewHeight,
+                  ),
+                ),
+              ),
+            const Divider(height: 1),
+            if (!hasUrl && snap.connectionState == ConnectionState.done)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  leading: Icon(Icons.link_off),
+                  title: Text('Attachment unavailable'),
+                  subtitle: Text('No URL/path, or access denied.'),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 8),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
+
 
   Future<void> _openUrl(String link) async {
     final ok = await launchUrlString(link, mode: LaunchMode.externalApplication);
@@ -132,6 +163,24 @@ class _FancyAttachmentTileState extends State<FancyAttachmentTile> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(kIsWeb ? 'Open in new tab:\n$link' : 'Open: $link')),
       );
+    }
+  }
+
+  Future<String?> _resolveUrl() async {
+    // 1) If a URL was provided, use it as-is
+    final given = widget.url;
+    if (given != null && given.isNotEmpty) return given;
+
+    // 2) Otherwise, try to mint a URL from the Storage path
+    final p = widget.path;
+    if (p == null || p.isEmpty) return null;
+
+    try {
+      final ref = firebase_storage.FirebaseStorage.instance.ref(p);
+      return await ref.getDownloadURL(); // obeys your Storage rules
+    } catch (e) {
+      debugPrint('FancyAttachmentTile: failed to resolve URL for $p — $e');
+      return null;
     }
   }
 }
