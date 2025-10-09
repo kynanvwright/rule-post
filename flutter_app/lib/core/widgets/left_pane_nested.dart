@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -16,67 +14,79 @@ final filterDefault = 'open';
 /// ─────────────────────────────────────────────────────────────────────────
 /// Left header: title + status chips + debounced search + "New" button
 /// ─────────────────────────────────────────────────────────────────────────
-class LeftPaneHeader extends ConsumerStatefulWidget {
-  const LeftPaneHeader({
-    super.key,
-    this.title = "Rule Enquiries",
-  });
+class LeftPaneHeader extends ConsumerWidget {
+  const LeftPaneHeader({super.key, this.title = 'Rule Enquiries'});
   final String title;
 
-  @override
-  ConsumerState<LeftPaneHeader> createState() => _LeftPaneHeaderState();
-}
-
-class _LeftPaneHeaderState extends ConsumerState<LeftPaneHeader> {
-  // ---- tweakables (easy to adjust) -----------------------------------------
-  static const double _kControlHeight = 40;      // overall height of both
-  static const double _kRadius = 8;              // corner radius
-  static const double _kHorzPad = 12;            // horizontal padding inside filter
-  // static const double _kGap = 12;                // space between filter and search
-  static const Duration _kDebounce = Duration(milliseconds: 300);
-
-  final _searchCtrl = TextEditingController();
-  Timer? _debounce;
-
-  // Options
-  static const _statusOptions = ['all', 'open', 'closed'];
-
-  String _statusFromUri(BuildContext context) =>
-      GoRouterState.of(context).uri.queryParameters['status'] ?? filterDefault;
-  String _qFromUri(BuildContext context) =>
-      GoRouterState.of(context).uri.queryParameters['q'] ?? '';
-
-  String _statusLabel(String v) => switch (v) {
-        'open' => 'Open',
-        'closed' => 'Closed',
-        _ => 'All',
-      };
-
-  IconData _statusIcon(String v) => switch (v) {
-        'open' => Icons.lock_open,
-        'closed' => Icons.lock,
-        _ => Icons.filter_alt,
-      };
+  static const double _kControlHeight = 40.0; // keep in sync with controls
+  static const double _kHorzPad = 12.0;
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final currentStatus = _statusFromUri(context);
-      final q = _qFromUri(context);
-      if (!['all', 'open', 'closed'].contains(currentStatus)) {
-        _updateQuery(context, status: 'open'); // your new default
-      }
-      _searchCtrl.text = q;
-      setState(() {});
-    });
-  }
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isLoggedIn = ref.watch(isLoggedInProvider);
 
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    _searchCtrl.dispose();
-    super.dispose();
+    return SizedBox(
+      height: _kControlHeight,
+      child: Row(
+        children: [
+          // Title (fills available space, vertically centered)
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium,
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: false,
+                ),
+              ),
+            ),
+          ),
+
+          // Controls block (fixed height, vertically centered)
+          SizedBox(
+            height: _kControlHeight,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isLoggedIn) ...[
+                  NewPostButton(type: PostType.enquiry),
+                  const SizedBox(width: 12),
+                ],
+                _ControlsDropdown(
+                  selectedStatus: GoRouterState.of(context)
+                      .uri
+                      .queryParameters['status'] ?? 'all',
+                  statusOptions: const ['all', 'open', 'closed'],
+                  statusIcon: (v) => switch (v) {
+                    'open' => Icons.lock_open,
+                    'closed' => Icons.lock,
+                    _ => Icons.filter_alt,
+                  },
+                  statusLabel: (v) => switch (v) {
+                    'open' => 'Open',
+                    'closed' => 'Closed',
+                    _ => 'All',
+                  },
+                  initialQuery: GoRouterState.of(context)
+                      .uri
+                      .queryParameters['q'] ?? '',
+                  onStatusChanged: (v) => _updateQuery(context, status: v),
+                  onQueryChanged: (val) =>
+                      _updateQuery(context, q: val.trim()),
+                  onClearQuery: () => _updateQuery(context, q: ''),
+                  height: _kControlHeight,
+                  radius: 8,
+                  horizontalPad: _kHorzPad,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _updateQuery(BuildContext context, {String? status, String? q}) {
@@ -92,70 +102,8 @@ class _LeftPaneHeaderState extends ConsumerState<LeftPaneHeader> {
     }
     context.go(Uri(path: s.path, queryParameters: params).toString());
   }
-
-  @override
-  Widget build(BuildContext context) {
-    final isLoggedIn = ref.watch(isLoggedInProvider);
-    final selectedStatus = _statusFromUri(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Title + controls that auto-wrap when crowded
-        OverflowBar(
-          alignment: MainAxisAlignment.spaceBetween, // spread left vs right group
-          overflowAlignment: OverflowBarAlignment.start,
-          spacing: 12,          // gap within a line
-          overflowSpacing: 8,   // gap between wrapped lines
-          children: [
-            // Left: title (allow ellipsis on narrow widths)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: Text(
-                widget.title,
-                style: Theme.of(context).textTheme.titleMedium,
-                overflow: TextOverflow.ellipsis,
-                softWrap: false,
-              ),
-            ),
-
-            // Right: group the controls so they behave as one "block"
-            Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                if (isLoggedIn) NewPostButton(type: PostType.enquiry),
-                _ControlsDropdown(
-                  selectedStatus: selectedStatus,
-                  statusOptions: _statusOptions,
-                  statusIcon: _statusIcon,
-                  statusLabel: _statusLabel,
-                  initialQuery: _searchCtrl.text,
-                  onStatusChanged: (v) => _updateQuery(context, status: v),
-                  onQueryChanged: (val) {
-                    _debounce?.cancel();
-                    _debounce = Timer(_kDebounce, () {
-                      _updateQuery(context, q: val.trim());
-                    });
-                  },
-                  onClearQuery: () {
-                    _searchCtrl.clear();
-                    setState(() {}); // refresh suffix visibility if you mirror it
-                    _updateQuery(context, q: '');
-                  },
-                  height: _kControlHeight,
-                  radius: _kRadius,
-                  horizontalPad: _kHorzPad,
-                ),
-              ],
-            ),
-          ],
-        ),
-      ],
-    );
-  }
 }
+
 
 class _ControlsDropdown extends StatefulWidget {
   const _ControlsDropdown({
