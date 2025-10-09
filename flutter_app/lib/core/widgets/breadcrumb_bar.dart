@@ -49,10 +49,22 @@ class BreadcrumbBar extends ConsumerWidget  {
                     duration: const Duration(milliseconds: 500),
                     transitionBuilder: (child, animation) =>
                         FadeTransition(opacity: animation, child: child),
-                    child: Text(
-                      items[i].label,
-                      key: ValueKey(items[i].label), // 👈 important: new key when text changes
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: Theme.of(context).colorScheme.primary,
+                            width: 1.5,
+                          ),
+                        ),
+                      ),
+                      child: Text(
+                        items[i].label,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          height: 1.2,
+                        ),
+                      ),
                     ),
                   ),
                 ),
