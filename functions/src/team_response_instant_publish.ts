@@ -2,6 +2,7 @@ import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 
+import { Attachment, publishAttachments } from "./make_attachments_public";
 import { computeStageEnds } from "./publishing_and_permissions";
 
 const db = getFirestore();
@@ -62,6 +63,13 @@ export const teamResponseInstantPublisher = onCall(
           responseNumber: i + 1,
           publishedAt,
         });
+        // --- Token + URL population for this doc’s attachments
+        const raw = sorted[i].get("attachments");
+        const attachments = Array.isArray(raw) ? (raw as Attachment[]) : [];
+        if (attachments.length > 0) {
+          const updatedAttachments = await publishAttachments(attachments);
+          writer.update(sorted[i].ref, { attachments: updatedAttachments });
+        }
         // --- Draft delete ---
         const metaSnap = await sorted[i].ref
           .collection("meta")
@@ -92,6 +100,13 @@ export const teamResponseInstantPublisher = onCall(
           responseNumber: i + 1,
           publishedAt,
         });
+        // --- Token + URL population for this doc’s attachments
+        const raw = docs[i].get("attachments");
+        const attachments = Array.isArray(raw) ? (raw as Attachment[]) : [];
+        if (attachments.length > 0) {
+          const updatedAttachments = await publishAttachments(attachments);
+          writer.update(docs[i].ref, { attachments: updatedAttachments });
+        }
         // --- Draft delete ---
         const metaSnap = await docs[i].ref.collection("meta").doc("data").get();
         const team = metaSnap.exists ? metaSnap.get("authorTeam") : undefined;

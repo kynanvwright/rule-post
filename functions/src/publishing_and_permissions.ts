@@ -111,7 +111,7 @@ export const enquiryPublisher = onSchedule(
       });
       published += 1;
 
-      // 2) Token + URL population for this doc’s attachments
+      // --- 2. Token + URL population for this doc’s attachments
       const raw = doc.get("attachments");
       const attachments = Array.isArray(raw) ? (raw as Attachment[]) : [];
       if (attachments.length > 0) {
@@ -119,7 +119,7 @@ export const enquiryPublisher = onSchedule(
         writer.update(doc.ref, { attachments: updatedAttachments });
       }
 
-      // --- 2. Get team from meta subdoc ---
+      // --- 3. Get team from meta subdoc ---
       const metaSnap = await doc.ref.collection("meta").doc("data").get();
       const team = metaSnap.exists ? metaSnap.get("authorTeam") : undefined;
 
@@ -130,7 +130,7 @@ export const enquiryPublisher = onSchedule(
         continue;
       }
 
-      // --- 3. Queue draft delete ---
+      // --- 4. Queue draft delete ---
       const draftRef = db
         .collection("drafts")
         .doc("posts")
@@ -198,6 +198,13 @@ export const teamResponsePublisher = onSchedule(
             responseNumber: i + 1,
             publishedAt,
           });
+          // --- 2. Token + URL population for this doc’s attachments
+          const raw = sorted[i].get("attachments");
+          const attachments = Array.isArray(raw) ? (raw as Attachment[]) : [];
+          if (attachments.length > 0) {
+            const updatedAttachments = await publishAttachments(attachments);
+            writer.update(sorted[i].ref, { attachments: updatedAttachments });
+          }
           // --- Draft delete ---
           const metaSnap = await sorted[i].ref
             .collection("meta")
@@ -229,6 +236,13 @@ export const teamResponsePublisher = onSchedule(
             responseNumber: i + 1,
             publishedAt,
           });
+          // --- 2. Token + URL population for this doc’s attachments
+          const raw = docs[i].get("attachments");
+          const attachments = Array.isArray(raw) ? (raw as Attachment[]) : [];
+          if (attachments.length > 0) {
+            const updatedAttachments = await publishAttachments(attachments);
+            writer.update(docs[i].ref, { attachments: updatedAttachments });
+          }
           // --- Draft delete ---
           const metaSnap = await docs[i].ref
             .collection("meta")
@@ -474,7 +488,14 @@ export const committeeResponsePublisher = onSchedule(
             // roundNumber: roundNumber + 1,
             // responseNumber: 0,
           });
-
+          // Token + URL population for this doc’s attachments
+          const snap = await tx.get(committeeDoc.ref);
+          const raw = snap.get("attachments");
+          const attachments = Array.isArray(raw) ? (raw as Attachment[]) : [];
+          if (attachments.length > 0) {
+            const updatedAttachments = await publishAttachments(attachments);
+            tx.update(committeeDoc.ref, { attachments: updatedAttachments });
+          }
           // Delete response draft
           const metaSnap = await committeeDoc.ref
             .collection("meta")

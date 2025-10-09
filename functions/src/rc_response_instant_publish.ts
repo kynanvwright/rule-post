@@ -2,6 +2,7 @@ import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 
+import { Attachment, publishAttachments } from "./make_attachments_public";
 import { computeStageEnds } from "./publishing_and_permissions";
 
 const db = getFirestore();
@@ -99,6 +100,14 @@ export const committeeResponseInstantPublisher = onCall(
           roundNumber: roundNumber + 1,
           responseNumber: 0,
         });
+        // Token + URL population for this doc’s attachments
+        const snap = await tx.get(responseRef);
+        const raw = snap.get("attachments");
+        const attachments = Array.isArray(raw) ? (raw as Attachment[]) : [];
+        if (attachments.length > 0) {
+          const updatedAttachments = await publishAttachments(attachments);
+          tx.update(responseRef, { attachments: updatedAttachments });
+        }
         // Delete response draft
         const metaSnap = await responseRef.collection("meta").doc("data").get();
         const team = metaSnap.exists ? metaSnap.get("authorTeam") : undefined;
