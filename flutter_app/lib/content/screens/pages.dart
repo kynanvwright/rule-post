@@ -273,7 +273,7 @@ class ResponseDetailPage extends StatelessWidget {
                         _StatusChip('Unpublished', color: Colors.orange)
                       else if (enquiry.containsKey('roundNumber') && response.containsKey('roundNumber') && !currentRound)
                         _StatusChip('Round closed', color: Colors.red)
-                      else if (enquiry.containsKey('teamsCanComment'))
+                      else if (enquiry.containsKey('teamsCanComment') && !fromRC)
                         _StatusChip(teamsCanComment ? 'Competitors may comment' : 'Comments closed', 
                         color: teamsCanComment ? Colors.green : Colors.red),
                       
@@ -608,13 +608,11 @@ class _ChildrenSection extends ConsumerWidget {
                     ? null
                     : (title.length > 140 ? '${title.substring(0, 140)}…' : title);
                 final commentCount = d['commentCount'] ?? 0;
-                final trailingText = Text('$commentCount comments');
+                final trailingText = fromRC==false ? Text('$commentCount comments') : Text('Rules Committee');
 
                 tile = ListTile(
                   title: !isPublished
-                  ? Text('Response $roundNumber.$responseNumber (Draft)') 
-                  : fromRC 
-                  ? Text('Response $roundNumber.$responseNumber (Rules Committee)')
+                  ? Text('Response $roundNumber.$responseNumber (Draft)')
                   : Text('Response $roundNumber.$responseNumber'),
                   subtitle: titleSnippet == null ? null : Text(titleSnippet),
                   trailing: trailingText,
