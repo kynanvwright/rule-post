@@ -1,5 +1,5 @@
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
-// import { logger } from "firebase-functions";
+import { logger } from "firebase-functions";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 
 import { Attachment, publishAttachments } from "./make_attachments_public";
@@ -15,40 +15,27 @@ type publishPayload = {
 export const committeeResponseInstantPublisher = onCall(
   { cors: true, enforceAppCheck: true },
   async (req) => {
-    // 1) Check user is logged in and admin
     const callerUid = req.auth?.uid;
     if (!callerUid)
       throw new HttpsError("unauthenticated", "You must be signed in.");
-    const isAdmin = req.auth?.token.role == "admin";
-    const isRC = req.auth?.token.team == "RC";
-    if (!isAdmin && !isRC) {
+    const isAdmin = req.auth?.token.role === "admin";
+    const isRC = req.auth?.token.team === "RC";
+    if (!isAdmin && !isRC)
       throw new HttpsError("permission-denied", "Admin/RC function only.");
-    }
 
-    // 2) Get enquiry and response from Firestore
     const { enquiryID, responseID } = req.data as publishPayload;
     const enquiryDoc = await db.collection("enquiries").doc(enquiryID).get();
     if (!enquiryDoc.exists) {
-      console.log("[committeeResponseInstantPublisher] No matching enquiry.");
-      return;
+      logger.warn("[committeeResponseInstantPublisher] No matching enquiry.");
+      return { ok: false, reason: "no-enquiry" };
     }
     const enquiryRef = enquiryDoc.ref;
+
+    // Resolve the target response ref without reading it yet (tx will read)
     let responseRef: FirebaseFirestore.DocumentReference;
-    let responseSnap: FirebaseFirestore.DocumentSnapshot;
-
     if (responseID) {
-      // Path: explicit response
       responseRef = enquiryRef.collection("responses").doc(responseID);
-      responseSnap = await responseRef.get();
-
-      if (!responseSnap.exists) {
-        console.log(
-          "[committeeResponseInstantPublisher] No matching response.",
-        );
-        return;
-      }
     } else {
-      // Path: find latest unpublished RC response
       const committeeSnap = await enquiryRef
         .collection("responses")
         .where("fromRC", "==", true)
@@ -56,87 +43,66 @@ export const committeeResponseInstantPublisher = onCall(
         .get();
 
       if (committeeSnap.empty) {
-        console.log(
+        logger.warn(
           "[committeeResponseInstantPublisher] No unpublished RC responses.",
         );
-        return;
+        return { ok: false, reason: "no-unpublished-rc" };
       }
       if (committeeSnap.size !== 1) {
-        console.log(
+        logger.warn(
           "[committeeResponseInstantPublisher] Too many unpublished RC responses.",
         );
-        return;
+        return { ok: false, reason: "multiple-unpublished-rc" };
       }
-
-      // docs[0] is already a QueryDocumentSnapshot (a kind of DocumentSnapshot)
-      const doc0 = committeeSnap.docs[0];
-      responseRef = doc0.ref;
-      responseSnap = doc0; // already a snapshot; no extra get() needed
+      responseRef = committeeSnap.docs[0].ref;
     }
 
-    // inside your callable/handler
     const publishedAt = FieldValue.serverTimestamp();
 
     try {
-      // 1) Run the transaction and return info needed for post-tx work
       const txResult = await db.runTransaction(async (tx) => {
-        // --- READS FIRST ---------------------------------------------------------
         const enquirySnap = await tx.get(enquiryRef);
-        if (!enquirySnap.exists) {
-          throw new Error(`Enquiry ${enquiryRef.id} not found`);
-        }
+        if (!enquirySnap.exists) return { ok: false, reason: "no-enquiry" };
+
         const e = enquirySnap.data() ?? {};
         const roundNumber =
           typeof e.roundNumber === "number" ? e.roundNumber : undefined;
-
-        if (roundNumber === undefined) {
-          // Nothing to do; return consistent shape for client
-          return {
-            ok: false,
-            reason: "Missing roundNumber",
-            attachments: [] as Attachment[],
-            team: undefined as string | undefined,
-          };
-        }
+        if (roundNumber === undefined)
+          return { ok: false, reason: "missing-round-number" };
 
         const stillOpen =
           e.isOpen === true &&
           e.isPublished === true &&
           e.teamsCanRespond === false;
+        if (!stillOpen) return { ok: false, reason: "wrong-stage" };
 
-        if (!stillOpen) {
-          console.log(
-            "[committeeResponseInstantPublisher] Enquiry is not at correct stage for this action.",
-          );
-          return {
-            ok: false,
-            reason: "Wrong stage",
-            attachments: [] as Attachment[],
-            team: undefined as string | undefined,
-          };
+        const respSnap = await tx.get(responseRef);
+        if (!respSnap.exists) return { ok: false, reason: "no-response" };
+
+        // Guard against concurrent publishes
+        if (respSnap.get("isPublished") === true) {
+          return { ok: false, reason: "already-published" };
         }
 
-        const responseSnap = await tx.get(responseRef);
-        if (!responseSnap.exists) {
-          throw new Error(`Response ${responseRef.id} not found`);
-        }
-
-        // attachments to be processed AFTER the transaction
-        const raw = responseSnap.get("attachments");
+        const raw = respSnap.get("attachments");
         const attachments = Array.isArray(raw) ? (raw as Attachment[]) : [];
 
-        const metaDocRef = responseRef.collection("meta").doc("data");
-        const metaSnap = await tx.get(metaDocRef);
+        // Optional: verify fromRC is true to enforce invariant
+        if (respSnap.get("fromRC") !== true)
+          return { ok: false, reason: "not-rc-response" };
+
+        const metaSnap = await tx.get(
+          responseRef.collection("meta").doc("data"),
+        );
         const team = metaSnap.exists
           ? (metaSnap.get("authorTeam") as string | undefined)
           : undefined;
 
-        // --- WRITES AFTER ALL READS ----------------------------------------------
         tx.update(responseRef, {
           isPublished: true,
           roundNumber: roundNumber + 1,
           responseNumber: 0,
-          publishedAt, // serverTimestamp inside tx is fine
+          publishedAt,
         });
 
         if (team) {
@@ -147,14 +113,12 @@ export const committeeResponseInstantPublisher = onCall(
             .doc(responseRef.id);
           tx.delete(draftRef);
         } else {
-          // Don't throw; just log and continue with the rest of the atomic ops
-          console.warn(
-            `[committeeResponseInstantPublisher] No team found for ${responseRef.id}.`,
+          logger.warn(
+            `[committeeResponseInstantPublisher] No team for ${responseRef.id}.`,
           );
         }
 
         const nextStageEnds = computeStageEnds(4, { hour: 19, minute: 55 });
-
         tx.update(enquiryRef, {
           roundNumber: FieldValue.increment(1),
           teamsCanRespond: true,
@@ -163,11 +127,9 @@ export const committeeResponseInstantPublisher = onCall(
           stageEnds: Timestamp.fromDate(nextStageEnds),
         });
 
-        // Return stuff needed after commit (attachments to publish, team for logs, etc.)
-        return { ok: true, attachments, team };
+        return { ok: true, attachments };
       });
 
-      // 2) Post-transaction side effects (safe to retry idempotently, but kept separate)
       if (txResult?.ok && txResult.attachments?.length) {
         const updatedAttachments = await publishAttachments(
           txResult.attachments,
@@ -175,14 +137,22 @@ export const committeeResponseInstantPublisher = onCall(
         await responseRef.update({ attachments: updatedAttachments });
       }
 
-      return { ok: !!txResult?.ok };
+      return {
+        ok: !!txResult?.ok,
+        reason: txResult?.ok ? undefined : txResult?.reason,
+      };
     } catch (err) {
-      console.error(
-        "[committeeResponseInstantPublisher] Transaction failed for " +
-          `enquiry ${enquiryID}:`,
+      logger.error(
+        "[committeeResponseInstantPublisher] Transaction failed for enquiry " +
+          enquiryID +
+          ":",
         err,
       );
-      return { ok: false, error: (err as Error)?.message ?? String(err) };
+      return {
+        ok: false,
+        reason: "tx-failed",
+        error: (err as Error)?.message ?? String(err),
+      };
     }
   },
 );

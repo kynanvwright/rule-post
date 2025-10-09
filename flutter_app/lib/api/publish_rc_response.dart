@@ -14,7 +14,7 @@ Future<bool> publishRcResponse(String enquiryId) async {
     if (raw is Map) {
     final data = result.data;
     if (data['ok'] != true) {
-    debugPrint('Function returns map, did not succeed');
+    debugPrint("Function returns map, did not succeed. Possible cause: ${data['reason']}");
     }
     return data['ok'] ?? false;
     } else {
