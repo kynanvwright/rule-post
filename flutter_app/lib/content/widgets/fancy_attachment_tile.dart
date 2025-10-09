@@ -102,16 +102,11 @@ class _FancyAttachmentTileState extends State<FancyAttachmentTile> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
-                    tooltip: 'Download',
-                    icon: const Icon(Icons.download),
-                    onPressed: hasUrl ? () => _openUrl(resolvedUrl) : null,
-                  ),
-                  IconButton(
                     tooltip: canPreviewInline
                         ? (_expanded ? 'Hide preview' : 'Show preview')
                         : 'Open',
                     icon: Icon(canPreviewInline
-                        ? (_expanded ? Icons.expand_less : Icons.expand_more)
+                        ? (_expanded ? Icons.expand_less : Icons.search)
                         : Icons.open_in_new),
                     onPressed: hasUrl
                         ? () {
@@ -122,6 +117,11 @@ class _FancyAttachmentTileState extends State<FancyAttachmentTile> {
                             }
                           }
                         : null,
+                  ),
+                  IconButton(
+                    tooltip: 'Download',
+                    icon: const Icon(Icons.download),
+                    onPressed: hasUrl ? () => _openUrl(resolvedUrl) : null,
                   ),
                 ],
               ),
