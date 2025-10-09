@@ -67,14 +67,20 @@ class AppScaffold extends StatelessWidget {
           // Background (colour + repeating tile)
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFFF7F6FB),
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFF121212)
+                  : const Color(0xFFF7F6FB),
               image: DecorationImage(
                 image: AssetImage(tileAsset),
                 repeat: ImageRepeat.repeat,
-                opacity: 0.06,
+                opacity: Theme.of(context).brightness == Brightness.dark ? 0.12 : 0.06,
+                colorFilter: Theme.of(context).brightness == Brightness.dark
+                    ? ColorFilter.mode(Colors.black.withValues(alpha: 0.45), BlendMode.darken)
+                    : null,
               ),
             ),
           ),
+
 
           // Centered app canvas
           SafeArea(
@@ -341,7 +347,6 @@ class _DefaultBanner extends ConsumerWidget {
                         ],
                       ),
                     ]
-
             ),
           );
         },
