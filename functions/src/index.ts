@@ -28,6 +28,7 @@ export { deleteUser } from "./delete_user";
 export { listTeamUsers } from "./list_team_users";
 export { closeEnquiry } from "./close_enquiry";
 export { committeeResponseInstantPublisher } from "./rc_response_instant_publish";
+export { teamResponseInstantPublisher } from "./team_response_instant_publish";
 export {
   onEnquiryIsPublishedUpdated,
   onResponseIsPublishedUpdated,

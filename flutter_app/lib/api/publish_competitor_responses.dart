@@ -10,10 +10,16 @@ Future<int?> publishCompetitorResponses(String enquiryId) async {
       'enquiryID': enquiryId.trim(),
     });
 
-    final data = result.data as Map<String, dynamic>;
-    if (data['ok']) {
-      return data['num_published'] ?? 0;
+    final raw = result.data;
+
+    if (raw is Map) {
+    final data = result.data;
+    if (data['ok'] != true) {
+    debugPrint('Function returns map, did not succeed');
+    }
+    return data['num_published'] ?? 0;
     } else {
+      debugPrint('Function does not return map.');
       return null;
     }
   } on FirebaseFunctionsException catch (e) {
