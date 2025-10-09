@@ -23,10 +23,8 @@ class BreadcrumbBar extends ConsumerWidget  {
       _Crumb('Enquiries', '/enquiries${state.uri.hasQuery ? '?${state.uri.query}' : ''}'),
       if (p['enquiryId'] != null)
         _Crumb(enquiryLabel(), '/enquiries/${p['enquiryId']}'),
-      if (state.matchedLocation.contains('/responses'))
-        _Crumb('Responses', '/enquiries/${p['enquiryId']}/responses', goParent: true, upLevels: 1), // go up one level, no page for responses
-      if (p['responseId'] != null)
-        _Crumb(responseLabel(), '/enquiries/${p['enquiryId']}/responses/${p['responseId']}'),
+      if (p['enquiryId'] != null && p['responseId'] != null)
+        _Crumb(responseLabel(), '/enquiries/${p['enquiryId']}/${p['responseId']}'),
     ];
 
     return SingleChildScrollView(
@@ -40,9 +38,7 @@ class BreadcrumbBar extends ConsumerWidget  {
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
                   onTap: () {
-                    final target = items[i].goParent
-                        ? _parentOf(items[i].href, upLevels: items[i].upLevels)
-                        : items[i].href;
+                    final target = items[i].href;
                     context.go(target);
                   },
                   child: AnimatedSwitcher(
@@ -83,17 +79,5 @@ class BreadcrumbBar extends ConsumerWidget  {
 class _Crumb {
   final String label;
   final String href;
-  final bool goParent;      // <— when true, navigate one level up from href
-  final int upLevels;       // <— how many levels to go up (default 1)
-  _Crumb(this.label, this.href, {this.goParent = false, this.upLevels = 1});
-}
-
-String _parentOf(String href, {int upLevels = 1}) {
-  final u = Uri.parse(href);
-  final segs = List<String>.from(u.pathSegments);
-  if (segs.isEmpty) return href;
-  final cut = segs.length - upLevels.clamp(0, segs.length);
-  final parentPath = '/${segs.take(cut).join('/')}';
-  final qs = u.hasQuery ? '?${u.query}' : '';
-  return '$parentPath$qs';
+  _Crumb(this.label, this.href);
 }
