@@ -7,7 +7,7 @@ Future<int?> publishCompetitorResponses(String enquiryId) async {
     final callable = functions.httpsCallable('teamResponseInstantPublisher');
 
     final result = await callable.call(<String, dynamic>{
-      'enquiryID': enquiryId.trim,
+      'enquiryID': enquiryId.trim(),
     });
 
     final data = result.data as Map<String, dynamic>;

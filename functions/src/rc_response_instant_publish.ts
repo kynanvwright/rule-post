@@ -1,5 +1,5 @@
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
-import { logger } from "firebase-functions";
+// import { logger } from "firebase-functions";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 
 import { Attachment, publishAttachments } from "./make_attachments_public";
@@ -74,13 +74,29 @@ export const committeeResponseInstantPublisher = onCall(
       responseSnap = doc0; // already a snapshot; no extra get() needed
     }
 
-    try {
-      await db.runTransaction(async (tx) => {
-        const e = enquiryDoc.data() || {};
-        const roundNumber = e.roundNumber as number | undefined;
+    // inside your callable/handler
+    const publishedAt = FieldValue.serverTimestamp();
 
-        if (typeof roundNumber !== "number") {
-          return;
+    try {
+      // 1) Run the transaction and return info needed for post-tx work
+      const txResult = await db.runTransaction(async (tx) => {
+        // --- READS FIRST ---------------------------------------------------------
+        const enquirySnap = await tx.get(enquiryRef);
+        if (!enquirySnap.exists) {
+          throw new Error(`Enquiry ${enquiryRef.id} not found`);
+        }
+        const e = enquirySnap.data() ?? {};
+        const roundNumber =
+          typeof e.roundNumber === "number" ? e.roundNumber : undefined;
+
+        if (roundNumber === undefined) {
+          // Nothing to do; return consistent shape for client
+          return {
+            ok: false,
+            reason: "Missing roundNumber",
+            attachments: [] as Attachment[],
+            team: undefined as string | undefined,
+          };
         }
 
         const stillOpen =
@@ -92,36 +108,49 @@ export const committeeResponseInstantPublisher = onCall(
           console.log(
             "[committeeResponseInstantPublisher] Enquiry is not at correct stage for this action.",
           );
-          return;
+          return {
+            ok: false,
+            reason: "Wrong stage",
+            attachments: [] as Attachment[],
+            team: undefined as string | undefined,
+          };
         }
 
+        const responseSnap = await tx.get(responseRef);
+        if (!responseSnap.exists) {
+          throw new Error(`Response ${responseRef.id} not found`);
+        }
+
+        // attachments to be processed AFTER the transaction
+        const raw = responseSnap.get("attachments");
+        const attachments = Array.isArray(raw) ? (raw as Attachment[]) : [];
+
+        const metaDocRef = responseRef.collection("meta").doc("data");
+        const metaSnap = await tx.get(metaDocRef);
+        const team = metaSnap.exists
+          ? (metaSnap.get("authorTeam") as string | undefined)
+          : undefined;
+
+        // --- WRITES AFTER ALL READS ----------------------------------------------
         tx.update(responseRef, {
           isPublished: true,
           roundNumber: roundNumber + 1,
           responseNumber: 0,
+          publishedAt, // serverTimestamp inside tx is fine
         });
-        // Token + URL population for this doc’s attachments
-        const snap = await tx.get(responseRef);
-        const raw = snap.get("attachments");
-        const attachments = Array.isArray(raw) ? (raw as Attachment[]) : [];
-        if (attachments.length > 0) {
-          const updatedAttachments = await publishAttachments(attachments);
-          tx.update(responseRef, { attachments: updatedAttachments });
-        }
-        // Delete response draft
-        const metaSnap = await responseRef.collection("meta").doc("data").get();
-        const team = metaSnap.exists ? metaSnap.get("authorTeam") : undefined;
-        if (!team) {
-          logger.warn(
-            `[committeeResponseInstantPublisher] No team found for ${responseSnap.id}.`,
-          );
-        } else {
+
+        if (team) {
           const draftRef = db
             .collection("drafts")
             .doc("posts")
             .collection(team)
-            .doc(responseSnap.id);
+            .doc(responseRef.id);
           tx.delete(draftRef);
+        } else {
+          // Don't throw; just log and continue with the rest of the atomic ops
+          console.warn(
+            `[committeeResponseInstantPublisher] No team found for ${responseRef.id}.`,
+          );
         }
 
         const nextStageEnds = computeStageEnds(4, { hour: 19, minute: 55 });
@@ -130,16 +159,30 @@ export const committeeResponseInstantPublisher = onCall(
           roundNumber: FieldValue.increment(1),
           teamsCanRespond: true,
           teamsCanComment: false,
-          stageStarts: FieldValue.serverTimestamp(),
+          stageStarts: publishedAt,
           stageEnds: Timestamp.fromDate(nextStageEnds),
         });
+
+        // Return stuff needed after commit (attachments to publish, team for logs, etc.)
+        return { ok: true, attachments, team };
       });
+
+      // 2) Post-transaction side effects (safe to retry idempotently, but kept separate)
+      if (txResult?.ok && txResult.attachments?.length) {
+        const updatedAttachments = await publishAttachments(
+          txResult.attachments,
+        );
+        await responseRef.update({ attachments: updatedAttachments });
+      }
+
+      return { ok: !!txResult?.ok };
     } catch (err) {
       console.error(
         "[committeeResponseInstantPublisher] Transaction failed for " +
           `enquiry ${enquiryID}:`,
         err,
       );
+      return { ok: false, error: (err as Error)?.message ?? String(err) };
     }
   },
 );

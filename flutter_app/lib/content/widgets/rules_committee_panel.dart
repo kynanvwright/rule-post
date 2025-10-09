@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:cloud_functions/cloud_functions.dart';
 
 typedef ConfirmGuard = Future<bool> Function(BuildContext context);
 
@@ -79,9 +79,27 @@ class AdminAction {
                   SnackBar(content: Text('Published RC response')),
                 );
               }
-            } catch (e) {
+            } on FormatException catch (e, st) {
+              // Our validator: shows the exact path + type
+              // e.g. "Invalid parameter at $.meta.stageEnds (Timestamp): Unsupported type..."
+              // ignore: avoid_print
+              print('Param validation failed: $e\n$st');
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Failed to publish RC response')),
+                SnackBar(content: Text('Invalid parameters: ${e.message}')),
+              );
+            } on FirebaseFunctionsException catch (e, st) {
+              // Server-side error from your callable
+              // ignore: avoid_print
+              print('Functions error: ${e.code} ${e.message}\nDetails: ${e.details}\n$st');
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Cloud Function error: ${e.code}: ${e.message ?? ''}')),
+              );
+            } catch (e, st) {
+              // Client-side unexpected error (like the assert you saw)
+              // ignore: avoid_print
+              print('Unexpected error: $e\n$st');
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Unexpected error: $e')),
               );
             }
           },

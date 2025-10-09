@@ -7,11 +7,20 @@ Future<bool> publishRcResponse(String enquiryId) async {
     final callable = functions.httpsCallable('committeeResponseInstantPublisher');
 
     final result = await callable.call(<String, dynamic>{
-      'enquiryID': enquiryId.trim,
+      'enquiryID': enquiryId.trim(),
     });
+    final raw = result.data;
 
-    final data = result.data as Map<String, dynamic>;
+    if (raw is Map) {
+    final data = result.data;
+    if (data['ok'] != true) {
+    debugPrint('Function returns map, did not succeed');
+    }
     return data['ok'] ?? false;
+    } else {
+      debugPrint('Function does not return map.');
+      return false;
+    }
   } on FirebaseFunctionsException catch (e) {
     // Backend threw HttpsError
     debugPrint('❌ Cloud Function error: ${e.code} – ${e.message}');

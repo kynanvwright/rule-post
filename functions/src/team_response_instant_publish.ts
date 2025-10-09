@@ -139,5 +139,6 @@ export const teamResponseInstantPublisher = onCall(
     console.log(
       `[teamResponseInstantPublisher] Published ${totalResponsesPublished} responses.`,
     );
+    return { ok: true, num_published: totalResponsesPublished };
   },
 );
