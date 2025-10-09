@@ -1,12 +1,5 @@
-// import { randomUUID } from "node:crypto"; // no extra npm dep needed
-
 import { File } from "@google-cloud/storage";
-import {
-  getFirestore,
-  FieldValue,
-  DocumentSnapshot,
-  DocumentReference,
-} from "firebase-admin/firestore";
+import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import {
   onCall,
@@ -16,264 +9,89 @@ import {
 
 import { assignUniqueColoursForEnquiry } from "./post_colours";
 
+/* --------------------------------- Config --------------------------------- */
+
 const ALLOWED_TYPES = [
   "application/pdf",
-  // "image/.+",
-  "application/vnd.openxmlformats-officedocument." +
-    "wordprocessingml.document",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "application/msword",
 ];
 const ALLOWED_MIME = new RegExp(`^(${ALLOWED_TYPES.join("|")})$`, "i");
-const MAX_BYTES = 25 * 1024 * 1024; // 25 MB cap for MVP
+const MAX_BYTES = 25 * 1024 * 1024; // 25 MB
+
+/* -------------------------------- Utilities ------------------------------- */
 
 function assert(cond: unknown, msg: string): asserts cond {
   if (!cond) throw new HttpsError("failed-precondition", msg);
 }
 
-/**
- * Lightweight filename sanitiser (keeps extensions).
- *
- * - Replaces disallowed characters with "_"
- * - Trims the result to 200 characters max
- *
- * @param {string} name Original filename
- * @return {string} Sanitised filename
- */
+/** Lightweight filename sanitiser (keeps extensions). */
 function sanitiseName(name: string): string {
-  return name.replace(/[^\w.\-+]/g, "_").slice(0, 200);
+  return String(name)
+    .replace(/[^\w.\-+]/g, "_")
+    .slice(0, 200);
 }
 
 /**
- * Attempts to delete a file, then always throws a precondition error.
+ * Type guard for Google Cloud Storage errors.
+ * Returns true if the given value is an object with `code === 404`,
+ * which indicates a "Not Found" error from GCS.
  *
- * @param {File} file The GCS file to delete
- * @param {string} message Error message to throw
- * @throws {HttpsError} Always throws after attempting deletion
- * @return {never} This function never returns
+ * This avoids using `any` and keeps ESLint (`no-explicit-any`, `no-unsafe-member-access`)
+ * fully satisfied while handling storage errors safely.
  */
-export async function deleteAndFail(
-  file: File,
-  message: string,
-): Promise<never> {
+function isNotFoundError(e: unknown): boolean {
+  return (
+    typeof e === "object" &&
+    e !== null &&
+    "code" in e &&
+    (e as { code?: number }).code === 404
+  );
+}
+
+/** Delete a file then always fail with a clean error. */
+async function deleteAndFail(file: File, message: string): Promise<never> {
   try {
     await file.delete();
   } catch {
-    // ignore deletion errors
+    /* ignore */
   }
   throw new HttpsError("failed-precondition", message);
 }
 
-/**
- * Returns the maximum numeric value of a given field in a Firestore collection.
- * If the field is missing from all documents, returns the provided default.
- *
- * @param {string} collectionPath - Path to the Firestore collection
- * @param {string} [field="value"] - Name of the field to search for max
- * @param {number} [defaultIfMissingEverywhere=1] - Returned if no matches
- * @return {Promise<number>} Resolves with the maximum value or the default
- * @throws {Error} If the Firestore query fails
- */
-export async function getMaxOrDefault(
-  collectionPath: string,
-  field = "value",
-  defaultIfMissingEverywhere = 0,
-): Promise<number> {
-  const db = getFirestore(); // should 'app' be passed in?
+/* --------------------------------- Types ---------------------------------- */
 
-  const snap = await db
-    .collection(collectionPath)
-    .orderBy(field, "desc")
-    .limit(1)
-    .get();
-
-  if (snap.empty) return defaultIfMissingEverywhere;
-
-  const v = snap.docs[0].get(field);
-  return typeof v === "number" ? v : defaultIfMissingEverywhere;
-}
-
-// What the client will send for each temp attachment
 type TempAttachmentIn = {
-  name: string; // display name (e.g., "diagram.png")
-  storagePath: string; // e.g. "enquiries_temp/<uid>/123-diagram.png"
-  size?: number; // optional; server re-reads from metadata anyway
-  contentType?: string; // optional; server re-reads from metadata anyway
-};
-
-// What we store on the public enquiry doc
-type FinalisedAttachment = {
   name: string;
-  path: string; // tokenised download URL
+  storagePath: string;
   size?: number;
   contentType?: string;
 };
 
-// Payload shape for createEnquiry
-type CreatePostData = {
-  postType: string;
-  title: string;
-  postText?: string;
-  attachments?: TempAttachmentIn[]; // <-- client sends temp entries
-  parentIds?: string[]; // for responses/comments
+type FinalisedAttachment = {
+  name: string;
+  path: string;
+  size?: number;
+  contentType?: string;
 };
+
+type CreatePostData = {
+  postType: "enquiry" | "response" | "comment";
+  title?: string;
+  postText?: string;
+  attachments?: TempAttachmentIn[];
+  parentIds?: string[]; // response: [enquiryId], comment: [enquiryId, responseId]
+};
+
+/* ------------------------------- Main Logic -------------------------------- */
 
 export const createPost = onCall<CreatePostData>(
   { enforceAppCheck: true },
   async (req: CallableRequest<CreatePostData>) => {
-    // auth check
-    if (!req.auth?.uid) {
+    /* ----------------------------- Auth & Inputs ----------------------------- */
+    if (!req.auth?.uid)
       throw new HttpsError("unauthenticated", "Sign in required.");
-    }
     const authorUid = req.auth.uid;
-
-    // ---- Parse + validate inputs ----
-    const data = (req.data ?? {}) as CreatePostData;
-    if (
-      !data.postType ||
-      (data.postType !== "enquiry" &&
-        data.postType !== "response" &&
-        data.postType !== "comment")
-    ) {
-      throw new HttpsError("invalid-argument", "Invalid or missing postType.");
-    }
-    if (!data.postText && !data.attachments) {
-      throw new HttpsError(
-        "invalid-argument",
-        "Post must contain either text or an attachment.",
-      );
-    }
-    if (
-      data.postType === "response" &&
-      (!data.parentIds || data.parentIds.length !== 1)
-    ) {
-      throw new HttpsError(
-        "invalid-argument",
-        "Response must contain one parentId.",
-      );
-    }
-    if (
-      data.postType === "comment" &&
-      (!data.parentIds || data.parentIds.length !== 2)
-    ) {
-      throw new HttpsError(
-        "invalid-argument",
-        "Comment must contain two parentIds.",
-      );
-    }
-    if (
-      data.postType === "comment" &&
-      Array.isArray(data.attachments) &&
-      data.attachments.length > 0
-    ) {
-      throw new HttpsError(
-        "invalid-argument",
-        "Comments must not have attachments.",
-      );
-    }
-    // declare inputs to variables
-    const postType = data.postType;
-    const title = String(data.title ?? "").trim();
-    const postText = String(data.postText ?? "").trim();
-    const parentIds = Array.isArray(data.parentIds) ? data.parentIds : [];
-
-    // get references to services
-    const db = getFirestore(); // should 'app' be passed in?
-    const bucket = getStorage().bucket();
-
-    // Pre-create an doc id so storage has a matching location
-    let docRef;
-    if (postType === "enquiry") {
-      docRef = db.collection("enquiries").doc();
-    } else if (postType === "response") {
-      docRef = db
-        .collection("enquiries")
-        .doc(parentIds[0])
-        .collection("responses")
-        .doc();
-    } else {
-      // comment
-      docRef = db
-        .collection("enquiries")
-        .doc(parentIds[0])
-        .collection("responses")
-        .doc(parentIds[1])
-        .collection("comments")
-        .doc();
-    }
-    const postId = docRef.id;
-    const postPath = docRef.path;
-
-    // ---- Finalise attachments (optional) ----
-    const incoming = Array.isArray(data.attachments) ? data.attachments : [];
-    const finalised: FinalisedAttachment[] = [];
-
-    const tempRoot =
-      postType === "enquiry"
-        ? "enquiries_temp"
-        : postType === "response"
-          ? "responses_temp"
-          : "comments_temp";
-
-    for (const a of incoming) {
-      const name = String(a?.name ?? "").trim();
-      const tmpPath = String(a?.storagePath ?? "").trim();
-      if (!name || !tmpPath) continue;
-
-      // Enforce that the temp object belongs to the caller
-      const expectedPrefix = `${tempRoot}/${authorUid}/`;
-      if (!tmpPath.startsWith(expectedPrefix)) {
-        throw new HttpsError("permission-denied", "Invalid attachment path.");
-      }
-
-      const srcFile = bucket.file(tmpPath);
-      const [exists] = await srcFile.exists();
-      if (!exists) {
-        throw new HttpsError(
-          "not-found",
-          `Temp attachment not found: ${tmpPath}`,
-        );
-      }
-
-      // Read server-side metadata (trust server, not client)
-      const [md] = await srcFile.getMetadata();
-      const size = Number(md.size ?? a.size ?? 0);
-      const contentType = String(
-        md.contentType ?? a.contentType ?? "application/octet-stream",
-      );
-
-      if (size > MAX_BYTES) {
-        await deleteAndFail(srcFile, "Attachment too large.");
-      }
-
-      if (!ALLOWED_MIME.test(contentType)) {
-        await deleteAndFail(srcFile, "Unsupported attachment type.");
-      }
-
-      // Build final path under the new enquiry id
-      const finalPath = postPath + "/" + sanitiseName(name);
-
-      // Move temp -> final (move = copy+delete)
-      await srcFile.move(finalPath);
-
-      const file = bucket.file(finalPath);
-
-      // Add a download token and persist contentType
-      // const token = randomUUID();
-      await file.setMetadata({
-        contentType,
-        // metadata: { firebaseStorageDownloadTokens: token },
-      });
-
-      // const url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(
-      //   finalPath,
-      // )}?alt=media}`;
-
-      finalised.push({ name, path: finalPath, size, contentType });
-    }
-
-    // ---- Write Firestore docs ----
-    const now = FieldValue.serverTimestamp();
-
     const authorTeam = req.auth.token.team;
     if (typeof authorTeam !== "string" || authorTeam.length === 0) {
       throw new HttpsError(
@@ -282,206 +100,353 @@ export const createPost = onCall<CreatePostData>(
       );
     }
 
-    let enquiryNumber: number;
-    let enquiryRoundNumber: number;
-    let enquiryResponseNumber: number | null;
-    let enquiryDoc: DocumentSnapshot | null;
-    let postColourMap: Record<string, string> | null = null;
-    let postColour: string | null = null;
-    if (postType === "enquiry") {
-      const maxEnquiryNumber = await getMaxOrDefault(
-        "enquiries",
-        "enquiryNumber",
+    const data = (req.data ?? {}) as CreatePostData;
+    if (
+      !data.postType ||
+      !["enquiry", "response", "comment"].includes(data.postType)
+    ) {
+      throw new HttpsError("invalid-argument", "Invalid or missing postType.");
+    }
+    const postType = data.postType;
+
+    const title = String(data.title ?? "").trim();
+    const postText = String(data.postText ?? "").trim();
+
+    if (
+      postType !== "comment" &&
+      !postText &&
+      !Array.isArray(data.attachments)
+    ) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Post must contain either text or an attachment.",
       );
-      enquiryNumber = maxEnquiryNumber + 1;
-      postColourMap = await assignUniqueColoursForEnquiry(postId);
-    } else {
-      enquiryDoc = await db.collection("enquiries").doc(parentIds[0]).get();
-      if (!enquiryDoc.exists) {
+    }
+
+    const parentIds = Array.isArray(data.parentIds) ? data.parentIds : [];
+    if (postType === "response" && parentIds.length !== 1) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Response must contain one parentId.",
+      );
+    }
+    if (postType === "comment") {
+      if (parentIds.length !== 2) {
         throw new HttpsError(
-          "failed-precondition",
-          "No matching enquiry for this response.",
+          "invalid-argument",
+          "Comment must contain two parentIds.",
         );
       }
-      enquiryRoundNumber = enquiryDoc.get("roundNumber") as number;
-      // increment round number if user is the RC
-      if (authorTeam === "RC") {
-        enquiryRoundNumber += 1;
-        enquiryResponseNumber = 0;
-      } else {
-        enquiryResponseNumber = null;
-      }
-      // Assign post colour based on team
-      if (authorTeam === "RC") {
-        const colourWheelDoc = await db
-          .collection("app_data")
-          .doc("colour_wheel")
-          .get();
-        if (!colourWheelDoc.exists) {
-          console.log("[createPost] No app data at specified address.");
-          return;
-        }
-        postColour = colourWheelDoc.get("grey");
-      } else {
-        const enquiryMetaDoc = await enquiryDoc.ref
-          .collection("meta")
-          .doc("data")
-          .get();
-        assert(enquiryMetaDoc, "enquiries/{id}/meta/data not found");
-        const map = enquiryMetaDoc.get("teamColourMap") as
-          | Record<string, string>
-          | undefined;
-        if (map) {
-          postColour = map[authorTeam];
-        } else {
-          throw new HttpsError(
-            "failed-precondition",
-            "Team colour map not retrieved/interpreted correctly.",
-          );
-        }
+      if (Array.isArray(data.attachments) && data.attachments.length > 0) {
+        throw new HttpsError(
+          "invalid-argument",
+          "Comments must not have attachments.",
+        );
       }
     }
-    const isOpen = true; // future use
-    const isPublished = false; // future use
-    const fromRC = authorTeam === "RC";
 
-    const result = await db.runTransaction(async (tx) => {
-      const publicDoc: Record<string, unknown> = {
-        title,
-        postText,
-        isPublished,
-        fromRC,
-      };
-      if (finalised.length > 0) {
-        publicDoc.attachments = finalised;
+    const db = getFirestore();
+    const bucket = getStorage().bucket();
+
+    /* -------------------------- Pre-create docRef ---------------------------- */
+    const docRef =
+      postType === "enquiry"
+        ? db.collection("enquiries").doc()
+        : postType === "response"
+          ? db
+              .collection("enquiries")
+              .doc(parentIds[0])
+              .collection("responses")
+              .doc()
+          : db
+              .collection("enquiries")
+              .doc(parentIds[0])
+              .collection("responses")
+              .doc(parentIds[1])
+              .collection("comments")
+              .doc();
+
+    const postId = docRef.id;
+    const postPath = docRef.path;
+
+    /* ------------------- Validate attachments (no moves yet) ----------------- */
+    const incoming = Array.isArray(data.attachments) ? data.attachments : [];
+    const validatedAttachments: FinalisedAttachment[] = [];
+
+    if (postType !== "comment" && incoming.length > 0) {
+      const tempRoot =
+        postType === "enquiry"
+          ? "enquiries_temp"
+          : postType === "response"
+            ? "responses_temp"
+            : "comments_temp";
+
+      const expectedPrefix = `${tempRoot}/${authorUid}/`;
+
+      for (const a of incoming) {
+        const name = sanitiseName(String(a?.name ?? "").trim());
+        const tmpPath = String(a?.storagePath ?? "").trim();
+        if (!name || !tmpPath) continue;
+
+        if (!tmpPath.startsWith(expectedPrefix)) {
+          throw new HttpsError("permission-denied", "Invalid attachment path.");
+        }
+
+        const srcFile = bucket.file(tmpPath);
+
+        const [md] = await srcFile.getMetadata().catch((e: unknown) => {
+          if (isNotFoundError(e)) {
+            throw new HttpsError(
+              "not-found",
+              `Temp attachment not found: ${tmpPath}`,
+            );
+          }
+          throw e;
+        });
+
+        const size = Number(md.size ?? a.size ?? 0);
+        const contentType = String(
+          md.contentType ?? a.contentType ?? "application/octet-stream",
+        );
+
+        if (size > MAX_BYTES)
+          await deleteAndFail(srcFile, "Attachment too large.");
+        if (!ALLOWED_MIME.test(contentType))
+          await deleteAndFail(srcFile, "Unsupported attachment type.");
+
+        const finalPath = `${postPath}/${name}`;
+        validatedAttachments.push({ name, path: finalPath, size, contentType });
       }
+    }
+
+    /* -------------------------- Perform transaction -------------------------- */
+    const result = await db.runTransaction(async (tx) => {
+      const now = FieldValue.serverTimestamp();
+      const isPublished = false;
+      const fromRC = authorTeam === "RC";
+
+      const publicDoc: Record<string, unknown> = { isPublished, fromRC };
+      if (title) publicDoc.title = title;
+      if (postText) publicDoc.postText = postText;
+      // attachments added after storage copies succeed
+
       if (postType === "enquiry") {
-        publicDoc.isOpen = isOpen;
-        publicDoc.enquiryNumber = enquiryNumber;
-        publicDoc.roundNumber = 1;
-        publicDoc.teamsCanRespond = true; // updated on response publish
-        publicDoc.teamsCanComment = false; // updated on response publish
-        publicDoc.stageLength = 4; // working days
-      } else if (postType === "response") {
-        if (!enquiryDoc) {
+        // 1) atomic counter for enquiryNumber
+        const countersRef = db.collection("app_data").doc("counters");
+        const countersSnap = await tx.get(countersRef);
+        const current = countersSnap.exists
+          ? Number(countersSnap.get("enquiryNumber") ?? 0)
+          : 0;
+        const next = current + 1;
+        tx.set(countersRef, { enquiryNumber: next }, { merge: true });
+
+        // 2) compute private team colours, keep them in meta only
+        const colourMap = await assignUniqueColoursForEnquiry(postId);
+
+        Object.assign(publicDoc, {
+          isOpen: true,
+          enquiryNumber: next,
+          roundNumber: 1,
+          teamsCanRespond: true, // toggled later by RC publish
+          teamsCanComment: false, // toggled later by RC publish
+          stageLength: 4,
+        });
+
+        // Write public + meta
+        tx.set(docRef, publicDoc);
+        tx.set(docRef.collection("meta").doc("data"), {
+          authorUid,
+          authorTeam, // PRIVATE
+          createdAt: now,
+          teamColourMap: colourMap ?? {}, // PRIVATE
+        });
+      } else {
+        // Non-enquiry: read parent enquiry + private meta inside TX
+        const enquiryRef = db.collection("enquiries").doc(parentIds[0]);
+        const enquirySnap = await tx.get(enquiryRef);
+        if (!enquirySnap.exists) {
           throw new HttpsError(
             "failed-precondition",
-            "No matching enquiry for this response.",
+            "No matching enquiry found.",
           );
-        } else {
-          const isOpen = enquiryDoc.get("isOpen");
-          if (isOpen !== true) {
-            throw new HttpsError("failed-precondition", "Enquiry is closed.");
-          }
-          // Locks duplicate submissions. Relax later to allow edits
-          const teamsCanRespond = enquiryDoc.get("teamsCanRespond");
-          if (fromRC !== true && teamsCanRespond !== true) {
+        }
+
+        const enquiryIsOpen = enquirySnap.get("isOpen") === true;
+        if (!enquiryIsOpen)
+          throw new HttpsError("failed-precondition", "Enquiry is closed.");
+
+        const roundNumber = Number(enquirySnap.get("roundNumber") || 0);
+
+        // Private meta (for colours, etc.)
+        const enquiryMetaRef = enquiryRef.collection("meta").doc("data");
+        const enquiryMetaSnap = await tx.get(enquiryMetaRef);
+        if (!enquiryMetaSnap.exists) {
+          throw new HttpsError(
+            "failed-precondition",
+            "Enquiry meta not found.",
+          );
+        }
+        const teamColourMap = (enquiryMetaSnap.get("teamColourMap") ||
+          {}) as Record<string, string>;
+
+        if (postType === "response") {
+          if (
+            authorTeam !== "RC" &&
+            enquirySnap.get("teamsCanRespond") !== true
+          ) {
             throw new HttpsError(
               "failed-precondition",
               "Competitors not permitted to respond at this time.",
             );
           }
-          const respSnap = await db
-            .collection("enquiries")
-            .doc(parentIds[0])
-            .collection("responses")
-            .where("isPublished", "==", false)
-            .get();
-          if (!respSnap.empty) {
-            const metaRefs: DocumentReference[] = respSnap.docs.map((d) =>
-              d.ref.collection("meta").doc("data"),
+
+          // PRIVATE uniqueness guard: one response per team per round
+          const guardRef = enquiryRef
+            .collection("meta")
+            .doc("response_guards") // a doc so the subcollection is private under meta
+            .collection("guards")
+            .doc(`${authorTeam}_${roundNumber}`);
+
+          tx.create(guardRef, { authorTeam, roundNumber, createdAt: now });
+
+          publicDoc.roundNumber =
+            authorTeam === "RC" ? roundNumber + 1 : roundNumber;
+
+          // Resolve colour privately
+          if (authorTeam === "RC") {
+            const wheelSnap = await tx.get(
+              db.collection("app_data").doc("colour_wheel"),
             );
-
-            const metaDocs = await db.getAll(...metaRefs);
-
-            for (const m of metaDocs) {
-              if (!m.exists) continue;
-              const team = m.get("authorTeam") as string | undefined;
-              if (team === authorTeam) {
-                throw new HttpsError(
-                  "failed-precondition",
-                  "Only one response allowed per team per round.",
-                );
-              }
-            }
+            if (!wheelSnap.exists)
+              throw new HttpsError(
+                "failed-precondition",
+                "Colour wheel not configured.",
+              );
+            publicDoc.colour = wheelSnap.get("grey");
+          } else {
+            const c = teamColourMap?.[authorTeam];
+            if (!c)
+              throw new HttpsError(
+                "failed-precondition",
+                "Team colour not found.",
+              );
+            publicDoc.colour = c;
           }
         }
-        publicDoc.roundNumber = enquiryRoundNumber;
-        publicDoc.responseNumber = enquiryResponseNumber; // set on publishing
-        assert(postColour, "Post colour not populated for assignment.");
-        publicDoc.colour = postColour;
-      } else {
-        if (!enquiryDoc) {
-          throw new HttpsError(
-            "failed-precondition",
-            "No matching enquiry for this comment.",
-          );
-        } else {
-          const isOpen = enquiryDoc.get("isOpen");
-          if (isOpen !== true) {
-            throw new HttpsError("failed-precondition", "Enquiry is closed.");
-          }
-          const teamsCanComment = enquiryDoc.get("teamsCanComment");
-          if (fromRC !== true && teamsCanComment !== true) {
+
+        if (postType === "comment") {
+          if (
+            authorTeam !== "RC" &&
+            enquirySnap.get("teamsCanComment") !== true
+          ) {
             throw new HttpsError(
               "failed-precondition",
               "Competitors not permitted to comment at this time.",
             );
           }
-          const responseDoc = await db
-            .collection("enquiries")
-            .doc(parentIds[0])
-            .collection("responses")
-            .doc(parentIds[1])
-            .get();
-          const responseRound = responseDoc.get("roundNumber");
-          const enquiryRound = enquiryDoc.get("roundNumber");
-          if (responseRound !== enquiryRound) {
+
+          const respRef = enquiryRef.collection("responses").doc(parentIds[1]);
+          const respSnap = await tx.get(respRef);
+          if (!respSnap.exists)
+            throw new HttpsError("failed-precondition", "Response not found.");
+
+          if (respSnap.get("fromRC") === true) {
             throw new HttpsError(
               "failed-precondition",
-              "Comments can only be made on the latest round of responses.",
+              "Comments can only be made on Competitor responses.",
             );
           }
-          const isRcResponse = responseDoc.get("fromRC");
-          if (isRcResponse) {
+          const respRound = Number(respSnap.get("roundNumber") || 0);
+          if (respRound !== roundNumber) {
             throw new HttpsError(
               "failed-precondition",
-              "Comments can only be made on Comeptitor responses.",
+              "Comments must target the latest round.",
             );
           }
-          publicDoc.colour = postColour;
-          // consider blocking comments on RC responses
+
+          // Resolve colour privately
+          if (authorTeam === "RC") {
+            const wheelSnap = await tx.get(
+              db.collection("app_data").doc("colour_wheel"),
+            );
+            if (!wheelSnap.exists)
+              throw new HttpsError(
+                "failed-precondition",
+                "Colour wheel not configured.",
+              );
+            publicDoc.colour = wheelSnap.get("grey");
+          } else {
+            const c = teamColourMap?.[authorTeam];
+            if (!c)
+              throw new HttpsError(
+                "failed-precondition",
+                "Team colour not found.",
+              );
+            publicDoc.colour = c;
+          }
         }
+
+        // Write public + meta
+        tx.set(docRef, publicDoc);
+        tx.set(docRef.collection("meta").doc("data"), {
+          authorUid,
+          authorTeam, // PRIVATE
+          createdAt: now,
+        });
       }
 
-      const metaDoc: Record<string, unknown> = {
-        authorUid,
-        authorTeam,
-        createdAt: now,
-      };
-      if (postType === "enquiry") {
-        metaDoc.teamColourMap = postColourMap;
-      }
-
-      tx.set(docRef, publicDoc);
-      tx.set(docRef.collection("meta").doc("data"), metaDoc);
-
-      // generate documents for draft retrieval
+      // Draft (kept in tx for atomicity)
       const draftRef = db
         .collection("drafts")
         .doc("posts")
         .collection(authorTeam)
         .doc(postId);
-      const draftDoc: Record<string, unknown> = {
-        createdAt: now,
+      tx.set(draftRef, {
+        createdAt: FieldValue.serverTimestamp(),
         postType,
         parentIds,
-      };
-      tx.set(draftRef, draftDoc);
+      });
 
       return { id: postId };
     });
 
-    return result;
+    /* ------------------ After tx: copy files, then update doc ----------------- */
+    if (validatedAttachments.length > 0) {
+      const moved: { finalPath: string }[] = [];
+
+      try {
+        for (const v of validatedAttachments) {
+          const temp = incoming.find(
+            (a) => sanitiseName(a.name) === sanitiseName(v.name),
+          );
+          assert(temp, "Validated attachment not found in input.");
+
+          const src = bucket.file(String(temp.storagePath));
+          const dest = bucket.file(v.path);
+
+          // Copy with metadata, then delete source (move with metadata)
+          await src.copy(
+            dest,
+            v.contentType
+              ? { metadata: { contentType: v.contentType } }
+              : undefined,
+          );
+          await src.delete();
+
+          moved.push({ finalPath: v.path });
+        }
+
+        // Single update adding attachments (public field is fine)
+        await docRef.update({ attachments: validatedAttachments });
+      } catch (e) {
+        // Best-effort cleanup of already-copied files
+        await Promise.allSettled(
+          moved.map(({ finalPath }) => bucket.file(finalPath).delete()),
+        );
+        throw e;
+      }
+    }
+
+    return result; // { id }
   },
 );
