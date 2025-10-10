@@ -4,10 +4,11 @@ import 'package:cloud_functions/cloud_functions.dart';
 Future<bool> publishRcResponse(String enquiryId) async {
   try {
     final functions = FirebaseFunctions.instanceFor(region: 'europe-west8');
-    final callable = functions.httpsCallable('committeeResponseInstantPublisher');
+    final callable = functions.httpsCallable('responseInstantPublisher');
 
     final result = await callable.call(<String, dynamic>{
       'enquiryID': enquiryId.trim(),
+      'rcResponse': true,
     });
     final raw = result.data;
 
