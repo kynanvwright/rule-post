@@ -6,6 +6,8 @@ import {
   FieldValue,
   getFirestore,
   type Firestore,
+  DocumentReference,
+  DocumentData,
 } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
 
@@ -40,9 +42,9 @@ export async function runCreatePostTx(
   parentIds: string[],
   title: string,
   postText: string,
+  docRef: DocumentReference<DocumentData>,
   author: AuthorInfo,
 ): Promise<TxResult> {
-  const docRef = postDocRef(db, postType, parentIds);
   const postId = docRef.id;
   const postPath = docRef.path;
 

@@ -1,61 +1,30 @@
+// ──────────────────────────────────────────────────────────────────────────────
+// File: src/notifications/send_email_on_publish.ts
+// Purpose: Record new posts and publish daily digest to users
+// ──────────────────────────────────────────────────────────────────────────────
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { defineSecret } from "firebase-functions/params";
 import { logger } from "firebase-functions/v2";
-import {
-  onDocumentUpdated,
-  // (optional) types if you want to annotate the handler param explicitly:
-  // FirestoreEvent, Change, DocumentSnapshot
-} from "firebase-functions/v2/firestore";
+import { onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { Resend } from "resend";
 
+import {
+  ISODate,
+  BasePublishable,
+  EnquiryDoc,
+  ResponseDoc,
+  CommentDoc,
+  PublishKind,
+  PublishEventData,
+  EnquiryParams,
+  ResponseParams,
+  CommentParams,
+  UserData,
+} from "../common/types";
+
 const db = getFirestore();
-
 const RESEND_API_KEY = defineSecret("RESEND_API_KEY");
-
-/* ─────────────────────────────── Types ─────────────────────────────── */
-
-type ISODate = Timestamp;
-
-interface BasePublishable {
-  isPublished?: boolean;
-  title?: string;
-  publishedAt?: ISODate;
-}
-
-// just type aliases, not redundant interfaces
-export type EnquiryDoc = BasePublishable;
-export type ResponseDoc = BasePublishable;
-export type CommentDoc = BasePublishable;
-
-type PublishKind = "enquiry" | "response" | "comment";
-
-export interface PublishEventData {
-  kind: PublishKind;
-  enquiryId: string;
-  responseId?: string;
-  commentId?: string;
-  title?: string;
-  createdAt: ISODate;
-  publishedAt: ISODate;
-  processed: boolean;
-  processedAt?: ISODate;
-}
-
-interface EnquiryParams {
-  enquiryId: string;
-}
-interface ResponseParams extends EnquiryParams {
-  responseId: string;
-}
-interface CommentParams extends ResponseParams {
-  commentId: string;
-}
-
-interface UserData {
-  emailNotificationsOn?: boolean;
-  email?: string;
-}
 
 /* ─────────────────────────── helpers ─────────────────────────── */
 

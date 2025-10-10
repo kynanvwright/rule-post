@@ -2,6 +2,8 @@
 // File: src/common/types.ts
 // Purpose: Shared TS types
 // ────────────────────────────────────────────────────────────────────────────
+import { Timestamp } from "firebase-admin/firestore";
+
 export type TempAttachmentIn = {
   name: string;
   storagePath: string;
@@ -53,3 +55,47 @@ export type instantPublishPayload = {
   enquiryID: string;
   rcResponse: boolean;
 };
+
+/* ─────────────────────────────── Notifications ─────────────────────────────── */
+
+export type ISODate = Timestamp;
+
+export interface BasePublishable {
+  isPublished?: boolean;
+  title?: string;
+  publishedAt?: ISODate;
+}
+
+// just type aliases, not redundant interfaces
+export type EnquiryDoc = BasePublishable;
+export type ResponseDoc = BasePublishable;
+export type CommentDoc = BasePublishable;
+
+export type PublishKind = "enquiry" | "response" | "comment";
+
+export interface PublishEventData {
+  kind: PublishKind;
+  enquiryId: string;
+  responseId?: string;
+  commentId?: string;
+  title?: string;
+  createdAt: ISODate;
+  publishedAt: ISODate;
+  processed: boolean;
+  processedAt?: ISODate;
+}
+
+export interface EnquiryParams {
+  enquiryId: string;
+}
+export interface ResponseParams extends EnquiryParams {
+  responseId: string;
+}
+export interface CommentParams extends ResponseParams {
+  commentId: string;
+}
+
+export interface UserData {
+  emailNotificationsOn?: boolean;
+  email?: string;
+}

@@ -1,4 +1,6 @@
-// src/index.ts
+// ──────────────────────────────────────────────────────────────────────────────
+// File: src/index.ts
+// ──────────────────────────────────────────────────────────────────────────────
 import { getApps, initializeApp } from "firebase-admin/app";
 import { setGlobalOptions } from "firebase-functions/v2";
 

@@ -1,3 +1,7 @@
+// ──────────────────────────────────────────────────────────────────────────────
+// File: src/admin_funcs/close_enquiry.ts
+// Purpose: Close enquiries, locking submission of any child posts
+// ──────────────────────────────────────────────────────────────────────────────
 import { getFirestore } from "firebase-admin/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 

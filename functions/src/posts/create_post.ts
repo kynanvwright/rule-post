@@ -61,6 +61,7 @@ export const createPost = onCall<CreatePostData>(
       data.parentIds,
       data.title,
       data.postText,
+      tempDocRef,
       { uid: authorUid, team: authorTeam },
     );
 

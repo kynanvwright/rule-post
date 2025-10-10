@@ -1,5 +1,5 @@
 // ──────────────────────────────────────────────────────────────────────────────
-// File: src/schedule/publishers/team_response_publisher.ts
+// File: src/scheduled_funcs/team_response_publisher.ts
 // Purpose: Publishes competitor responses after stage end; nightly 20:00 Rome
 // ──────────────────────────────────────────────────────────────────────────────
 import { FieldValue, getFirestore, Timestamp } from "firebase-admin/firestore";
