@@ -1,4 +1,7 @@
-// functions/src/index.ts (or wherever you export functions v2)
+// ──────────────────────────────────────────────────────────────────────────────
+// File: src/notifications/toggle_notifications.ts
+// Purpose: Allow users to choose if they receive emails
+// ──────────────────────────────────────────────────────────────────────────────
 import { getFirestore } from "firebase-admin/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 

@@ -12,6 +12,7 @@ import {
 import { HttpsError } from "firebase-functions/v2/https";
 
 import { resolvePostColour } from "./colour";
+import { isNotFoundError } from "../common/errors";
 
 import type { AuthorInfo, CreatePostData, TxResult } from "../common/types";
 
@@ -143,11 +144,21 @@ export async function runCreatePostTx(
           .doc("response_guards")
           .collection("guards")
           .doc(`${author.team}_${roundNumber}`);
-        tx.create(guardRef, {
-          authorTeam: author.team,
-          roundNumber,
-          createdAt: now,
-        });
+        try {
+          tx.create(guardRef, {
+            authorTeam: author.team,
+            roundNumber,
+            createdAt: now,
+          });
+        } catch (e: unknown) {
+          if (isNotFoundError(e)) {
+            throw new HttpsError(
+              "already-exists",
+              `Your team has already submitted a response for round ${roundNumber}.`,
+            );
+          }
+          throw e; // rethrow anything unexpected
+        }
 
         publicDoc.roundNumber =
           author.team === "RC" ? roundNumber + 1 : roundNumber;
