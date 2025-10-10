@@ -87,6 +87,7 @@ A website for facilitating America's Cup Rule Enquiries.
 - Add subheaders to navigation pane for rounds
 - Add symbols with colour-coding for colour-blind folks
 - Make left pane collapsible
+- Consider making the logo having matching text colour to "Rule Post"
 
 ### 📧 Notifications & Alerts
 - Add (toggleable) email alerts to users for when:

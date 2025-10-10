@@ -1,7 +1,7 @@
 // workingDays.ts
 import { DateTime } from "luxon";
 
-import { ROME_TZ } from "./config";
+import { ROME_TZ } from "./common/config";
 
 type HolidayRange = { start: string; end: string };
 

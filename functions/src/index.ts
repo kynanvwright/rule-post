@@ -13,26 +13,24 @@ if (!getApps().length) {
 }
 
 /** App functions (re-exports) */
-export { blockAllSelfRegistration } from "./new_users";
-export { createPost } from "./posts";
-export {
-  enquiryPublisher,
-  teamResponsePublisher,
-  commentPublisher,
-  committeeResponsePublisher,
-} from "./publishing_and_permissions";
-export { syncCustomClaims } from "./claims_sync";
-export { setEmailNotificationsOn } from "./toggle_notifications";
-export { createUserWithProfile } from "./create_user";
-export { deleteUser } from "./delete_user";
-export { listTeamUsers } from "./list_team_users";
-export { closeEnquiry } from "./close_enquiry";
-export { committeeResponseInstantPublisher } from "./rc_response_instant_publish";
-export { teamResponseInstantPublisher } from "./team_response_instant_publish";
+export { blockAllSelfRegistration } from "./users/new_users";
+export { createPost } from "./posts/create_post";
+export { enquiryPublisher } from "./scheduled_funcs/enquiry_publisher";
+export { teamResponsePublisher } from "./scheduled_funcs/team_response_publisher";
+export { committeeResponsePublisher } from "./scheduled_funcs/committee_response_publisher";
+export { commentPublisher } from "./scheduled_funcs/comment_publisher";
+
+export { syncCustomClaims } from "./users/claims_sync";
+export { setEmailNotificationsOn } from "./notifications/toggle_notifications";
+export { createUserWithProfile } from "./users/create_user";
+export { deleteUser } from "./users/delete_user";
+export { listTeamUsers } from "./utils/list_team_users";
+export { closeEnquiry } from "./admin_funcs/close_enquiry";
+export { responseInstantPublisher } from "./admin_funcs/response_instant_publisher";
 export {
   onEnquiryIsPublishedUpdated,
   onResponseIsPublishedUpdated,
   onCommentIsPublishedUpdated,
   sendPublishDigest,
-} from "./send_email_on_publish";
-export { findDrafts, hasDrafts } from "./find_my_drafts";
+} from "./notifications/send_email_on_publish";
+export { findDrafts, hasDrafts } from "./utils/find_drafts";
