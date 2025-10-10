@@ -7,14 +7,14 @@ import { logger } from "firebase-functions";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { DateTime } from "luxon";
 
-import { SCHED_REGION_ROME, ROME_TZ } from "../../common/config";
-import { FinalisedAttachment } from "../../common/types";
-import { computeStageEnds } from "../../utils/compute_stage_ends";
+import { SCHED_REGION_ROME, ROME_TZ } from "../common/config";
+import { FinalisedAttachment } from "../common/types";
+import { computeStageEnds } from "../utils/compute_stage_ends";
 import {
   tokeniseAttachmentsIfAny,
   stageUpdatePayload,
-} from "../../utils/helpers";
-import { isWorkingDay } from "../../working_day";
+} from "../utils/publish_helpers";
+import { isWorkingDay } from "../working_day";
 
 const db = getFirestore();
 

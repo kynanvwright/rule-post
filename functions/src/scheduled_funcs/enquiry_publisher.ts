@@ -6,14 +6,14 @@ import { FieldValue, getFirestore } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 
-import { SCHED_REGION_ROME, ROME_TZ } from "../../common/config";
-import { computeStageEnds } from "../../utils/compute_stage_ends";
+import { SCHED_REGION_ROME, ROME_TZ } from "../common/config";
+import { computeStageEnds } from "../utils/compute_stage_ends";
 import {
   tokeniseAttachmentsIfAny,
   readAuthorTeam,
   queueDraftDelete,
   stageUpdatePayload,
-} from "../../utils/helpers";
+} from "../utils/publish_helpers";
 
 const db = getFirestore();
 
