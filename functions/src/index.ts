@@ -29,6 +29,7 @@ export { deleteUser } from "./users/delete_user";
 export { listTeamUsers } from "./utils/list_team_users";
 export { closeEnquiry } from "./admin_funcs/close_enquiry";
 export { responseInstantPublisher } from "./admin_funcs/response_instant_publisher";
+export { changeStageLength } from "./admin_funcs/change_stage_length";
 export {
   onEnquiryIsPublishedUpdated,
   onResponseIsPublishedUpdated,

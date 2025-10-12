@@ -11,7 +11,7 @@ import { offsetByWorkingDays } from "../utils/offset_by_working_days";
 
 const db = getFirestore();
 
-export const closeEnquiry = onCall(
+export const changeStageLength = onCall(
   {
     region: REGION,
     cors: true,
