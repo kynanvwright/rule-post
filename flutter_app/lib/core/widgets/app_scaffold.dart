@@ -225,40 +225,53 @@ class _DefaultBanner extends ConsumerWidget {
 
                             // Title & (maybe) subtitle — make sure this part can truncate
                             Expanded(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    title,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: (textTheme.titleLarge ?? const TextStyle()).copyWith(
-                                      fontSize: titleSize,
-                                      color: scheme.onPrimary,
-                                      height: 1.1,
-                                      fontWeight: FontWeight.w700,
+                              child: MouseRegion(
+                                cursor: SystemMouseCursors.click,
+                                child: InkWell(
+                                  onTap: () => context.go('/enquiries?status=open'),         // or context.go('/') for true "home"
+                                  borderRadius: BorderRadius.circular(h * 0.06), // light rounding for nicer splash
+                                  splashColor: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.08),
+                                  highlightColor: Colors.transparent,
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(vertical: h * 0.06), // keeps tap target comfy
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          title,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: (textTheme.titleLarge ?? const TextStyle()).copyWith(
+                                            fontSize: titleSize,
+                                            color: scheme.onPrimary,
+                                            height: 1.1,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                          softWrap: false,
+                                        ),
+                                        if (showSubtitle) ...[
+                                          SizedBox(height: h * 0.02),
+                                          Text(
+                                            subtitle,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: (textTheme.bodyMedium ?? const TextStyle()).copyWith(
+                                              fontSize: subtitleSize,
+                                              color: scheme.onPrimary.withValues(alpha: 0.9),
+                                              height: 1.2,
+                                              fontWeight: FontWeight.w400,
+                                            ),
+                                            softWrap: false,
+                                          ),
+                                        ],
+                                      ],
                                     ),
-                                    softWrap: false,
                                   ),
-                                  if (showSubtitle) ...[
-                                    SizedBox(height: h * 0.02),
-                                    Text(
-                                      subtitle,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: (textTheme.bodyMedium ?? const TextStyle()).copyWith(
-                                        fontSize: subtitleSize,
-                                        color: scheme.onPrimary.withValues(alpha: 0.9),
-                                        height: 1.2,
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                      softWrap: false,
-                                    ),
-                                  ],
-                                ],
+                                ),
                               ),
                             ),
+
                           ],
                         ),
                       ),

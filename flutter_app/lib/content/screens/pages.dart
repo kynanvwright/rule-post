@@ -795,7 +795,7 @@ class _StatusCard extends StatelessWidget {
     } else if (stageMap['teamsCanRespond']) {
       return ['Competitors may respond','Competitors may comment on responses'];
     } else if (stageMap['teamsCanComment']) {
-      return ['Competitors may comment on responses','Under Rules Committee review'];
+      return ['Competitors may comment on responses','Rules Committee review'];
     } else {
       return ['Under Rules Committee review',''];
     }
