@@ -99,7 +99,7 @@ export const responseInstantPublisher = onCall(
     const stageLength = enquiryData!.stageLength ?? 4;
     const newStageEnds = rcResponse
       ? computeStageEnds(stageLength, { hour: 19, minute: 55 })
-      : computeStageEnds(stageLength+1, { hour: 11, minute: 55 });
+      : computeStageEnds(stageLength + 1, { hour: 11, minute: 55 });
     writer.update(enquiryRef, {
       teamsCanRespond: rcResponse, // depends on whose response is being published
       teamsCanComment: !rcResponse, // depends on whose response is being published

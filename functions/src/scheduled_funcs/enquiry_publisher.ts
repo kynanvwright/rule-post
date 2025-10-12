@@ -39,7 +39,10 @@ export const enquiryPublisher = onSchedule(
       // 1) read stage length and compute new stage end
       const enquiryData = doc.data();
       const stageLength = enquiryData.stageLength ?? 4;
-      const stageEndsDate = computeStageEnds(stageLength, { hour: 19, minute: 55 });
+      const stageEndsDate = computeStageEnds(stageLength, {
+        hour: 19,
+        minute: 55,
+      });
 
       // 2) publish fields
       writer.update(doc.ref, {

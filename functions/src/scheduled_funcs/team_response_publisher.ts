@@ -114,7 +114,10 @@ export const teamResponsePublisher = onSchedule(
 
       // advance stage for enquiry
       const stageLength = enquiryData.stageLength ?? 4;
-      const newStageEnds = computeStageEnds(stageLength+1, { hour: 11, minute: 55 });
+      const newStageEnds = computeStageEnds(stageLength + 1, {
+        hour: 11,
+        minute: 55,
+      });
       writer.update(enquiryRef, {
         teamsCanRespond: false,
         teamsCanComment: true,
