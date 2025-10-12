@@ -11,6 +11,7 @@ import '../../riverpod/user_detail.dart';
 import '../../api/close_enquiry_api.dart';
 import '../../api/publish_competitor_responses.dart';
 import '../../api/publish_rc_response.dart';
+import '../../api/change_stage_length.dart';
 import '../../core/widgets/draft_viewing.dart';
 
 /// -------------------- NO SELECTION --------------------
@@ -104,15 +105,8 @@ class EnquiryDetailPage extends StatelessWidget {
                 children: [
                   if (data.containsKey('isOpen') && !isOpen) 
                     _StatusChip('Closed', color: Colors.red),
-                  // else if (data.containsKey('teamsCanRespond') && teamsCanRespond)
-                  //   _StatusChip('Competitors may respond', color: Colors.green)
-                  // else if (data.containsKey('teamsCanComment') && teamsCanComment)
-                  //     _StatusChip('Competitors may comment on responses', color: Colors.green)
-                  // else if (data.containsKey('teamsCanRespond') && data.containsKey('teamsCanComment') && !teamsCanRespond && !teamsCanComment)
-                  //     _StatusChip('Under review by Rules Committee', color: Colors.orange),
                   if (data.containsKey('isPublished') && !isPublished) 
                     _StatusChip('Unpublished', color: Colors.orange),
-                   
                   if (data.containsKey('fromRC') && fromRC) 
                     _StatusChip('Rules Committee Enquiry', color: Colors.blue),
                   
@@ -148,6 +142,12 @@ class EnquiryDetailPage extends StatelessWidget {
               titleColour: Colors.red,
               boldTitle: true,
               actions: [
+                AdminAction.changeStageLength(
+                  enquiryId: enquiryId,
+                  context: context,
+                  loadCurrent: () => getStageLength(enquiryId), // 👈 fetch current
+                  run: (days) => changeStageLength(enquiryId, days),       // 👈 apply new value
+                ),
                 AdminAction.publishCompetitorResponses(
                   enquiryId: enquiryId, 
                   run: () => publishCompetitorResponses(enquiryId),

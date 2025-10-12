@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 
+import './prompt_stage_length.dart';
+
 typedef ConfirmGuard = Future<bool> Function(BuildContext context);
 
 class AdminAction {
@@ -45,20 +47,6 @@ class AdminAction {
               );
             }
           },
-          // customise later, showing relevant info for action
-          // confirmGuard: (ctx) async {
-          //   return await showDialog<bool>(
-          //     context: ctx,
-          //     builder: (_) => AlertDialog(
-          //       title: const Text('Are you sure?'),
-          //       content: const Text('This will run the action immediately.'),
-          //       actions: [
-          //         TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          //         FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Proceed')),
-          //       ],
-          //     ),
-          //   ) ?? false;
-          // }
         );
 
   factory AdminAction.publishRCResponse({
@@ -80,43 +68,22 @@ class AdminAction {
                 );
               }
             } on FormatException catch (e, st) {
-              // Our validator: shows the exact path + type
-              // e.g. "Invalid parameter at $.meta.stageEnds (Timestamp): Unsupported type..."
-              // ignore: avoid_print
-              print('Param validation failed: $e\n$st');
+              debugPrint('Param validation failed: $e\n$st');
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Invalid parameters: ${e.message}')),
               );
             } on FirebaseFunctionsException catch (e, st) {
-              // Server-side error from your callable
-              // ignore: avoid_print
-              print('Functions error: ${e.code} ${e.message}\nDetails: ${e.details}\n$st');
+              debugPrint('Functions error: ${e.code} ${e.message}\nDetails: ${e.details}\n$st');
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Cloud Function error: ${e.code}: ${e.message ?? ''}')),
               );
             } catch (e, st) {
-              // Client-side unexpected error (like the assert you saw)
-              // ignore: avoid_print
-              print('Unexpected error: $e\n$st');
+              debugPrint('Unexpected error: $e\n$st');
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Unexpected error: $e')),
               );
             }
           },
-          // customise later, showing relevant info for action
-          // confirmGuard: (ctx) async {
-          //   return await showDialog<bool>(
-          //     context: ctx,
-          //     builder: (_) => AlertDialog(
-          //       title: const Text('Are you sure?'),
-          //       content: const Text('This will run the action immediately.'),
-          //       actions: [
-          //         TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          //         FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Proceed')),
-          //       ],
-          //     ),
-          //   ) ?? false;
-          // }
         );
 
   factory AdminAction.closeEnquiry({
@@ -141,22 +108,63 @@ class AdminAction {
               );
             }
           },
-          // // customise later, showing relevant info for action
-          // confirmGuard: (ctx) async {
-          //   return await showDialog<bool>(
-          //     context: ctx,
-          //     builder: (_) => AlertDialog(
-          //       title: const Text('Are you sure?'),
-          //       content: const Text('This will run the action immediately.'),
-          //       actions: [
-          //         TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          //         FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Proceed')),
-          //       ],
-          //     ),
-          //   ) ?? false;
-          // }
-
         );
+  factory AdminAction.changeStageLength({
+    required String enquiryId,
+    // Load the current value (e.g. read Firestore or call a CF)
+    required Future<int> Function() loadCurrent,
+    // Apply/save the new value (e.g. call a CF that writes and recomputes)
+    required Future<bool> Function(int newDays) run,
+    required BuildContext context,
+  }) {
+    int? _pendingDays;
+
+    return AdminAction(
+      label: 'Change Stage Length',
+      icon: Icons.timer, // a little more descriptive than lock
+      tooltip: 'Change number of working days for major enquiry stages (default: 4)',
+      // Step 1: confirmGuard handles fetch + numeric input
+      confirmGuard: (ctx) async {
+        final v = await promptStageLength(ctx, loadCurrent: loadCurrent, min: 1, max: 30);
+        _pendingDays = v;
+        return v != null; // only proceed if user confirmed
+      },
+      // Step 2: onPressed runs only when confirmGuard returned true
+      onPressed: () async {
+        try {
+          final days = _pendingDays!;
+          final ok = await run(days);
+          if (ok) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Stage length set to $days working day${days == 1 ? '' : 's'}')),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('No change applied')),
+            );
+          }
+        } on FormatException catch (e, st) {
+          debugPrint('Param validation failed: $e\n$st');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Invalid parameters: ${e.message}')),
+          );
+        } on FirebaseFunctionsException catch (e, st) {
+          debugPrint('Functions error: ${e.code} ${e.message}\nDetails: ${e.details}\n$st');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Cloud Function error: ${e.code}: ${e.message ?? ''}')),
+          );
+        } catch (e, st) {
+          debugPrint('Unexpected error: $e\n$st');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Unexpected error: $e')),
+          );
+        } finally {
+          _pendingDays = null; // clear captured state
+        }
+      },
+    );
+  }
+
 }
 
 class AdminCard extends StatefulWidget {

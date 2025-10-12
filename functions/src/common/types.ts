@@ -56,6 +56,11 @@ export type instantPublishPayload = {
   rcResponse: boolean;
 };
 
+export type changeStageLengthPayload = {
+  enquiryID: string;
+  newStageLength: number;
+};
+
 /* ─────────────────────────────── Notifications ─────────────────────────────── */
 
 export type ISODate = Timestamp;
