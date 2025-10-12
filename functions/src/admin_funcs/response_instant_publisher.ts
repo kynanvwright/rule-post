@@ -46,6 +46,7 @@ export const responseInstantPublisher = onCall(
     let totalResponsesPublished = 0;
     const writer = db.bulkWriter();
     const publishedAt = FieldValue.serverTimestamp();
+    const enquiryData = enquiryDoc.data();
     const enquiryRef = enquiryDoc.ref;
 
     // 3) Get responses
@@ -95,9 +96,10 @@ export const responseInstantPublisher = onCall(
     }
 
     // 5) advance stage for enquiry
+    const stageLength = enquiryData!.stageLength ?? 4;
     const newStageEnds = rcResponse
-      ? computeStageEnds(4, { hour: 19, minute: 55 })
-      : computeStageEnds(5, { hour: 11, minute: 55 });
+      ? computeStageEnds(stageLength, { hour: 19, minute: 55 })
+      : computeStageEnds(stageLength+1, { hour: 11, minute: 55 });
     writer.update(enquiryRef, {
       teamsCanRespond: rcResponse, // depends on whose response is being published
       teamsCanComment: !rcResponse, // depends on whose response is being published

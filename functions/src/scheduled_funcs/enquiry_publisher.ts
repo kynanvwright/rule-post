@@ -20,7 +20,6 @@ const db = getFirestore();
 export const enquiryPublisher = onSchedule(
   { region: SCHED_REGION_ROME, schedule: "0 0,12 * * *", timeZone: ROME_TZ },
   async (): Promise<void> => {
-    const stageEndsDate = computeStageEnds(4, { hour: 19, minute: 55 });
     const publishedAt = FieldValue.serverTimestamp();
 
     const snap = await db
@@ -37,7 +36,12 @@ export const enquiryPublisher = onSchedule(
     let draftsQueued = 0;
 
     for (const doc of snap.docs) {
-      // 1) publish fields
+      // 1) read stage length and compute new stage end
+      const enquiryData = doc.data();
+      const stageLength = enquiryData.stageLength ?? 4;
+      const stageEndsDate = computeStageEnds(stageLength, { hour: 19, minute: 55 });
+
+      // 2) publish fields
       writer.update(doc.ref, {
         isPublished: true,
         publishedAt,
@@ -45,10 +49,10 @@ export const enquiryPublisher = onSchedule(
       });
       published += 1;
 
-      // 2) tokenise attachments if any
+      // 3) tokenise attachments if any
       await tokeniseAttachmentsIfAny(writer, doc.ref, doc.get("attachments"));
 
-      // 3) delete draft for author team
+      // 4) delete draft for author team
       const team = await readAuthorTeam(doc.ref);
       if (!team) {
         logger.warn(

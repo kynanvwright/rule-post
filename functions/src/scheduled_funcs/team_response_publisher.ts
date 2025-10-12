@@ -40,6 +40,7 @@ export const teamResponsePublisher = onSchedule(
     let totalResponsesPublished = 0;
 
     for (const enquiryDoc of enquiriesSnap.docs) {
+      const enquiryData = enquiryDoc.data();
       const enquiryRef = enquiryDoc.ref;
 
       // Try ordered by createdAt
@@ -112,7 +113,8 @@ export const teamResponsePublisher = onSchedule(
       }
 
       // advance stage for enquiry
-      const newStageEnds = computeStageEnds(5, { hour: 11, minute: 55 });
+      const stageLength = enquiryData.stageLength ?? 4;
+      const newStageEnds = computeStageEnds(stageLength+1, { hour: 11, minute: 55 });
       writer.update(enquiryRef, {
         teamsCanRespond: false,
         teamsCanComment: true,

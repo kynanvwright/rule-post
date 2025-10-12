@@ -44,6 +44,7 @@ export async function runCreatePostTx(
   title: string,
   postText: string,
   docRef: DocumentReference<DocumentData>,
+  stageLength: number,
   author: AuthorInfo,
 ): Promise<TxResult> {
   const postId = docRef.id;
@@ -89,7 +90,7 @@ export async function runCreatePostTx(
         roundNumber: 1,
         teamsCanRespond: true,
         teamsCanComment: false,
-        stageLength: 4,
+        stageLength: stageLength ?? 4,
       });
 
       // Public

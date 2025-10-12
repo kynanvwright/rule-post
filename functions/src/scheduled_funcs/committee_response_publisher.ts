@@ -111,7 +111,8 @@ export const committeeResponsePublisher = onSchedule(
             tx.delete(draftRef);
           }
 
-          const nextStageEnds = computeStageEnds(4, { hour: 19, minute: 55 });
+          const stageLength = e.stageLength ?? 4;
+          const nextStageEnds = computeStageEnds(stageLength, { hour: 19, minute: 55 });
           tx.update(enquiryRef, {
             roundNumber: FieldValue.increment(1),
             teamsCanRespond: true,
