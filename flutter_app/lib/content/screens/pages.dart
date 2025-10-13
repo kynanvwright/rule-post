@@ -144,25 +144,25 @@ class EnquiryDetailPage extends StatelessWidget {
               actions: [
                 AdminAction.changeStageLength(
                   enquiryId: enquiryId,
-                  context: context,
+                  loadCurrent: () => getStageLength(enquiryId),
+                  run: (days) => changeStageLength(enquiryId, days),
                   enabled: isOpen,
-                  loadCurrent: () => getStageLength(enquiryId), // 👈 fetch current
-                  run: (days) => changeStageLength(enquiryId, days),       // 👈 apply new value
+                  context: context,
                 ),
                 AdminAction.publishCompetitorResponses(
                   enquiryId: enquiryId, 
                   run: () => publishCompetitorResponses(enquiryId),
-                  enabled: teamsCanRespond && isOpen,
+                  enabled: teamsCanRespond && isOpen && isPublished,
                   context: context),
                 AdminAction.publishRCResponse(
                   enquiryId: enquiryId, 
                   run: () => publishRcResponse(enquiryId),
-                  enabled: !teamsCanRespond && isOpen,
+                  enabled: !teamsCanRespond && isOpen && isPublished,
                   context: context),
                 AdminAction.closeEnquiry(
                   enquiryId: enquiryId, 
                   run: () => closeEnquiry(enquiryId),
-                  enabled: isOpen,
+                  enabled: isOpen && isPublished,
                   context: context),
               ],
             ) : null,

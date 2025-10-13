@@ -103,7 +103,7 @@ class _FancyAttachmentTileState extends State<FancyAttachmentTile> {
                 children: [
                   IconButton(
                     tooltip: canPreviewInline
-                        ? (_expanded ? 'Hide preview' : 'Show preview')
+                        ? (_expanded ? 'Hide preview' : 'Show content')
                         : 'Open',
                     icon: Icon(canPreviewInline
                         ? (_expanded ? Icons.expand_less : Icons.search)

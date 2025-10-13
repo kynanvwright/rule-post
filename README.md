@@ -88,6 +88,7 @@ A website for facilitating America's Cup Rule Enquiries.
 - Add symbols with colour-coding for colour-blind folks
 - Make left pane collapsible
 - Consider making the logo having matching text colour to "Rule Post"
+- Indicate when an enquiry has an unusual stage length
 
 ### 📧 Notifications & Alerts
 - Add (toggleable) email alerts to users for when:

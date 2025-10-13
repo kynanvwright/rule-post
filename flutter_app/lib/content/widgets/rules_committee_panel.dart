@@ -94,7 +94,7 @@ class AdminAction {
   }) => AdminAction(
           label: 'Close Enquiry',
           icon: Icons.lock,
-          tooltip: enabled ? 'End enquiry and lock all submissions' : 'Enquiry already closed',
+          tooltip: enabled ? 'End enquiry and lock all submissions' : 'Locked: Enquiry already closed',
           enabled: enabled,
           onPressed: () async {
             try {
@@ -125,7 +125,7 @@ class AdminAction {
     return AdminAction(
       label: 'Change Stage Length',
       icon: Icons.timer, // a little more descriptive than lock
-      tooltip: enabled ? 'Change number of working days for major enquiry stages (default: 4)' : 'Enquiry closed',
+      tooltip: enabled ? 'Change number of working days for major enquiry stages (default: 4)' : 'Locked: Enquiry closed',
       enabled: enabled,
       // Step 1: confirmGuard handles fetch + numeric input
       confirmGuard: (ctx) async {
@@ -168,7 +168,6 @@ class AdminAction {
       },
     );
   }
-
 }
 
 class AdminCard extends StatefulWidget {
