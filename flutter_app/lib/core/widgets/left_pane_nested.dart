@@ -506,29 +506,35 @@ class _ResponsesBranch extends StatelessWidget {
           return leafInfo('No responses yet', context);
         }
 
-        return Column(
-          children: docs.map((d) {
-            final id = d.id;
-            final data = d.data();
-            final label =
-                'Response ${data['roundNumber'] ?? 'x'}.${data['responseNumber'] ?? 'x'}';
-            final isOpen = id == initiallyOpenResponseId;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8.0), // add space at the end
+          child: Column(
+            children: docs.map((d) {
+              final id = d.id;
+              final data = d.data();
+              final label =
+                  'Response ${data['roundNumber'] ?? 'x'}.${data['responseNumber'] ?? 'x'}';
+              final isOpen = id == initiallyOpenResponseId;
 
-            return Padding(
-              padding: const EdgeInsets.only(left: 12.0),
-              child: ListTile(
-                key: PageStorageKey('resp_${enquiryId}_$id'),
-                title: _RowTile(
-                  label: label,
-                  selected: isOpen && initiallySelectedCommentId == null,
-                  onTap: () {
-                    TwoPaneScope.of(context)?.closeDrawer();
-                    context.go('/enquiries/$enquiryId/responses/$id');
-                  },
+              return Padding(
+                padding: const EdgeInsets.only(left: 12.0),
+                child: ListTile(
+                  key: PageStorageKey('resp_${enquiryId}_$id'),
+                  dense: true,
+                  visualDensity: const VisualDensity(vertical: -3),
+                  minVerticalPadding: 0,
+                  title: _RowTile(
+                    label: label,
+                    selected: isOpen && initiallySelectedCommentId == null,
+                    onTap: () {
+                      TwoPaneScope.of(context)?.closeDrawer();
+                      context.go('/enquiries/$enquiryId/responses/$id');
+                    },
+                  ),
                 ),
-              ),
-            );
-          }).toList(),
+              );
+            }).toList(),
+         ),
         );
       },
     );
@@ -549,6 +555,8 @@ class _RowTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       dense: true,
+      visualDensity: const VisualDensity(vertical: -3), // tighter
+      minVerticalPadding: 0,
       contentPadding: EdgeInsets.zero,
       title: Text(
         label,
