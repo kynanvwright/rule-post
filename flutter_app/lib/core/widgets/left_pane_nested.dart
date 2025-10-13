@@ -360,6 +360,8 @@ class _LeftPaneNestedState extends State<LeftPaneNested> {
 /// ─────────────────────────────────────────────────────────────────────────
 /// Enquiries list (applies filters + search)
 /// ─────────────────────────────────────────────────────────────────────────
+final openIndexProvider = StateProvider<int?>((ref) => null);
+/// 
 class _EnquiriesTree extends ConsumerWidget {
   const _EnquiriesTree({
     required this.initiallyOpenEnquiryId,
@@ -422,7 +424,7 @@ class _EnquiriesTree extends ConsumerWidget {
           }).toList();
         }
 
-        // ⬇️ YOUR EXISTING LIST BUILDER — unchanged
+        // route-controlled accordion: only one open at once, synced to enquiryId in the URL
         return ListView.builder(
           itemCount: docs.length,
           itemBuilder: (context, i) {
@@ -430,22 +432,46 @@ class _EnquiriesTree extends ConsumerWidget {
             final id = d.id;
             final data = d.data();
             final title = (data['title'] ?? 'Untitled').toString();
-            final selected = id == initiallyOpenEnquiryId;
             final n = (data['enquiryNumber'] ?? 'Unnumbered').toString();
 
+            // 👇 route-driven open state
+            final routeEnquiryId = initiallyOpenEnquiryId; // passed from GoRouterState
+            final isOpen = id == routeEnquiryId;
+
             return ExpansionTile(
-              backgroundColor: selected ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.2) : null,
-              key: PageStorageKey('enq_$id'),
-              initiallyExpanded: selected,
+              // 👇 include isOpen in the key so internal state follows the route
+              key: ValueKey('enq_${id}_$isOpen'),
+              initiallyExpanded: isOpen,
+              maintainState: false, // don't keep children alive when not routed
+              backgroundColor: isOpen
+                  ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.2)
+                  : null,
+
+              // 👇 user toggles cause navigation, not local state changes
+              onExpansionChanged: (expanded) {
+                if (expanded && id != routeEnquiryId) {
+                  // Open another enquiry -> navigate to that enquiry
+                  TwoPaneScope.of(context)?.closeDrawer();
+                  context.go('/enquiries/$id');
+                } else if (!expanded && id == routeEnquiryId) {
+                  // Collapsing the routed enquiry: choose one behaviour:
+                  // A) keep it open by snapping back (do nothing; the key+initiallyExpanded will reopen)
+                  // or B) navigate to a route without enquiry to truly collapse:
+                  // context.go('/enquiries'); // <- uncomment if you want collapse via route
+                }
+              },
+
               title: _RowTile(
                 label: 'RE #$n - $title',
-                selected: selected && initiallyOpenResponseId == null,
+                selected: isOpen && initiallyOpenResponseId == null, // highlight follows route
                 showSubtitle: data['isPublished'] == false,
                 onTap: () {
+                  // Always let the route drive UI
                   TwoPaneScope.of(context)?.closeDrawer();
                   context.go('/enquiries/$id');
                 },
               ),
+
               children: [
                 _ResponsesBranch(
                   enquiryId: id,
@@ -456,6 +482,7 @@ class _EnquiriesTree extends ConsumerWidget {
             );
           },
         );
+
       },
     );
   }
