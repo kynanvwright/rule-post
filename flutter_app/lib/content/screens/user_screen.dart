@@ -7,6 +7,7 @@ import '../../riverpod/user_detail.dart';
 import '../../api/create_user_api.dart';
 import '../../auth//widgets/team_admin_panel.dart';
 import '../widgets/notification_tile.dart';
+import '../../core/widgets/back_button.dart';
 
 class ClaimsScreen extends ConsumerStatefulWidget {
   const ClaimsScreen({super.key});
@@ -30,7 +31,13 @@ class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
     // final userRole = ref.watch(roleProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: AppBar(
+        leading: Padding(
+          padding: const EdgeInsets.all(12),
+          child: BackButtonCompact(),
+        ),
+        title: const Text('Profile'),
+    ),
       body: claimsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),

@@ -15,7 +15,7 @@ import 'content/screens/pages.dart';
 import 'content/screens/user_screen.dart';
 import 'content/screens/help_screen.dart';
 import 'core/widgets/app_scaffold.dart';
-import 'core/widgets/breadcrumb_bar.dart';
+import 'core/widgets/right_pane_header.dart';
 import 'core/widgets/left_pane_nested.dart';
 import 'core/widgets/two_panel_shell.dart';
 
@@ -105,7 +105,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state, child) => TwoPaneFourSlot(
               leftHeader: LeftPaneHeader(),
               leftContent: LeftPaneNested(state: state),
-              rightHeader: BreadcrumbBar(state: state),
+              rightHeader: RightPaneHeader(state: state),
               rightContent: child,
             ),
             routes: [

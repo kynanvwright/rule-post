@@ -608,7 +608,10 @@ class _RowTile extends StatelessWidget {
 }
 
 Widget leafInfo(String text, BuildContext context) => Padding(
-  padding: const EdgeInsets.only(left: 24, bottom: 8),
+  padding: const EdgeInsets.only(
+    // left: 24, 
+    bottom: 8
+    ),
   child: Text(
     text,
     style: Theme.of(context).textTheme.bodyMedium?.copyWith(

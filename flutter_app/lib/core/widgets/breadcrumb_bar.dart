@@ -12,12 +12,9 @@ class BreadcrumbBar extends ConsumerWidget  {
   Widget build(BuildContext context, WidgetRef ref) {
     final p = state.pathParameters;
     final latest = ref.watch(latestVisitProvider);
-    String enquiryLabel() {
-      return latest?.enquiryAlias ?? '';
-    }
-    String responseLabel() {
-      return latest?.responseAlias ?? '';
-    }
+
+    String enquiryLabel() => latest?.enquiryAlias ?? '';
+    String responseLabel() => latest?.responseAlias ?? '';
 
     final items = <_Crumb>[
       _Crumb('Enquiries', '/enquiries${state.uri.hasQuery ? '?${state.uri.query}' : ''}'),
@@ -37,38 +34,36 @@ class BreadcrumbBar extends ConsumerWidget  {
             MouseRegion(
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
-                  onTap: () {
-                    final target = items[i].href;
-                    context.go(target);
-                  },
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 500),
-                    transitionBuilder: (child, animation) =>
-                        FadeTransition(opacity: animation, child: child),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: Theme.of(context).colorScheme.primary,
-                            width: 1.5,
-                          ),
+                onTap: () => context.go(items[i].href),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 500),
+                  transitionBuilder: (child, animation) =>
+                      FadeTransition(opacity: animation, child: child),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Theme.of(context).colorScheme.primary,
+                          width: 1.5,
                         ),
                       ),
-                      child: Text(
-                        items[i].label,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          height: 1.2,
-                        ),
+                    ),
+                    child: Text(
+                      items[i].label,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        height: 1.2,
                       ),
                     ),
                   ),
                 ),
+              ),
             ),
-            if (i < items.length - 1) const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text(' / '),
-            ),
+            if (i < items.length - 1)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8.0),
+                child: Text(' / '),
+              ),
           ],
         ],
       ),
