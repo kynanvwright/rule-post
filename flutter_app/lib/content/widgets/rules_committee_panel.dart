@@ -26,13 +26,13 @@ class AdminAction {
   factory AdminAction.publishCompetitorResponses({
     required String enquiryId,
     required Future<int?> Function() run,
-    required bool teamsCanRespond,
+    required bool enabled,
     required context,
   }) => AdminAction(
           label: 'Publish Competitor Responses',
           icon: Icons.publish,
-          tooltip: teamsCanRespond ? 'Publish all submitted responses' : 'Locked: No pending responses',
-          enabled: teamsCanRespond,
+          tooltip: enabled ? 'Publish all submitted responses' : 'Locked: No pending responses',
+          enabled: enabled,
           onPressed: () async {
             try {
               final functionSuccess = await run();
@@ -52,13 +52,13 @@ class AdminAction {
   factory AdminAction.publishRCResponse({
     required String enquiryId,
     required Future<bool> Function() run,
-    required bool teamsCanRespond,
+    required bool enabled,
     required context,
   }) => AdminAction(
           label: 'Publish RC Response',
           icon: Icons.publish,
-          tooltip: teamsCanRespond ? 'Locked: Wait for Competitors to respond' : 'Finish this enquiry stage and skip to the next',
-          enabled: !teamsCanRespond,
+          tooltip: enabled ? 'Finish this enquiry stage and skip to the next' : 'Locked: Wait for Competitors to respond',
+          enabled: enabled,
           onPressed: () async {
             try {
               final functionSuccess = await run();
@@ -89,11 +89,13 @@ class AdminAction {
   factory AdminAction.closeEnquiry({
     required String enquiryId,
     required Future<String?> Function() run,
+    required bool enabled,
     required context,
   }) => AdminAction(
           label: 'Close Enquiry',
           icon: Icons.lock,
-          tooltip: 'End enquiry and lock all submissions',
+          tooltip: enabled ? 'End enquiry and lock all submissions' : 'Enquiry already closed',
+          enabled: enabled,
           onPressed: () async {
             try {
               final closedEnquiryId = await run();
@@ -115,6 +117,7 @@ class AdminAction {
     required Future<int> Function() loadCurrent,
     // Apply/save the new value (e.g. call a CF that writes and recomputes)
     required Future<bool> Function(int newDays) run,
+    required bool enabled,
     required BuildContext context,
   }) {
     int? _pendingDays;
@@ -122,7 +125,8 @@ class AdminAction {
     return AdminAction(
       label: 'Change Stage Length',
       icon: Icons.timer, // a little more descriptive than lock
-      tooltip: 'Change number of working days for major enquiry stages (default: 4)',
+      tooltip: enabled ? 'Change number of working days for major enquiry stages (default: 4)' : 'Enquiry closed',
+      enabled: enabled,
       // Step 1: confirmGuard handles fetch + numeric input
       confirmGuard: (ctx) async {
         final v = await promptStageLength(ctx, loadCurrent: loadCurrent, min: 1, max: 30);
