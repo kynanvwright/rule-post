@@ -434,6 +434,7 @@ class _EnquiriesTree extends ConsumerWidget {
             final n = (data['enquiryNumber'] ?? 'Unnumbered').toString();
 
             return ExpansionTile(
+              backgroundColor: selected ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.2) : null,
               key: PageStorageKey('enq_$id'),
               initiallyExpanded: selected,
               title: _RowTile(
