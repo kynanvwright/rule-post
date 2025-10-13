@@ -1,9 +1,12 @@
-import 'package:flutter/material.dart';
-import 'create_post_wrapper.dart';
-import '../../core/models/attachments.dart' show TempAttachment;
+import 'dart:io' show File;
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
+
+import 'create_post_wrapper.dart';
+import '../../core/models/attachments.dart' show TempAttachment;
 
 enum PostType { enquiry, response, comment }
 
@@ -259,57 +262,48 @@ class _NewPostDialogState extends State<_NewPostDialog> {
   }
 
   Future<void> _addAttachmentToTemp() async {
-    try {
-      setState(() => _uploading = true);
+    if (_uploading) return;
+    setState(() => _uploading = true);
 
+    try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) {
         _toast('You must be signed in to add attachments.');
-        setState(() => _uploading = false);
         return;
       }
 
       final picked = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
         withData: true,
         type: FileType.custom,
         allowedExtensions: ['pdf', 'doc', 'docx'],
       );
-      if (picked == null || picked.files.isEmpty) {
-        setState(() => _uploading = false);
-        return;
+      if (picked == null || picked.files.isEmpty) return;
+
+      int success = 0;
+      final errors = <String>[];
+
+      // Upload sequentially (simple + predictable UI). If you prefer parallel:
+      // await Future.wait(picked.files.map(_uploadOneFile));
+      for (final f in picked.files) {
+        try {
+          await _uploadOneFile(uid, f);
+          success++;
+        } catch (e) {
+          errors.add('${f.name}: $e');
+        }
       }
 
-      final f = picked.files.single;
-      final bytes = f.bytes;
-      if (bytes == null) {
-        _toast('Could not read file bytes.');
-        setState(() => _uploading = false);
-        return;
+      if (success > 0) {
+        _toast('Uploaded $success file${success == 1 ? '' : 's'}.');
       }
-
-      final name = f.name;
-      final size = f.size;
-      final ext = (f.extension ?? '').toLowerCase();
-      final contentType = _guessContentType(ext) ?? 'application/octet-stream';
-
-      final ts = DateTime.now().millisecondsSinceEpoch;
-      final safeName = _sanitiseName(name);
-      final tempPath = '${widget.tempFolder}/$uid/$ts-$safeName';
-
-      final ref = FirebaseStorage.instance.ref(tempPath);
-      await ref.putData(bytes, SettableMetadata(contentType: contentType));
-
-      _pending.add(TempAttachment(
-        name: name,
-        storagePath: tempPath,
-        size: size,
-        contentType: contentType,
-      ));
-
-      setState(() => _uploading = false);
+      if (errors.isNotEmpty) {
+        _toast('Some files failed:\n${errors.join('\n')}');
+      }
     } catch (e) {
-      setState(() => _uploading = false);
       _toast('Attachment failed: $e');
+    } finally {
+      if (mounted) setState(() => _uploading = false);
     }
   }
 
@@ -340,6 +334,38 @@ class _NewPostDialogState extends State<_NewPostDialog> {
         return null;
     }
   }
+
+  Future<void> _uploadOneFile(String uid, PlatformFile f) async {
+    final bytes = f.bytes; // present on web (withData: true)
+    final path = f.path;   // present on mobile/desktop
+    if (bytes == null && (path == null || path.isEmpty)) {
+      throw 'Could not read file bytes or path.';
+    }
+
+    final name = f.name;
+    final size = f.size;
+    final ext = (f.extension ?? '').toLowerCase();
+    final contentType = _guessContentType(ext) ?? 'application/octet-stream';
+
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    final safeName = _sanitiseName(name);
+    final tempPath = '${widget.tempFolder}/$uid/$ts-$safeName';
+
+    final ref = FirebaseStorage.instance.ref(tempPath);
+
+    if (kIsWeb || bytes != null) {
+      await ref.putData(bytes!, SettableMetadata(contentType: contentType));
+    } else {
+      await ref.putFile(File(path!), SettableMetadata(contentType: contentType));
+    }
+
+    _pending.add(TempAttachment(
+      name: name,
+      storagePath: tempPath,
+      size: size,
+      contentType: contentType,
+    ));
+  }
 }
 
 class _NewPostPayload {
@@ -353,3 +379,4 @@ class _NewPostPayload {
   final String text;
   final List<TempAttachment>? attachments;
 }
+
