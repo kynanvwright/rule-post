@@ -503,7 +503,7 @@ class _ResponsesBranch extends StatelessWidget {
         }
         final docs = snap.data!.docs;
         if (docs.isEmpty) {
-          return leafInfo('No responses yet');
+          return leafInfo('No responses yet', context);
         }
 
         return Column(
@@ -570,10 +570,16 @@ class _RowTile extends StatelessWidget {
   }
 }
 
-Widget leafInfo(String text) => Padding(
-      padding: const EdgeInsets.only(left: 24, bottom: 8),
-      child: Text(text, style: const TextStyle(color: Colors.black54)),
-    );
+Widget leafInfo(String text, BuildContext context) => Padding(
+  padding: const EdgeInsets.only(left: 24, bottom: 8),
+  child: Text(
+    text,
+    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+      color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+    ),
+  ),
+);
+
 
 /// ─────────────────────────────────────────────────────────────────────────
 /// Query builder: isOpen filter + search (prefix on title_lc)
