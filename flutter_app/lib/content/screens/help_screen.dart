@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import '../../core/widgets/back_button.dart';
 
 class HelpFaqScreen extends StatelessWidget {
   const HelpFaqScreen({super.key});
@@ -129,6 +130,10 @@ class HelpFaqScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        leading: Padding(
+          padding: const EdgeInsets.all(12),
+          child: BackButtonCompact(),
+        ),
         title: const Text("Help & FAQ"),
       ),
       body: ListView(
