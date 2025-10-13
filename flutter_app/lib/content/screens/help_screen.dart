@@ -38,7 +38,7 @@ class HelpFaqScreen extends StatelessWidget {
 
       // 📝 ENQUIRIES
       {
-        "header": "📝 Posts",
+        "header": "✏️ How to Submit",
         "items": [
           {
             "question": "How do I submit a new enquiry?",
@@ -55,6 +55,12 @@ class HelpFaqScreen extends StatelessWidget {
             "answer":
                 "Log in, and navigate to the parent response using the navigation pane on the left. Click the '+ New' button in the 'Comments' section."
           },
+        ]  
+      },
+         
+      {
+        "header": "📋 Posts",
+        "items": [
           {
             "question": "Are posts anonymous?",
             "answer":
@@ -93,14 +99,14 @@ class HelpFaqScreen extends StatelessWidget {
                 "Enquiries have an 'Enquiry Stage' section, which details the current enquiry stage, when it ends, and what the next one will be."
           },
           {
-            "question": "What happens when the response window closes?",
-            "answer":
-                "Teams can no longer submit responses, but may still view all published material. The Rules Committee then issues its reply or closes the enquiry."
-          },
-          {
             "question": "How are deadlines calculated?",
             "answer":
                 "They are based on the AC Technical Regulations. The general flow is as follows: Enquiry is submitted, teams respond, teams comment on each other's responses, Rules Committee responds. Those last three steps repeat until the enquiry is closed."
+          },
+          {
+            "question": "What if I miss a deadline?",
+            "answer":
+                "There is currently no mechanism for allowing late submissions, but contact the Rules Committee if you believe this website facilitated the submission error."
           },
         ]
       },
