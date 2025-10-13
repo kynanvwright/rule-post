@@ -614,7 +614,12 @@ class _ChildrenSection extends ConsumerWidget {
                     ? null
                     : (title.length > 140 ? '${title.substring(0, 140)}…' : title);
                 final commentCount = d['commentCount'] ?? 0;
-                final trailingText = fromRC==false ? Text('$commentCount comments') : Text('Rules Committee');
+                final trailingText = Text( 
+                  fromRC==false 
+                    ? commentCount == 1
+                      ? '$commentCount comment'
+                      : '$commentCount comments'
+                    : 'Rules Committee');
 
                 tile = ListTile(
                   title: !isPublished

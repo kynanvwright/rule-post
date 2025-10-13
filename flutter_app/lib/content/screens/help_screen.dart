@@ -69,7 +69,7 @@ class HelpFaqScreen extends StatelessWidget {
           {
             "question": "Why didn't my post publish after I submitted it?",
             "answer":
-                "Posts are delayed to specific times, detailed in the AC Technical Regulations. The draft should be viewable if you are logged in."
+                "Post publications are delayed to specific times, detailed in the AC Technical Regulations. The draft should be viewable if you are logged in."
           },
           {
             "question": "Can I edit or delete a post after submitting it?",
@@ -116,7 +116,7 @@ class HelpFaqScreen extends StatelessWidget {
         "header": "⚙️ Technical / Troubleshooting",
         "items": [
           {
-            "question": "I can’t upload a file — what should I check?",
+            "question": "I can’t upload a file, what should I check?",
             "answer":
                 "Confirm it’s under the size limit (e.g. 10 MB) and in an allowed format (.pdf or .docx)."
           },
@@ -182,7 +182,7 @@ class HelpFaqScreen extends StatelessWidget {
             subtitle: const Text("Contact our support team"),
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Contact support tapped")),
+                const SnackBar(content: Text("Feature coming soon!")),
               );
             },
           ),

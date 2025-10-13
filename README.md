@@ -72,7 +72,8 @@ A website for facilitating America's Cup Rule Enquiries.
 - Permit editing prior to submission (be careful of permissions here)
 - Anonymity toggle (default ON to start)  
   - optionally allows teams to identify themselves
-- Add amendment/interpretation/neither tag on enquiry closure, to allow filtering later  
+- Add amendment/interpretation/neither tag on enquiry closure, to allow filtering later
+- have a page summarising all open enquiry deadlines
 
 ### 📑 Enquiries & Responses
 - Add per-user limits on new enquiries and attachments per day  
