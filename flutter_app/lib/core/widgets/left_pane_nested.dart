@@ -8,6 +8,7 @@ import '../../content/widgets/new_post_button.dart';
 import '../../riverpod/user_detail.dart';
 import '../widgets/draft_viewing.dart';
 import 'two_panel_shell.dart';
+import 'navigator_helper.dart';
 
 final filterDefault = 'open';
 
@@ -452,7 +453,7 @@ class _EnquiriesTree extends ConsumerWidget {
                 if (expanded && id != routeEnquiryId) {
                   // Open another enquiry -> navigate to that enquiry
                   TwoPaneScope.of(context)?.closeDrawer();
-                  context.go('/enquiries/$id');
+                  goWithQuery(context,'/enquiries/$id');
                 } else if (!expanded && id == routeEnquiryId) {
                   // Collapsing the routed enquiry: choose one behaviour:
                   // A) keep it open by snapping back (do nothing; the key+initiallyExpanded will reopen)
@@ -468,7 +469,7 @@ class _EnquiriesTree extends ConsumerWidget {
                 onTap: () {
                   // Always let the route drive UI
                   TwoPaneScope.of(context)?.closeDrawer();
-                  context.go('/enquiries/$id');
+                  goWithQuery(context,'/enquiries/$id');
                 },
               ),
 
@@ -556,7 +557,7 @@ class _ResponsesBranch extends StatelessWidget {
                     selected: isOpen && initiallySelectedCommentId == null,
                     onTap: () {
                       TwoPaneScope.of(context)?.closeDrawer();
-                      context.go('/enquiries/$enquiryId/responses/$id');
+                      goWithQuery(context, '/enquiries/$enquiryId/responses/$id');
                     },
                   ),
                 ),
