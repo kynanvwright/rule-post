@@ -221,7 +221,7 @@ String _fmtSize(int bytes) {
 ///
 /// NOTE: Some hosts may block embedding with X-Frame-Options/CSP.
 /// If your storage host blocks embedding, fall back to "Open in new tab".
-class _InlineDocIFrame extends StatelessWidget {
+class _InlineDocIFrame extends StatefulWidget {
   const _InlineDocIFrame({
     required this.url,
     required this.isPdf,
@@ -235,35 +235,124 @@ class _InlineDocIFrame extends StatelessWidget {
   final double height;
 
   @override
-  Widget build(BuildContext context) {
-    final viewType = 'iframe-${UniqueKey()}';
+  State<_InlineDocIFrame> createState() => _InlineDocIFrameState();
+}
 
-    // check if device is a phone
-    bool isMobileLayout(BuildContext context) =>
-    MediaQuery.of(context).size.width < 600;
+class _InlineDocIFrameState extends State<_InlineDocIFrame> {
+  late String _viewType;
+  bool _loading = true;
+  bool _error = false;
+  bool _registered = false;        // <- prevent double registration
+  late String _src;
 
-    // Choose iframe src:
-    //  - PDF: open directly; add small viewer params
-    //  - Word: use Google Docs Viewer to embed
-    final src = isPdf & !isMobileLayout(context)
-        ? '$url#toolbar=1&navpanes=0&scrollbar=1'
-        : isWord || isMobileLayout(context)
-            ? 'https://docs.google.com/gview?url=${Uri.encodeComponent(url)}&embedded=true'
-            : url;
+  bool _isMobileLayout(BuildContext context) =>
+      MediaQuery.of(context).size.width < 600;
 
-    // Register a one-off factory that returns an HTMLIFrameElement.
-    ui_web.platformViewRegistry.registerViewFactory(viewType, (int _) {
+  @override
+  void initState() {
+    super.initState();
+    _viewType = 'iframe-${UniqueKey()}';
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_registered) return;
+
+    final mobile = _isMobileLayout(context);
+
+    // Same logic as your original (with && fix)
+    _src = widget.isPdf && !mobile
+        ? '${widget.url}#toolbar=1&navpanes=0&scrollbar=1'
+        : (widget.isWord || mobile)
+            ? 'https://docs.google.com/gview?url=${Uri.encodeComponent(widget.url)}&embedded=true'
+            : widget.url;
+
+    ui_web.platformViewRegistry.registerViewFactory(_viewType, (int _) {
       final el = web.HTMLIFrameElement()
-        ..src = src
+        ..src = _src
         ..style.border = '0'
         ..style.width = '100%'
         ..style.height = '100%';
+
+      el.onLoad.listen((_) {
+        if (mounted) setState(() => _loading = false);
+      });
+
+      el.onError.listen((_) {
+        if (mounted) {
+          setState(() {
+            _loading = false;
+            _error = true;
+          });
+        }
+      });
+
+      // Failsafe
+      Future.delayed(const Duration(seconds: 12), () {
+        if (mounted && _loading) setState(() => _loading = false);
+      });
+
       return el;
     });
 
+    _registered = true;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return SizedBox(
-      height: height,
-      child: HtmlElementView(viewType: viewType),
+      height: widget.height,
+      child: Stack(
+        children: [
+          Positioned.fill(child: HtmlElementView(viewType: _viewType)),
+
+          if (_loading)
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.6),
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      SizedBox(height: 12),
+                      Text('Loading attachment…'),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          if (_error)
+            Positioned(
+              left: 12,
+              right: 12,
+              bottom: 12,
+              child: Material(
+                color: Theme.of(context).colorScheme.errorContainer,
+                elevation: 1,
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: Text(
+                    'Preview failed to load. Try “Open” or “Download”.',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onErrorContainer,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
+
