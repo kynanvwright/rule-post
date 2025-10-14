@@ -34,7 +34,7 @@ class BreadcrumbBar extends ConsumerWidget  {
             MouseRegion(
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
-                onTap: () => context.go(items[i].href),
+                onTap: () => context.push(items[i].href),
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 500),
                   transitionBuilder: (child, animation) =>

@@ -6,9 +6,11 @@ import 'package:url_launcher/url_launcher_string.dart';
 
 import '../../content/widgets/new_post_button.dart';
 import '../../riverpod/user_detail.dart';
+import '../../riverpod/enquiry_filter_provider.dart';
 import '../widgets/draft_viewing.dart';
 import 'two_panel_shell.dart';
-import 'navigator_helper.dart';
+// import 'navigator_helper.dart';
+import 'filter_dropdown.dart';
 
 final filterDefault = 'open';
 
@@ -56,7 +58,7 @@ class LeftPaneHeader extends ConsumerWidget {
                   NewPostButton(type: PostType.enquiry),
                   const SizedBox(width: 12),
                 ],
-                _ControlsDropdown(
+                FilterDropdown(
                   selectedStatus: GoRouterState.of(context)
                       .uri
                       .queryParameters['status'] ?? 'all',
@@ -101,259 +103,34 @@ class LeftPaneHeader extends ConsumerWidget {
         params['q'] = q;
       }
     }
-    context.go(Uri(path: s.path, queryParameters: params).toString());
+    context.push(Uri(path: s.path, queryParameters: params).toString());
   }
 }
-
-
-class _ControlsDropdown extends StatefulWidget {
-  const _ControlsDropdown({
-    required this.selectedStatus,
-    required this.statusOptions,
-    required this.statusIcon,
-    required this.statusLabel,
-    required this.initialQuery,
-    required this.onStatusChanged,
-    required this.onQueryChanged,
-    required this.onClearQuery,
-    required this.height,
-    required this.radius,
-    required this.horizontalPad,
-  });
-
-  final String selectedStatus;
-  final List<String> statusOptions;
-  final IconData Function(String) statusIcon;
-  final String Function(String) statusLabel;
-
-  final String initialQuery;
-  final ValueChanged<String> onStatusChanged;
-  final ValueChanged<String> onQueryChanged;
-  final VoidCallback onClearQuery;
-
-  final double height;
-  final double radius;
-  final double horizontalPad;
-
-  @override
-  State<_ControlsDropdown> createState() => _ControlsDropdownState();
-}
-
-class _ControlsDropdownState extends State<_ControlsDropdown> {
-  final _menuController = MenuController();
-  late final TextEditingController _localSearchCtrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _localSearchCtrl = TextEditingController(text: widget.initialQuery);
-  }
-
-  @override
-  void dispose() {
-    _localSearchCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Anchor button styled like your NewPostButton
-    final scheme = Theme.of(context).colorScheme;
-    final onVariant = scheme.onSurfaceVariant;
-    final bg = scheme.primary;
-    final fg = scheme.onPrimary;
-    final overlay = scheme.primary.withValues(alpha: 0.08);
-
-    final anchor = FilledButton(
-      style: ButtonStyle(
-        backgroundColor: WidgetStatePropertyAll(bg),
-        foregroundColor: WidgetStatePropertyAll(fg),
-        overlayColor: WidgetStatePropertyAll(overlay),
-        padding: WidgetStatePropertyAll(
-          EdgeInsets.symmetric(horizontal: widget.horizontalPad),
-        ),
-        minimumSize: WidgetStatePropertyAll(
-          Size(0, widget.height),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: const [
-          Icon(Icons.filter_alt, size: 20),
-        ],
-      ),
-      onPressed: () {
-        _menuController.isOpen
-            ? _menuController.close()
-            : _menuController.open();
-      },
-    );
-
-    // The dropdown content (card with filter + search)
-    final menuCard = ConstrainedBox(
-      constraints: const BoxConstraints(minWidth: 280, maxWidth: 360),
-      child: Card(
-        margin: EdgeInsets.zero,
-        clipBehavior: Clip.antiAlias,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header row shows icons as “legend”
-              Row(
-                children: [
-                  Icon(Icons.filter_alt, size: 18, color: onVariant),
-                  const SizedBox(width: 6),
-                  Text('Filter', style: Theme.of(context).textTheme.labelLarge),
-                  const Spacer(),
-                  IconButton(
-                    tooltip: 'Close',
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () => _menuController.close(),
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              // Status filter as radio list
-              ...widget.statusOptions.map((opt) {
-                final selected = opt == widget.selectedStatus;
-                return RadioListTile<String>(
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  value: opt,
-                  groupValue: widget.selectedStatus,
-                  onChanged: (v) {
-                    if (v == null) return;
-                    widget.onStatusChanged(v);
-                    setState(() {}); // just to reflect selection instantly
-                  },
-                  title: Row(
-                    children: [
-                      Icon(widget.statusIcon(opt), size: 18),
-                      const SizedBox(width: 8),
-                      Text(widget.statusLabel(opt)),
-                      if (selected) ...[
-                        const Spacer(),
-                        const Icon(Icons.check, size: 16),
-                      ],
-                    ],
-                  ),
-                );
-              }),
-              const Divider(height: 20),
-              // Search section
-              Row(
-                children: [
-                  Icon(Icons.search, size: 18, color: onVariant),
-                  const SizedBox(width: 6),
-                  Text('Search', style: Theme.of(context).textTheme.labelLarge),
-                ],
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _localSearchCtrl,
-                textInputAction: TextInputAction.search,
-                onChanged: (val) => widget.onQueryChanged(val),
-                onSubmitted: (val) => widget.onQueryChanged(val),
-                decoration: InputDecoration(
-                  hintText: 'Type to search…',
-                  isDense: true,
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: _localSearchCtrl.text.isNotEmpty
-                      ? IconButton(
-                          tooltip: 'Clear',
-                          onPressed: () {
-                            _localSearchCtrl.clear();
-                            widget.onClearQuery();
-                            setState(() {});
-                          },
-                          icon: const Icon(Icons.clear),
-                        )
-                      : null,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(widget.radius),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                ),
-              ),
-              const SizedBox(height: 8),
-              // Footer actions
-              Row(
-                children: [
-                  TextButton.icon(
-                    onPressed: () {
-                      // Reset to defaults
-                      widget.onStatusChanged('all');
-                      _localSearchCtrl.clear();
-                      widget.onClearQuery();
-                      setState(() {});
-                    },
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Reset'),
-                  ),
-                  const Spacer(),
-                  FilledButton.icon(
-                    onPressed: () => _menuController.close(),
-                    icon: const Icon(Icons.check),
-                    label: const Text('Done'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    // Use MenuAnchor when available (Flutter Material 3). It keeps the menu open while interacting.
-    return MenuAnchor(
-      controller: _menuController,
-      alignmentOffset: const Offset(0, 8),
-      menuChildren: [
-        // Wrap in IntrinsicWidth so the card sizes to content
-        IntrinsicWidth(child: menuCard),
-      ],
-      builder: (context, controller, child) {
-        return InkWell(
-          onTap: () {
-            controller.isOpen ? controller.close() : controller.open();
-          },
-          borderRadius: BorderRadius.circular(widget.radius),
-          child: anchor,
-        );
-      },
-    );
-  }
-}
-
 
 
 /// ─────────────────────────────────────────────────────────────────────────
 /// LeftPaneNested entry point (unchanged API)
 /// ─────────────────────────────────────────────────────────────────────────
-class LeftPaneNested extends StatefulWidget {
+class LeftPaneNested extends ConsumerStatefulWidget {
   const LeftPaneNested({super.key, required this.state});
   final GoRouterState state;
 
   @override
-  State<LeftPaneNested> createState() => _LeftPaneNestedState();
+  ConsumerState<LeftPaneNested> createState() => _LeftPaneNestedState();
 }
 
-class _LeftPaneNestedState extends State<LeftPaneNested> {
+class _LeftPaneNestedState extends ConsumerState<LeftPaneNested> {
   String? get _enquiryId => widget.state.pathParameters['enquiryId'];
   String? get _responseId => widget.state.pathParameters['responseId'];
   String? get _commentId => widget.state.pathParameters['commentId'];
 
   @override
   Widget build(BuildContext context) {
-    final qp = widget.state.uri.queryParameters; // status + q live here
+    // 👇 No more URL-derived filters here
     return _EnquiriesTree(
       initiallyOpenEnquiryId: _enquiryId,
       initiallyOpenResponseId: _responseId,
       initiallySelectedCommentId: _commentId,
-      filter: qp,
     );
   }
 }
@@ -362,33 +139,36 @@ class _LeftPaneNestedState extends State<LeftPaneNested> {
 /// Enquiries list (applies filters + search)
 /// ─────────────────────────────────────────────────────────────────────────
 final openIndexProvider = StateProvider<int?>((ref) => null);
-/// 
+
 class _EnquiriesTree extends ConsumerWidget {
   const _EnquiriesTree({
     required this.initiallyOpenEnquiryId,
     required this.initiallyOpenResponseId,
     required this.initiallySelectedCommentId,
-    required this.filter,
   });
 
   final String? initiallyOpenEnquiryId;
   final String? initiallyOpenResponseId;
   final String? initiallySelectedCommentId;
-  final Map<String, String> filter;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final teamId = ref.watch(teamProvider);
-    final rawQ = (filter['q'] ?? '').trim().toLowerCase();
+    final filter = ref.watch(enquiryFilterProvider);       // 👈 provider source of truth
+    final rawQ = filter.query.trim().toLowerCase();          // client-side search string
+
+    // If your stream only needs server-side status, keep it small:
+    final serverFilter = <String, String>{
+      'status': filter.status, // e.g. 'all' | 'open' | 'closed'
+      // Don't send 'q' to Firestore if you only filter by text client-side
+    };
 
     return StreamBuilder<List<DocView>>(
-      stream: combinedEnquiriesStream(teamId: teamId, filter: filter),
+      stream: combinedEnquiriesStream(teamId: teamId, filter: serverFilter),
       builder: (context, snap) {
         if (snap.hasError) {
           final error = snap.error.toString();
           debugPrint('❌ Firestore query error: $error');
-
-          // Extract index creation link if present.
           final link = RegExp(r'https://console\.firebase\.google\.com[^\s\)]*')
               .firstMatch(error)
               ?.group(0);
@@ -425,7 +205,8 @@ class _EnquiriesTree extends ConsumerWidget {
           }).toList();
         }
 
-        // route-controlled accordion: only one open at once, synced to enquiryId in the URL
+        final routeEnquiryId = initiallyOpenEnquiryId;
+
         return ListView.builder(
           itemCount: docs.length,
           itemBuilder: (context, i) {
@@ -435,41 +216,35 @@ class _EnquiriesTree extends ConsumerWidget {
             final title = (data['title'] ?? 'Untitled').toString();
             final n = (data['enquiryNumber'] ?? 'Unnumbered').toString();
 
-            // 👇 route-driven open state
-            final routeEnquiryId = initiallyOpenEnquiryId; // passed from GoRouterState
             final isOpen = id == routeEnquiryId;
 
             return ExpansionTile(
-              // 👇 include isOpen in the key so internal state follows the route
               key: ValueKey('enq_${id}_$isOpen'),
               initiallyExpanded: isOpen,
-              maintainState: false, // don't keep children alive when not routed
+              maintainState: false,
               backgroundColor: isOpen
                   ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.2)
                   : null,
 
-              // 👇 user toggles cause navigation, not local state changes
               onExpansionChanged: (expanded) {
                 if (expanded && id != routeEnquiryId) {
-                  // Open another enquiry -> navigate to that enquiry
                   TwoPaneScope.of(context)?.closeDrawer();
-                  goWithQuery(context,'/enquiries/$id');
+                  // 👇 IMPORTANT: do NOT append query now—filters are provider-based
+                  context.go('/enquiries/$id');
                 } else if (!expanded && id == routeEnquiryId) {
-                  // Collapsing the routed enquiry: choose one behaviour:
-                  // A) keep it open by snapping back (do nothing; the key+initiallyExpanded will reopen)
-                  // or B) navigate to a route without enquiry to truly collapse:
-                  // context.go('/enquiries'); // <- uncomment if you want collapse via route
+                  // (Optional) collapse by routing to list
+                  // context.go('/enquiries');
                 }
               },
 
               title: _RowTile(
                 label: 'RE #$n - $title',
-                selected: isOpen && initiallyOpenResponseId == null, // highlight follows route
+                selected: isOpen && initiallyOpenResponseId == null,
                 showSubtitle: data['isPublished'] == false,
                 onTap: () {
-                  // Always let the route drive UI
                   TwoPaneScope.of(context)?.closeDrawer();
-                  goWithQuery(context,'/enquiries/$id');
+                  // 👇 Same—no querystring
+                  context.go('/enquiries/$id');
                 },
               ),
 
@@ -483,11 +258,11 @@ class _EnquiriesTree extends ConsumerWidget {
             );
           },
         );
-
       },
     );
   }
 }
+
 
 /// ─────────────────────────────────────────────────────────────────────────
 /// Responses for a given enquiry
@@ -557,7 +332,8 @@ class _ResponsesBranch extends StatelessWidget {
                     selected: isOpen && initiallySelectedCommentId == null,
                     onTap: () {
                       TwoPaneScope.of(context)?.closeDrawer();
-                      goWithQuery(context, '/enquiries/$enquiryId/responses/$id');
+                      // goWithQuery(context, '/enquiries/$enquiryId/responses/$id');
+                      context.push('/enquiries/$enquiryId/responses/$id');
                     },
                   ),
                 ),

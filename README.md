@@ -30,6 +30,7 @@ A website for facilitating America's Cup Rule Enquiries.
   - triggers cloud function whenever the `user_data` collection is updated
 - Inline pdf and doc viewing
 - Adaptive screen sizing
+- Enquiry filtering and title text search
 
 ## Targets
 
@@ -59,9 +60,6 @@ A website for facilitating America's Cup Rule Enquiries.
 ## 📌 Future Features
 
 ### 🔒 Permissions & Roles
-- Add admin-only features  
-  - Skip to end of certain phases  
-  - Close enquiries  
 - Require email verification (via Firebase Auth)
 - Create static mirror of site for public viewing, updated whenever post details change
 - Look into limiting the access of cloud functions. Full admin may not be necessary and increase exploitation risk.
@@ -76,14 +74,12 @@ A website for facilitating America's Cup Rule Enquiries.
 - have a page summarising all open enquiry deadlines
 
 ### 📑 Enquiries & Responses
-- Add per-user limits on new enquiries and attachments per day  
-- Allow multiple attachments to be uploaded without reselection
+- Add per-user limits on new enquiries and attachments per day
 
 ### 🎨 UI / UX
 - Set navigation pane to minimum of:
   - Current width
   - Smallest width where all title text shown
-- Add filters/search to navigation pane
 - In navigation pane, allow final RC response to be labelled 'interpretation' or 'amendment'
 - Add subheaders to navigation pane for rounds
 - Add symbols with colour-coding for colour-blind folks

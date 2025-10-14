@@ -10,7 +10,7 @@ final firebaseUserProvider = StreamProvider<User?>(
   (ref) => FirebaseAuth.instance.idTokenChanges(),
 );
 
-/// All claims as a Map<String, Object?> ({} when signed out or no claims)
+/// All claims as a Map ({} when signed out or no claims)
 final allClaimsProvider = StreamProvider<Map<String, Object?>>((ref) async* {
   final userStream = FirebaseAuth.instance.idTokenChanges();
   await for (final user in userStream) {

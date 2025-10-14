@@ -17,5 +17,5 @@ Map<String, String> _sanitiseQuery(Map<String, String> qp) {
 void goWithQuery(BuildContext context, String path, {GoRouterState? state}) {
   final qp = _sanitiseQuery(currentQuery(context, state: state));
   final uri = Uri(path: path, queryParameters: qp.isEmpty ? null : qp);
-  context.go(uri.toString());
+  context.push(uri.toString());
 }
