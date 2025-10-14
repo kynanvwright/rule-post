@@ -11,6 +11,7 @@ import '../widgets/draft_viewing.dart';
 import 'two_panel_shell.dart';
 // import 'navigator_helper.dart';
 import 'filter_dropdown.dart';
+import '../../navigation/nav.dart';
 
 final filterDefault = 'open';
 
@@ -59,9 +60,6 @@ class LeftPaneHeader extends ConsumerWidget {
                   const SizedBox(width: 12),
                 ],
                 FilterDropdown(
-                  selectedStatus: GoRouterState.of(context)
-                      .uri
-                      .queryParameters['status'] ?? 'all',
                   statusOptions: const ['all', 'open', 'closed'],
                   statusIcon: (v) => switch (v) {
                     'open' => Icons.lock_open,
@@ -73,13 +71,6 @@ class LeftPaneHeader extends ConsumerWidget {
                     'closed' => 'Closed',
                     _ => 'All',
                   },
-                  initialQuery: GoRouterState.of(context)
-                      .uri
-                      .queryParameters['q'] ?? '',
-                  onStatusChanged: (v) => _updateQuery(context, status: v),
-                  onQueryChanged: (val) =>
-                      _updateQuery(context, q: val.trim()),
-                  onClearQuery: () => _updateQuery(context, q: ''),
                   height: _kControlHeight,
                   radius: 8,
                   horizontalPad: _kHorzPad,
@@ -90,20 +81,6 @@ class LeftPaneHeader extends ConsumerWidget {
         ],
       ),
     );
-  }
-
-  void _updateQuery(BuildContext context, {String? status, String? q}) {
-    final s = GoRouterState.of(context).uri;
-    final params = Map<String, String>.from(s.queryParameters);
-    if (status != null) params['status'] = status;
-    if (q != null) {
-      if (q.isEmpty) {
-        params.remove('q');
-      } else {
-        params['q'] = q;
-      }
-    }
-    context.push(Uri(path: s.path, queryParameters: params).toString());
   }
 }
 
@@ -230,10 +207,10 @@ class _EnquiriesTree extends ConsumerWidget {
                 if (expanded && id != routeEnquiryId) {
                   TwoPaneScope.of(context)?.closeDrawer();
                   // 👇 IMPORTANT: do NOT append query now—filters are provider-based
-                  context.go('/enquiries/$id');
+                  Nav.pushEnquiry(context, id);
                 } else if (!expanded && id == routeEnquiryId) {
                   // (Optional) collapse by routing to list
-                  // context.go('/enquiries');
+                  // Nav.goHome(context);
                 }
               },
 
@@ -244,7 +221,7 @@ class _EnquiriesTree extends ConsumerWidget {
                 onTap: () {
                   TwoPaneScope.of(context)?.closeDrawer();
                   // 👇 Same—no querystring
-                  context.go('/enquiries/$id');
+                  Nav.pushEnquiry(context, id);
                 },
               ),
 
@@ -332,8 +309,7 @@ class _ResponsesBranch extends StatelessWidget {
                     selected: isOpen && initiallySelectedCommentId == null,
                     onTap: () {
                       TwoPaneScope.of(context)?.closeDrawer();
-                      // goWithQuery(context, '/enquiries/$enquiryId/responses/$id');
-                      context.push('/enquiries/$enquiryId/responses/$id');
+                      Nav.pushResponse(context, enquiryId, id);
                     },
                   ),
                 ),

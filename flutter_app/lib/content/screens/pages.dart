@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../widgets/fancy_attachment_tile.dart';
 import '../widgets/new_post_button.dart';
@@ -13,6 +12,7 @@ import '../../api/publish_competitor_responses.dart';
 import '../../api/publish_rc_response.dart';
 import '../../api/change_stage_length.dart';
 import '../../core/widgets/draft_viewing.dart';
+import '../../navigation/nav.dart';
 
 /// -------------------- NO SELECTION --------------------
 class NoSelectionPage extends StatelessWidget {
@@ -85,10 +85,7 @@ class EnquiryDetailPage extends StatelessWidget {
 
             // Record latest visit (runs after this frame to avoid write-in-build)
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              ref.read(latestVisitProvider.notifier).state = LatestVisit(
-                enquiryId: enquiryId,
-                enquiryAlias: 'RE #$enquiryNumber',
-              );
+              ref.read(enquiryAliasProvider(enquiryId).notifier).state = 'RE #${data["enquiryNumber"]}';
             });   
 
             return _DetailScaffold(
@@ -254,12 +251,8 @@ class ResponseDetailPage extends StatelessWidget {
 
                 // Record latest visit (runs after this frame to avoid write-in-build)
                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                  ref.read(latestVisitProvider.notifier).state = LatestVisit(
-                    enquiryId: enquiryId,
-                    enquiryAlias: 'RE #$enquiryNumber',
-                    responseId: responseId,
-                    responseAlias: 'Response $roundNumber.$responseNumber',
-                  );
+                ref.read(responseAliasProvider((enquiryId: enquiryId, responseId: responseId)).notifier).state =
+                    'Response $roundNumber.$responseNumber';
                 });   
 
                 return _DetailScaffold(
@@ -627,7 +620,7 @@ class _ChildrenSection extends ConsumerWidget {
                   : Text('Response $roundNumber.$responseNumber'),
                   subtitle: titleSnippet == null ? null : Text(titleSnippet),
                   trailing: trailingText,
-                  onTap: () => context.push('/enquiries/$enquiryId/responses/$responseId'),
+                  onTap: () => Nav.pushResponse(context, enquiryId, responseId),
                 );
               } else if (segments.contains('comments')) {
                 tile = ListTileCollapsibleText(

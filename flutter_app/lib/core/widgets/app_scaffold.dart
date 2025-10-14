@@ -1,11 +1,11 @@
 // app_scaffold.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../riverpod/user_detail.dart';
 import './colour_helper.dart';
 import '../../auth/widgets/auth_service.dart';
+import '../../navigation/nav.dart';
 
 enum _Bp { phone, tablet, desktop }
 _Bp _bp(double w) {
@@ -213,7 +213,7 @@ class _DefaultBanner extends ConsumerWidget {
                           children: [
                             if (!(bp == _Bp.phone && w < 340)) // optional: hide logo on ultra-narrow
                               InkWell(
-                                onTap: () => context.go('/enquiries?status=open'),
+                                onTap: () => Nav.goHome(context),
                                 borderRadius: BorderRadius.circular(h * 0.1),
                                 child: Padding(
                                   padding: EdgeInsets.all(bp == _Bp.phone ? h * 0.03 : h * 0.05),
@@ -228,7 +228,7 @@ class _DefaultBanner extends ConsumerWidget {
                               child: MouseRegion(
                                 cursor: SystemMouseCursors.click,
                                 child: InkWell(
-                                  onTap: () => context.go('/enquiries?status=open'),         // or context.go('/') for true "home"
+                                  onTap: () => Nav.goHome(context),
                                   borderRadius: BorderRadius.circular(h * 0.06), // light rounding for nicer splash
                                   splashColor: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.08),
                                   highlightColor: Colors.transparent,
@@ -311,7 +311,7 @@ class _DefaultBanner extends ConsumerWidget {
                             constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
                             child: IconButton(
                               tooltip: 'Help',
-                              onPressed: () => context.go('/help'),
+                              onPressed: () => Nav.pushHelp(context),
                               icon: Icon(Icons.help_outline, color: scheme.onPrimary, size: iconSize),
                               padding: EdgeInsets.zero,
                               splashRadius: (iconSize + minTap) / 4,
@@ -336,7 +336,7 @@ class _DefaultBanner extends ConsumerWidget {
                                   MenuItemButton(
                                     leadingIcon: Icon(Icons.person),
                                     child: Text("Profile"),
-                                    onPressed: () => context.go('/user-details'),
+                                    onPressed: () => Nav.pushAccount(context),
                                   ),
                                   MenuItemButton(
                                     leadingIcon: const Icon(Icons.logout),
@@ -344,7 +344,7 @@ class _DefaultBanner extends ConsumerWidget {
                                     onPressed: () async {
                                       await AuthService().signOut();
                                       if (context.mounted) {
-                                        context.go('/enquiries');
+                                        Nav.goHome(context);
                                       }
                                     },
                                   ),
@@ -352,7 +352,7 @@ class _DefaultBanner extends ConsumerWidget {
                                   MenuItemButton(
                                     leadingIcon: const Icon(Icons.login),
                                     child: const Text("Sign In"),
-                                    onPressed: () => context.go('/login'),
+                                    onPressed: () => Nav.goLogin(context),
                                   ),
                               ],
                             ),

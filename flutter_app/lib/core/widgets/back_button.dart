@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import '../../navigation/nav.dart';
 
 class BackButtonCompact extends StatelessWidget {
   const BackButtonCompact({
     super.key,
     this.onPressed,
     this.size = 36,
+    this.twoPaneKey, // optional for nested shell handling
   });
 
   final VoidCallback? onPressed;
   final double size;
+  final GlobalKey<NavigatorState>? twoPaneKey;
 
   @override
   Widget build(BuildContext context) {
@@ -19,11 +21,8 @@ class BackButtonCompact extends StatelessWidget {
     final overlay = scheme.primary.withValues(alpha: 0.12);
 
     void defaultBack() {
-      if (Navigator.of(context).canPop()) {
-        context.pop();
-      } else {
-        context.go('/enquiries');
-      }
+      // Centralised navigation logic
+      Nav.back(context, twoPaneKey: twoPaneKey);
     }
 
     return FilledButton(

@@ -5,28 +5,17 @@ import '../../riverpod/enquiry_filter_provider.dart';
 class FilterDropdown extends ConsumerStatefulWidget {
   const FilterDropdown({
     super.key,
-    required this.selectedStatus,    // (legacy) used to hydrate once if provider is default
     required this.statusOptions,
     required this.statusIcon,
     required this.statusLabel,
-    required this.initialQuery,      // (legacy) used to hydrate once if provider is default
-    required this.onStatusChanged,   // (legacy) not used anymore
-    required this.onQueryChanged,    // (legacy) not used anymore
-    required this.onClearQuery,      // (legacy) not used anymore
     required this.height,
     required this.radius,
     required this.horizontalPad,
   });
 
-  final String selectedStatus;
   final List<String> statusOptions;
   final IconData Function(String) statusIcon;
   final String Function(String) statusLabel;
-
-  final String initialQuery;
-  final ValueChanged<String> onStatusChanged;
-  final ValueChanged<String> onQueryChanged;
-  final VoidCallback onClearQuery;
 
   final double height;
   final double radius;
@@ -47,16 +36,6 @@ class FilterDropdownState extends ConsumerState<FilterDropdown> {
 
     // One-time hydration from widget props if provider is at defaults.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final current = ref.read(enquiryFilterProvider);
-      final n = ref.read(enquiryFilterProvider.notifier);
-
-      // If still default, seed from incoming (legacy) props
-      if (current.status == 'all' && widget.selectedStatus.isNotEmpty) {
-        n.setStatus(widget.selectedStatus);
-      }
-      if (current.query.isEmpty && widget.initialQuery.isNotEmpty) {
-        n.setQuery(widget.initialQuery);
-      }
 
       // Sync controller to provider
       _syncControllerWithProvider(ref.read(enquiryFilterProvider).query, setSelectionToEnd: true);
