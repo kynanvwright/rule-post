@@ -15,6 +15,7 @@ class BackButtonCompact extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final enabled = Nav.canGoBack(context, twoPaneKey: twoPaneKey);
     final scheme = Theme.of(context).colorScheme;
     final bg = scheme.primary;
     final fg = scheme.onPrimary;
@@ -35,7 +36,7 @@ class BackButtonCompact extends StatelessWidget {
         padding: const WidgetStatePropertyAll(EdgeInsets.zero),
         visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
       ),
-      onPressed: onPressed ?? defaultBack,
+      onPressed: enabled ? onPressed ?? defaultBack : null,
       child: const Icon(Icons.arrow_back, size: 20),
     );
   }

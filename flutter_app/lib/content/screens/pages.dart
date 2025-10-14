@@ -545,15 +545,21 @@ class _ChildrenSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // 1) Read any deps ONCE (used for the key)
+    final teamId = ref.watch(teamProvider);
+
+    // 2) Build the stream ONCE (don’t call this again for the key)
+    final stream = builder(context, ref);
+
+    // 3) Use a stable key that DOESN’T include the stream
+    final keyForList = ValueKey<String>('$title|$teamId');
+
     return _SectionCard(
       title: title,
       trailing: newChildButton,
       child: StreamBuilder<List<DocView>>(
-        key: ValueKey<Object?>(
-          // anything that changes when the query changes
-          (title, ref.watch(teamProvider), builder(context, ref).runtimeType), // or just '$title|$teamId'
-        ),
-        stream: builder(context, ref),
+        key: keyForList,
+        stream: stream,
         builder: (context, snap) {
           if (!snap.hasData || snap.connectionState != ConnectionState.active) {
             return const Padding(

@@ -22,22 +22,29 @@ class BreadcrumbBar extends ConsumerWidget {
         ? null
         : ref.watch(responseAliasProvider((enquiryId: enquiryId, responseId: responseId)));
 
+    // 👉 No ID fallback — just a neutral label until alias is ready
     String enquiryLabel() =>
-        (enquiryAlias != null && enquiryAlias.isNotEmpty)
-            ? enquiryAlias
-            : (enquiryId != null ? 'Enquiry $enquiryId' : 'Enquiry');
+        (enquiryAlias != null && enquiryAlias.isNotEmpty) ? enquiryAlias : '';
 
     String responseLabel() =>
-        (responseAlias != null && responseAlias.isNotEmpty)
-            ? responseAlias
-            : (responseId != null ? 'Response $responseId' : 'Response');
+        (responseAlias != null && responseAlias.isNotEmpty) ? responseAlias : '';
 
     final crumbs = <_Crumb>[
-      _Crumb('Enquiries', () => Nav.goHome(context)),
+      _Crumb('Enquiries', () => Nav.goHome(context),
+          key: const ValueKey('root:enquiries')),
       if (enquiryId != null)
-        _Crumb(enquiryLabel(), () => Nav.pushEnquiry(context, enquiryId)),
+        _Crumb(
+          enquiryLabel(),
+          () => Nav.pushEnquiry(context, enquiryId),
+          // 👉 Stable key tied to route id, not the (changing) label
+          key: ValueKey('enquiry:$enquiryId'),
+        ),
       if (enquiryId != null && responseId != null)
-        _Crumb(responseLabel(), () => Nav.pushResponse(context, enquiryId, responseId)),
+        _Crumb(
+          responseLabel(),
+          () => Nav.pushResponse(context, enquiryId, responseId),
+          key: ValueKey('response:$enquiryId/$responseId'),
+        ),
     ];
 
     return SingleChildScrollView(
@@ -52,7 +59,7 @@ class BreadcrumbBar extends ConsumerWidget {
               child: GestureDetector(
                 onTap: crumbs[i].onTap,
                 child: Container(
-                  key: ValueKey(crumbs[i].label),
+                  key: crumbs[i].key, // 👈 stable key
                   decoration: BoxDecoration(
                     border: Border(
                       bottom: BorderSide(
@@ -61,9 +68,13 @@ class BreadcrumbBar extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  child: Text(
-                    crumbs[i].label,
-                    style: const TextStyle(fontWeight: FontWeight.w600, height: 1.2),
+                  child: AnimatedSwitcher( // optional: smooth fade-in when alias arrives
+                    duration: const Duration(milliseconds: 150),
+                    child: Text(
+                      crumbs[i].label,
+                      key: ValueKey(crumbs[i].label), // switcher’s internal key
+                      style: const TextStyle(fontWeight: FontWeight.w600, height: 1.2),
+                    ),
                   ),
                 ),
               ),
@@ -83,5 +94,6 @@ class BreadcrumbBar extends ConsumerWidget {
 class _Crumb {
   final String label;
   final VoidCallback onTap;
-  _Crumb(this.label, this.onTap);
+  final Key? key;
+  _Crumb(this.label, this.onTap, {this.key});
 }
