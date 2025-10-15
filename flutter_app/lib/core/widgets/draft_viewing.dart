@@ -159,7 +159,7 @@ Stream<List<DocView>> combinedResponsesStream({
       .map((snap) => snap.docs.map((d) => DocView(d.id, d.reference, d.data())).toList())
       .map(_sortPosts); // pre-filter/sort so we can short-circuit later
   if (teamId == null) {
-      debugPrint('[combinedResponsesStream] ⏭ Not logged in — skipping draftDocStreams.');
+      debugPrint('[combinedResponsesStream] $enquiryId: ⏭ Not logged in — skipping draftDocStreams.');
     return public$;
   }
 
@@ -180,12 +180,12 @@ Stream<List<DocView>> combinedResponsesStream({
   //    Otherwise, fetch those draft docs and merge.
   return draftIds$.switchMap((ids) {
     if (ids.isEmpty) {
-      debugPrint('[combinedResponsesStream] no draft -> public only');
+      debugPrint('[combinedResponsesStream] $enquiryId: no draft -> public only');
       return public$;
     }
 
     if (ids.length > 1) {
-      debugPrint('[combinedResponsesStream] ❗multiple drafts detected: $ids');
+      debugPrint('[combinedResponsesStream] $enquiryId: ❗multiple drafts detected: $ids');
       // choose a policy: first, or prefer latest by updatedAt, etc.
       // For now, take the first (stable due to sort).
     }
@@ -211,7 +211,7 @@ Stream<List<DocView>> combinedResponsesStream({
         if (draft == null) return pub;
         final map = { for (final d in pub) d.id : d };
         map[draft.id] = draft; // upsert/override
-        debugPrint('[combinedResponsesStream] draft found -> combined with published list');
+        debugPrint('[combinedResponsesStream] $enquiryId: draft found -> combined with published list');
         return _sortPosts(map.values.toList());
       },
     );
@@ -265,7 +265,7 @@ Stream<List<DocView>> combinedCommentsStream({
       .map((snap) => snap.docs.map((d) => DocView(d.id, d.reference, d.data())).toList())
       .map(_sortPosts); // pre-filter/sort so we can short-circuit later
   if (teamId == null) {
-      debugPrint('[combinedCommentsStream] ⏭ Not logged in — skipping draftDocStreams.');
+      debugPrint('[combinedCommentsStream] $responseId: ⏭ Not logged in — skipping draftDocStreams.');
     return public$;
   }
 
@@ -285,7 +285,7 @@ Stream<List<DocView>> combinedCommentsStream({
   // 3) If there are no draft IDs, just return public$.
   return draftIds$.switchMap((ids) {
     if (ids.isEmpty) {
-      debugPrint('[combinedCommentsStream] no drafts -> public only');
+      debugPrint('[combinedCommentsStream] $responseId: no drafts -> public only');
       return public$;
     }
 

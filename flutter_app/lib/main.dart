@@ -109,29 +109,39 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               rightContent: child,
             ),
             routes: [
+              // List view (no selection)
               GoRoute(
                 path: '/enquiries',
                 builder: (context, state) => const NoSelectionPage(),
-                routes: [
-                  GoRoute(
-                    path: ':enquiryId',
-                    builder: (context, state) => EnquiryDetailPage(
-                      enquiryId: state.pathParameters['enquiryId']!,
-                    ),
-                    routes: [
-                      GoRoute(
-                        path: 'responses/:responseId',
-                        builder: (context, state) => ResponseDetailPage(
-                          enquiryId: state.pathParameters['enquiryId']!,
-                          responseId: state.pathParameters['responseId']!,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+              ),
+
+              // ── Enquiry detail (standalone route)
+              GoRoute(
+                path: '/enquiries/:enquiryId',
+                pageBuilder: (context, state) {
+                  final eid = state.pathParameters['enquiryId']!;
+                  return NoTransitionPage(
+                    key: ValueKey('enquiry:$eid'),
+                    child: EnquiryDetailPage(enquiryId: eid),
+                  );
+                },
+              ),
+
+              // ── Response detail (sibling route, not a child of the enquiry route)
+              GoRoute(
+                path: '/enquiries/:enquiryId/responses/:responseId',
+                pageBuilder: (context, state) {
+                  final eid = state.pathParameters['enquiryId']!;
+                  final rid = state.pathParameters['responseId']!;
+                  return NoTransitionPage(
+                    key: ValueKey('response:$eid:$rid'),
+                    child: ResponseDetailPage(enquiryId: eid, responseId: rid),
+                  );
+                },
               ),
             ],
           ),
+
 
           // Pages that replace the TwoPane (still inside AppScaffold)
           GoRoute(
