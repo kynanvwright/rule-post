@@ -311,7 +311,7 @@ class _DefaultBanner extends ConsumerWidget {
                             constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
                             child: IconButton(
                               tooltip: 'Help',
-                              onPressed: () => Nav.pushHelp(context),
+                              onPressed: () => Nav.goHelp(context),
                               icon: Icon(Icons.help_outline, color: scheme.onPrimary, size: iconSize),
                               padding: EdgeInsets.zero,
                               splashRadius: (iconSize + minTap) / 4,
@@ -336,7 +336,7 @@ class _DefaultBanner extends ConsumerWidget {
                                   MenuItemButton(
                                     leadingIcon: Icon(Icons.person),
                                     child: Text("Profile"),
-                                    onPressed: () => Nav.pushAccount(context),
+                                    onPressed: () => Nav.goAccount(context),
                                   ),
                                   MenuItemButton(
                                     leadingIcon: const Icon(Icons.logout),

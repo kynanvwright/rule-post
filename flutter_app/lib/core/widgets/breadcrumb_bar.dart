@@ -35,14 +35,14 @@ class BreadcrumbBar extends ConsumerWidget {
       if (enquiryId != null)
         _Crumb(
           enquiryLabel(),
-          () => Nav.pushEnquiry(context, enquiryId),
+          () => Nav.goEnquiry(context, enquiryId),
           // 👉 Stable key tied to route id, not the (changing) label
           key: ValueKey('enquiry:$enquiryId'),
         ),
       if (enquiryId != null && responseId != null)
         _Crumb(
           responseLabel(),
-          () => Nav.pushResponse(context, enquiryId, responseId),
+          () => Nav.goResponse(context, enquiryId, responseId),
           key: ValueKey('response:$enquiryId/$responseId'),
         ),
     ];
