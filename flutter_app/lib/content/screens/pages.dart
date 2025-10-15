@@ -626,7 +626,7 @@ class _ChildrenSection extends ConsumerWidget {
                   : Text('Response $roundNumber.$responseNumber'),
                   subtitle: titleSnippet == null ? null : Text(titleSnippet),
                   trailing: trailingText,
-                  onTap: () => Nav.pushResponse(context, enquiryId, responseId),
+                  onTap: () => Nav.goResponse(context, enquiryId, responseId),
                 );
               } else if (segments.contains('comments')) {
                 tile = ListTileCollapsibleText(
