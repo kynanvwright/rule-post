@@ -26,7 +26,7 @@ class RightPaneHeader extends ConsumerWidget {
           width: sideWidth,
           child: Align(
             alignment: Alignment.centerLeft,
-            child: BackButtonCompact(onPressed: onBack),
+            child: BackButtonCompact(),
           ),
         ),
 

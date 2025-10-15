@@ -1,43 +1,52 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import '../../navigation/nav.dart';
+import 'package:go_router/go_router.dart';
+import 'package:web/web.dart' as web;
 
 class BackButtonCompact extends StatelessWidget {
   const BackButtonCompact({
     super.key,
-    this.onPressed,
-    this.size = 36,
-    this.twoPaneKey, // optional for nested shell handling
+    this.size = 32,
+    this.smartFallback = false,
+    this.tooltip = 'Back',
   });
 
-  final VoidCallback? onPressed;
   final double size;
-  final GlobalKey<NavigatorState>? twoPaneKey;
+  final bool smartFallback;
+  final String tooltip;
+
+  void _exactBrowserBack() {
+    if (kIsWeb) {
+      web.window.history.back();
+    }
+  }
+
+  void _smartBack(BuildContext context) {
+    if (Navigator.of(context).canPop()) {
+      context.pop();
+    } else {
+      _exactBrowserBack();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final enabled = Nav.canGoBack(context, twoPaneKey: twoPaneKey);
     final scheme = Theme.of(context).colorScheme;
     final bg = scheme.primary;
     final fg = scheme.onPrimary;
-    final overlay = scheme.primary.withValues(alpha: 0.12);
-
-    void defaultBack() {
-      // Centralised navigation logic
-      Nav.back(context, twoPaneKey: twoPaneKey);
-    }
-
-    return FilledButton(
+    return IconButton.filled(
+      tooltip: tooltip,
+      icon: const Icon(Icons.arrow_back),
+      iconSize: size,
+      onPressed: () => smartFallback ? _smartBack(context) : _exactBrowserBack(),
       style: ButtonStyle(
         shape: const WidgetStatePropertyAll(CircleBorder()),
         backgroundColor: WidgetStatePropertyAll(bg),
         foregroundColor: WidgetStatePropertyAll(fg),
-        overlayColor: WidgetStatePropertyAll(overlay),
         minimumSize: WidgetStatePropertyAll(Size.square(size)),
         padding: const WidgetStatePropertyAll(EdgeInsets.zero),
         visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
       ),
-      onPressed: enabled ? onPressed ?? defaultBack : null,
-      child: const Icon(Icons.arrow_back, size: 20),
     );
   }
 }
