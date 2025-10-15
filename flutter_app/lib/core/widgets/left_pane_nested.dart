@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher_string.dart';
 import '../../content/widgets/new_post_button.dart';
 import '../../riverpod/user_detail.dart';
 import '../../riverpod/enquiry_filter_provider.dart';
+import '../../riverpod/combined_enquiries_provider.dart';
 import '../widgets/draft_viewing.dart';
 import 'two_panel_shell.dart';
 // import 'navigator_helper.dart';
@@ -132,47 +133,39 @@ class _EnquiriesTree extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final teamId = ref.watch(teamProvider);
     final filter = ref.watch(enquiryFilterProvider);       // 👈 provider source of truth
-    final rawQ = filter.query.trim().toLowerCase();          // client-side search string
+    final itemsAsync = ref.watch(
+      combinedEnquiriesProvider((status: filter.status, teamId: teamId)),
+    );
 
-    // If your stream only needs server-side status, keep it small:
-    final serverFilter = <String, String>{
-      'status': filter.status, // e.g. 'all' | 'open' | 'closed'
-      // Don't send 'q' to Firestore if you only filter by text client-side
-    };
+    return itemsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, st) {
+        final error = err.toString();
+        debugPrint('❌ Firestore query error: $error');
+        final link = RegExp(r'https://console\.firebase\.google\.com[^\s\)]*')
+            .firstMatch(error)
+            ?.group(0);
 
-    return StreamBuilder<List<DocView>>(
-      stream: combinedEnquiriesStream(teamId: teamId, filter: serverFilter),
-      builder: (context, snap) {
-        if (snap.hasError) {
-          final error = snap.error.toString();
-          debugPrint('❌ Firestore query error: $error');
-          final link = RegExp(r'https://console\.firebase\.google\.com[^\s\)]*')
-              .firstMatch(error)
-              ?.group(0);
-
-          return Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Failed to load enquiries'),
-                const SizedBox(height: 8),
-                if (link != null)
-                  TextButton(
-                    onPressed: () => launchUrlString(link),
-                    child: const Text('Create required Firestore index'),
-                  ),
-              ],
-            ),
-          );
-        }
-
-        if (!snap.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
+        return Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Failed to load enquiries'),
+              const SizedBox(height: 8),
+              if (link != null)
+                TextButton(
+                  onPressed: () => launchUrlString(link),
+                  child: const Text('Create required Firestore index'),
+                ),
+            ],
+          ),
+        );
+      },
+      data: (docs0) {
         // keep your client-side search
-        List<DocView> docs = snap.data!;
+        final rawQ = filter.query.trim().toLowerCase();
+        List<DocView> docs = docs0;
         if (rawQ.isNotEmpty) {
           docs = docs.where((d) {
             final data = d.data();
@@ -202,29 +195,23 @@ class _EnquiriesTree extends ConsumerWidget {
               backgroundColor: isOpen
                   ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.2)
                   : null,
-
               onExpansionChanged: (expanded) {
                 if (expanded && id != routeEnquiryId) {
                   TwoPaneScope.of(context)?.closeDrawer();
-                  // 👇 IMPORTANT: do NOT append query now—filters are provider-based
-                  Nav.pushEnquiry(context, id);
+                  Nav.goEnquiry(context, id); // no querystring
                 } else if (!expanded && id == routeEnquiryId) {
-                  // (Optional) collapse by routing to list
-                  // Nav.goHome(context);
+                  // optional: Nav.goHome(context);
                 }
               },
-
               title: _RowTile(
                 label: 'RE #$n - $title',
                 selected: isOpen && initiallyOpenResponseId == null,
                 showSubtitle: data['isPublished'] == false,
                 onTap: () {
                   TwoPaneScope.of(context)?.closeDrawer();
-                  // 👇 Same—no querystring
-                  Nav.pushEnquiry(context, id);
+                  Nav.goEnquiry(context, id);
                 },
               ),
-
               children: [
                 _ResponsesBranch(
                   enquiryId: id,
@@ -237,6 +224,7 @@ class _EnquiriesTree extends ConsumerWidget {
         );
       },
     );
+
   }
 }
 
@@ -309,7 +297,7 @@ class _ResponsesBranch extends StatelessWidget {
                     selected: isOpen && initiallySelectedCommentId == null,
                     onTap: () {
                       TwoPaneScope.of(context)?.closeDrawer();
-                      Nav.pushResponse(context, enquiryId, id);
+                      Nav.goResponse(context, enquiryId, id);
                     },
                   ),
                 ),
