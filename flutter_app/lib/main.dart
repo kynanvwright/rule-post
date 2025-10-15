@@ -120,17 +120,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
                     ),
                     routes: [
                       GoRoute(
-                        path: 'responses',
-                        builder: (context, state) => const NoSelectionPage(),
-                        routes: [
-                          GoRoute(
-                            path: ':responseId',
-                            builder: (context, state) => ResponseDetailPage(
-                              enquiryId: state.pathParameters['enquiryId']!,
-                              responseId: state.pathParameters['responseId']!,
-                            ),
-                          ),
-                        ],
+                        path: 'responses/:responseId',
+                        builder: (context, state) => ResponseDetailPage(
+                          enquiryId: state.pathParameters['enquiryId']!,
+                          responseId: state.pathParameters['responseId']!,
+                        ),
                       ),
                     ],
                   ),
