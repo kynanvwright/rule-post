@@ -6,7 +6,7 @@ import 'package:web/web.dart' as web;
 class BackButtonCompact extends StatelessWidget {
   const BackButtonCompact({
     super.key,
-    this.size = 32,
+    this.size = 28,
     this.smartFallback = false,
     this.tooltip = 'Back',
   });
@@ -44,8 +44,8 @@ class BackButtonCompact extends StatelessWidget {
         backgroundColor: WidgetStatePropertyAll(bg),
         foregroundColor: WidgetStatePropertyAll(fg),
         minimumSize: WidgetStatePropertyAll(Size.square(size)),
-        padding: const WidgetStatePropertyAll(EdgeInsets.zero),
-        visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
+        padding: const WidgetStatePropertyAll(EdgeInsets.all(2)),
+        // visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
       ),
     );
   }
