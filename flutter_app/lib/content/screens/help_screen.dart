@@ -111,6 +111,11 @@ class HelpFaqScreen extends StatelessWidget {
             "answer":
                 "There is currently no mechanism for allowing late submissions, but contact the Rules Committee if you believe this website facilitated the submission error."
           },
+          {
+            "question": "Which time zone are deadlines in?",
+            "answer":
+                "The displayed enquiry deadlines are adjusted to your device's timezone."
+          },
         ]
       },
 
