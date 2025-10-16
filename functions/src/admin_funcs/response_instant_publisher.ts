@@ -76,7 +76,6 @@ export const responseInstantPublisher = onCall(
         isPublished: true,
         responseNumber: rcResponse ? 0 : i + 1,
         publishedAt,
-        ...(rcResponse && { roundNumber: true }),
       });
       await tokeniseAttachmentsIfAny(
         writer,
@@ -103,6 +102,7 @@ export const responseInstantPublisher = onCall(
     writer.update(enquiryRef, {
       teamsCanRespond: rcResponse, // depends on whose response is being published
       teamsCanComment: !rcResponse, // depends on whose response is being published
+      ...(rcResponse && { roundNumber: FieldValue.increment(1) }),
       ...stageUpdatePayload(newStageEnds),
     });
 
