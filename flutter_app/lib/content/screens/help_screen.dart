@@ -188,19 +188,19 @@ class HelpFaqScreen extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            // const SizedBox(height: 16),
           ],
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.support_agent),
-            title: const Text("Still need help?"),
-            subtitle: const Text("Contact our support team"),
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Feature coming soon!")),
-              );
-            },
-          ),
+          // const Divider(),
+          // ListTile(
+          //   leading: const Icon(Icons.support_agent),
+          //   title: const Text("Still need help?"),
+          //   subtitle: const Text("Contact our support team"),
+          //   onTap: () {
+          //     ScaffoldMessenger.of(context).showSnackBar(
+          //       const SnackBar(content: Text("Feature coming soon!")),
+          //     );
+          //   },
+          // ),
         ],
       ),
     );
