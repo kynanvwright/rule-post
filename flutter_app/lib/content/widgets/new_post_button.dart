@@ -180,7 +180,15 @@ class _NewPostDialogState extends State<_NewPostDialog> {
                 ],
                   TextFormField(
                     controller: _text,
-                    decoration: InputDecoration(labelText: widget.postType == 'comment' ? 'Comment' : 'Details'),
+                    decoration: InputDecoration(
+                      labelText: widget.postType == 'comment' ? 'Comment' : 'Details',
+                      suffixIcon: widget.postType == 'comment' 
+                      ? null 
+                      : Tooltip(
+                        message: 'Plain text alternative to attaching a file',
+                        child: Icon(Icons.info_outline, size: 18),
+                        ),
+                    ),
                     maxLines: 5,
                     validator: (v) =>
                         ((widget.postType == 'comment') && (v == null || v.trim().isEmpty)) ? 'Content is required' : null,
