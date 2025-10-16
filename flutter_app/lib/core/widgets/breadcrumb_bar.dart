@@ -12,39 +12,54 @@ class BreadcrumbBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final p = state.pathParameters;
-    final enquiryId = p['enquiryId'];
+    final enquiryId  = p['enquiryId'];
     final responseId = p['responseId'];
 
-    final enquiryAlias = enquiryId == null
+    // Read current alias values (they start as null; something else sets them later)
+    final enquiryAlias  = enquiryId == null
         ? null
         : ref.watch(enquiryAliasProvider(enquiryId));
+
     final responseAlias = (enquiryId == null || responseId == null)
         ? null
         : ref.watch(responseAliasProvider((enquiryId: enquiryId, responseId: responseId)));
 
-    String enquiryLabel() =>
-        (enquiryAlias != null && enquiryAlias.isNotEmpty) ? enquiryAlias : '';
+    bool hasText(String? s) => s != null && s.trim().isNotEmpty;
 
-    String responseLabel() =>
-        (responseAlias != null && responseAlias.isNotEmpty) ? responseAlias : '';
+    final needsEnquiry  = enquiryId != null;
+    final needsResponse = enquiryId != null && responseId != null;
+
+    // Gate rendering until all required pieces exist (and have text if you want)
+    final ready =
+        (!needsEnquiry  || hasText(enquiryAlias)) &&
+        (!needsResponse || hasText(responseAlias));
+
+    // Keep header height stable while waiting
+    const barHeight = 32.0;
+    if (!ready) return const SizedBox(height: barHeight);
+
+    // Build labels now that we know they exist
+    final enquiryLabel  = needsEnquiry  ? enquiryAlias!.trim()  : '';
+    final responseLabel = needsResponse ? responseAlias!.trim() : '';
 
     final crumbs = <_Crumb>[
       _Crumb('Enquiries', () => Nav.goHome(context),
           key: const ValueKey('root:enquiries')),
-      if (enquiryId != null)
+      if (needsEnquiry)
         _Crumb(
-          enquiryLabel(),
+          enquiryLabel,
           () => Nav.goEnquiry(context, enquiryId),
           key: ValueKey('enquiry:$enquiryId'),
         ),
-      if (enquiryId != null && responseId != null)
+      if (needsResponse)
         _Crumb(
-          responseLabel(),
+          responseLabel,
           () => Nav.goResponse(context, enquiryId, responseId),
           key: ValueKey('response:$enquiryId/$responseId'),
         ),
     ];
 
+    // Fade in once (no per-crumb flicker)
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.all(8),
@@ -57,7 +72,7 @@ class BreadcrumbBar extends ConsumerWidget {
               child: GestureDetector(
                 onTap: crumbs[i].onTap,
                 child: Container(
-                  key: crumbs[i].key, // 👈 stable key
+                  key: crumbs[i].key,
                   decoration: BoxDecoration(
                     border: Border(
                       bottom: BorderSide(
@@ -66,12 +81,11 @@ class BreadcrumbBar extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  child: AnimatedSwitcher( // optional: smooth fade-in when alias arrives
-                    duration: const Duration(milliseconds: 150),
-                    child: Text(
-                      crumbs[i].label,
-                      key: ValueKey(crumbs[i].label), // switcher’s internal key
-                      style: const TextStyle(fontWeight: FontWeight.w600, height: 1.2),
+                  child: Text(
+                    crumbs[i].label,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      height: 1.2,
                     ),
                   ),
                 ),
