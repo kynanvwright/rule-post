@@ -6,11 +6,12 @@ class HelpFaqScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final faqs = [
-      // 🧭 GENERAL
+    final faqs = <Map<String, Object>>[
+      // General
       {
-        "header": "🧭 General",
-        "items": [
+        "icon": Icons.explore, // was 🧭
+        "header": "General",
+        "items": <Map<String, String>>[
           {
             "question": "What is a Rule Enquiry?",
             "answer":
@@ -19,7 +20,7 @@ class HelpFaqScreen extends StatelessWidget {
           {
             "question": "What are enquiries, responses, comments and posts?",
             "answer":
-                "Enquiry refers to both the initial question and the entire discussion thread. Responses are formal replies from teams to the initial enquiry and the Rules Committee's proposals. Comments allow teams to directly engage directly to each other's responses. Post is a general term for any of these submission types."
+                "Enquiry refers to both the initial question and the entire discussion thread. Responses are formal replies from teams to the initial enquiry and the Rules Committee's proposals. Comments allow teams to engage directly with each other's responses. Post is a general term for any of these submission types."
           },
           {
             "question": "How can I keep up to date with new posts?",
@@ -29,17 +30,16 @@ class HelpFaqScreen extends StatelessWidget {
           {
             "question": "How do I get an account?",
             "answer":
-                "Accounts are only for team members of America's Cup Competitors. Each Competitor has a nominated 'team admin' who can add/delete users."
+                "Accounts are only for team members of America's Cup Competitors. Each Competitor has a nominated 'team admin' who can add or delete users."
           },
-
-
         ]
       },
 
-      // 📝 ENQUIRIES
+      // How to Submit
       {
-        "header": "✏️ How to Submit",
-        "items": [
+        "icon": Icons.edit, // was ✏️
+        "header": "How to Submit",
+        "items": <Map<String, String>>[
           {
             "question": "How do I submit a new enquiry?",
             "answer":
@@ -55,12 +55,14 @@ class HelpFaqScreen extends StatelessWidget {
             "answer":
                 "Log in, and navigate to the parent response using the navigation pane on the left. Click the '+ New' button in the 'Comments' section."
           },
-        ]  
+        ]
       },
-         
+
+      // Posts
       {
-        "header": "📋 Posts",
-        "items": [
+        "icon": Icons.description, // was 📋
+        "header": "Posts",
+        "items": <Map<String, String>>[
           {
             "question": "Are posts anonymous?",
             "answer":
@@ -89,10 +91,11 @@ class HelpFaqScreen extends StatelessWidget {
         ]
       },
 
-      // ⏰ TIMING & STAGES
+      // Timing & Stages
       {
-        "header": "⏰ Timing & Stages",
-        "items": [
+        "icon": Icons.schedule, // was ⏰
+        "header": "Timing & Stages",
+        "items": <Map<String, String>>[
           {
             "question": "How do I find a submission deadline?",
             "answer":
@@ -111,22 +114,23 @@ class HelpFaqScreen extends StatelessWidget {
         ]
       },
 
-      // ⚙️ TECHNICAL / TROUBLESHOOTING
+      // Technical / Troubleshooting
       {
-        "header": "⚙️ Technical / Troubleshooting",
-        "items": [
+        "icon": Icons.build, // was ⚙️
+        "header": "Technical / Troubleshooting",
+        "items": <Map<String, String>>[
           {
-            "question": "I can’t upload a file, what should I check?",
+            "question": "I can't upload a file, what should I check?",
             "answer":
-                "Confirm it’s under the size limit (e.g. 10 MB) and in an allowed format (.pdf or .docx)."
+                "Confirm it's under the size limit (e.g. 10 MB) and in an allowed format (.pdf or .docx)."
           },
           {
-            "question": "Why is the “+ New” button greyed out?",
+            "question": "Why is the '+ New' button greyed out?",
             "answer":
                 "The submission window may have closed, or your team has already submitted for this round."
           },
           {
-            "question": "Why do I get “permission denied”?",
+            "question": "Why do I get 'permission denied'?",
             "answer":
                 "Your account might not have the right role (Team vs Rules Committee) or the enquiry is locked."
           },
@@ -136,8 +140,8 @@ class HelpFaqScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        leading: Padding(
-          padding: const EdgeInsets.all(12),
+        leading: const Padding(
+          padding: EdgeInsets.all(12),
           child: BackButtonCompact(),
         ),
         title: const Text("Help & FAQ"),
@@ -151,12 +155,18 @@ class HelpFaqScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           for (final section in faqs) ...[
-            Text(
-              section["header"] as String,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
+            Row(
+              children: [
+                Icon(section["icon"] as IconData),
+                const SizedBox(width: 8),
+                Text(
+                  section["header"] as String,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             ...(section["items"] as List<Map<String, String>>).map(
@@ -167,7 +177,7 @@ class HelpFaqScreen extends StatelessWidget {
                   children: [
                     Padding(
                       padding: const EdgeInsets.all(16.0),
-                      child: Text(faq["answer"]!),
+                      child: buildAnswerText(context, faq["answer"]!),
                     ),
                   ],
                 ),
@@ -193,6 +203,7 @@ class HelpFaqScreen extends StatelessWidget {
 }
 
 Widget buildAnswerText(BuildContext context, String text) {
+  // Supports **bold** inline
   final regex = RegExp(r"\*\*(.+?)\*\*");
   final spans = <TextSpan>[];
   int lastIndex = 0;
@@ -201,10 +212,12 @@ Widget buildAnswerText(BuildContext context, String text) {
     if (match.start > lastIndex) {
       spans.add(TextSpan(text: text.substring(lastIndex, match.start)));
     }
-    spans.add(TextSpan(
-      text: match.group(1),
-      style: const TextStyle(fontWeight: FontWeight.bold),
-    ));
+    spans.add(
+      TextSpan(
+        text: match.group(1),
+        style: const TextStyle(fontWeight: FontWeight.bold),
+      ),
+    );
     lastIndex = match.end;
   }
 
