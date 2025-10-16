@@ -139,6 +139,15 @@ export async function runCreatePostTx(
           );
         }
 
+        publicDoc.roundNumber =
+          author.team === "RC" ? roundNumber + 1 : roundNumber;
+        publicDoc.colour = await resolvePostColour(
+          tx,
+          db,
+          author.team,
+          teamColourMap,
+        );
+
         // Uniqueness guard
         const guardRef = enquiryRef
           .collection("meta")
@@ -160,15 +169,6 @@ export async function runCreatePostTx(
           }
           throw e; // rethrow anything unexpected
         }
-
-        publicDoc.roundNumber =
-          author.team === "RC" ? roundNumber + 1 : roundNumber;
-        publicDoc.colour = await resolvePostColour(
-          tx,
-          db,
-          author.team,
-          teamColourMap,
-        );
       }
 
       if (postType === "comment") {
