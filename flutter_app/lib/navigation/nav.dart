@@ -1,75 +1,65 @@
 // nav.dart
+import 'dart:async';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
-import '../debug/nav_log.dart';
 
-void _next(VoidCallback f) =>
-    WidgetsBinding.instance.addPostFrameCallback((_) => f());
+Uri _currentUri(BuildContext c) =>
+    GoRouter.of(c).routeInformationProvider.value.uri;
 
-String _currentPath(BuildContext c) =>
-    GoRouter.of(c).routeInformationProvider.value.uri.toString();
+bool _samePath(Uri a, Uri b) => a.path == b.path;
+
+String _normPath(String path) {
+  final p = path.startsWith('/') ? path : '/$path';
+  return (p.length > 1 && p.endsWith('/')) ? p.substring(0, p.length - 1) : p;
+}
+
+void _callNowOrMicrotask(void Function() f) {
+  // If we’re currently building/layout/painting, defer to a microtask
+  // (faster than next frame, avoids "during build" issues).
+  final phase = SchedulerBinding.instance.schedulerPhase;
+  switch (phase) {
+    case SchedulerPhase.idle:
+      f(); // safe to call immediately
+      break;
+    default:
+      scheduleMicrotask(f);
+  }
+}
 
 class Nav {
-  /// Replace stack with the enquiries list (your "Home")
-  static void goHome(BuildContext c) => _goOnNext(c, '/enquiries', tag: 'goHome');
+  static bool _navInFlight = false;
 
-  static void goHelp(BuildContext c) => _goOnNext(c, '/help', tag: 'goHelp', skipIfSame: true);
-
-  static void goAccount(BuildContext c) => _goOnNext(c, '/user-details', tag: 'goAccount', skipIfSame: true);
-
-  static void goLogin(BuildContext c) => _goOnNext(c, '/login', tag: 'goLogin');
+  static void goHome(BuildContext c) => _goOnce(c, '/enquiries');
+  static void goHelp(BuildContext c) => _goOnce(c, '/help');
+  static void goAccount(BuildContext c) => _goOnce(c, '/user-details');
+  static void goLogin(BuildContext c) => _goOnce(c, '/login');
 
   static void goEnquiry(BuildContext c, String enquiryId) =>
-      _goOnNext(c, '/enquiries/$enquiryId', tag: 'goEnquiry', skipIfSame: true);
+      _goOnce(c, '/enquiries/${Uri.encodeComponent(enquiryId)}');
 
   static void goResponse(BuildContext c, String enquiryId, String responseId) =>
-      _goOnNext(c, '/enquiries/$enquiryId/responses/$responseId', tag: 'goResponse', skipIfSame: true);
+      _goOnce(c, '/enquiries/${Uri.encodeComponent(enquiryId)}/responses/${Uri.encodeComponent(responseId)}');
 
   static void exitToList(BuildContext c) => goHome(c);
 
-  // ---------------- internals ----------------
-  static bool _navInFlight = false;
+  // ---- internals ------------------------------------------------------------
+  static void _goOnce(BuildContext c, String path) {
+    if (_navInFlight) return;
 
-  static void _goOnNext(BuildContext c, String path, {required String tag, bool skipIfSame = false}) {
-    final seq = NavLog.nextSeq();
-    final cur = _currentPath(c);
-    if (skipIfSame && cur == path) {
-      NavLog.p('[$seq][$tag] no-op (already at target) "$path"');
-      return;
-    }
-    NavLog.p('[$seq][$tag] schedule next-frame nav: "$cur" -> "$path" (inFlight=$_navInFlight)');
+    final target = Uri(path: _normPath(path));
+    final current = _currentUri(c);
+    if (_samePath(current, target)) return;
 
-    // _next(() {
-      final sw = NavLog.sw('[$seq][$tag] execute go("$path")');
-      _goOnce(c, path, seq: seq, tag: tag);
-      NavLog.end(sw, '[$seq][$tag] execute go("$path")');
-    // });
-  }
-
-  static void _goOnce(BuildContext c, String path, {required int seq, required String tag}) {
-    final current = _currentPath(c);
-    if (current == path) {
-      NavLog.p('[$seq][$tag] goOnce: already at "$path" -> no-op');
-      return;
-    }
-    if (_navInFlight) {
-      NavLog.p('[$seq][$tag] goOnce: blocked (inFlight=true) for "$path"');
-      return;
-    }
     _navInFlight = true;
-    NavLog.p('[$seq][$tag] goOnce: ENTER (from="$current" -> to="$path")');
 
-    try {
-      GoRouter.of(c).go(path);
-    } catch (e, st) {
-      NavLog.p('[$seq][$tag] goOnce: ERROR $e\n$st');
-      rethrow;
-    } finally {
-      // Release on next microtask; collapses double taps / handlers
-      Future.microtask(() {
-        _navInFlight = false;
-        NavLog.p('[$seq][$tag] goOnce: EXIT (released inFlight=false)');
-      });
-    }
+    _callNowOrMicrotask(() {
+      try {
+        GoRouter.of(c).go(target.toString()); // immediate hop
+      } finally {
+        // collapse rapid taps/handlers without delaying a frame
+        scheduleMicrotask(() => _navInFlight = false);
+      }
+    });
   }
 }
