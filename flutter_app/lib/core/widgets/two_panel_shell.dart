@@ -94,6 +94,7 @@ class _TwoPaneFourSlotState extends State<TwoPaneFourSlot> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('🔍 TwoPaneShell rebuild');
     return LayoutBuilder(
       builder: (context, constraints) {
         final totalW = constraints.maxWidth;

@@ -104,6 +104,7 @@ class _LeftPaneNestedState extends ConsumerState<LeftPaneNested> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('🔍 Building left pane');
     // 👇 No more URL-derived filters here
     return _EnquiriesTree(
       initiallyOpenEnquiryId: _enquiryId,
@@ -131,6 +132,7 @@ class _EnquiriesTree extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    debugPrint('🔍 Building enquiries list');
     final teamId = ref.watch(teamProvider);
     final filter = ref.watch(enquiryFilterProvider);       // 👈 provider source of truth
     final itemsAsync = ref.watch(
@@ -245,6 +247,7 @@ class _ResponsesBranch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('🔍 Building responses list');
     final q = FirebaseFirestore.instance
         .collection('enquiries')
         .doc(enquiryId)

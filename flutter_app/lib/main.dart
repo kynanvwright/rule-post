@@ -112,7 +112,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               // List view (no selection)
               GoRoute(
                 path: '/enquiries',
-                builder: (context, state) => const NoSelectionPage(),
+                pageBuilder: (context, state) => NoTransitionPage(
+                  key: ValueKey('page:${state.uri}'), // forces unmount on change
+                  child: NoSelectionPage(),
+                ),
               ),
 
               // ── Enquiry detail (standalone route)

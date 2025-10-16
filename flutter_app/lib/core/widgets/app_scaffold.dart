@@ -51,6 +51,7 @@ class AppScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('🔍 AppScaffold rebuild');
     final width = MediaQuery.of(context).size.width;
     final bp = _bp(width);
 
