@@ -742,6 +742,17 @@ class _StatusCard extends StatelessWidget {
       color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
     );
     final stageTexts = _getStageTexts(stageMap);
+    final startLocal = _asLocal(stageMap['stageStarts']);
+    final endLocal   = _asLocal(stageMap['stageEnds']);
+
+    final startStr = _fmt(startLocal);
+    final endStr   = _fmt(endLocal);
+
+    // Explain *which* zone we used (device-local). Show once.
+    final ref = startLocal ?? endLocal;
+    final tzInfo = ref == null
+        ? ''
+        : ' (${ref.timeZoneName}, UTC${_fmtTzOffset(ref.timeZoneOffset)})';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -764,8 +775,14 @@ class _StatusCard extends StatelessWidget {
             const Icon(Icons.schedule, size: 16),
             const SizedBox(width: 6),
             Flexible(
-              child: Text(
-                '${_fmt(stageMap['stageStarts'])}  →  ${_fmt(stageMap['stageEnds'])}',
+              child: 
+              // Text(
+              //   '${_fmt(stageMap['stageStarts'])}  →  ${_fmt(stageMap['stageEnds'])}',
+              //   style: dateStyle,
+              //   overflow: TextOverflow.ellipsis,
+              // ),
+              Text(
+                '$startStr  →  $endStr$tzInfo',
                 style: dateStyle,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -824,6 +841,31 @@ class _StatusCard extends StatelessWidget {
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
     ];
     return months[m - 1];
+  }
+
+  DateTime? _asLocal(dynamic v) {
+    if (v == null) return null;
+
+    DateTime asUtc;
+    if (v is DateTime) {
+      asUtc = v.isUtc ? v : v.toUtc();
+    } else if (v is Timestamp) {
+      asUtc = v.toDate().toUtc();
+    } else if (v is int) {
+      asUtc = DateTime.fromMillisecondsSinceEpoch(v, isUtc: true);
+    } else if (v is String) {
+      asUtc = DateTime.parse(v).toUtc(); // expects ISO-8601
+    } else {
+      throw ArgumentError('Unsupported date type: ${v.runtimeType}');
+    }
+    return asUtc.toLocal(); // ← device/browser local time zone
+  }
+
+  String _fmtTzOffset(Duration d) {
+    final sign = d.isNegative ? '-' : '+';
+    final h = d.inHours.abs().toString().padLeft(2, '0');
+    final m = (d.inMinutes.abs() % 60).toString().padLeft(2, '0');
+    return '$sign$h:$m';
   }
 }
 
