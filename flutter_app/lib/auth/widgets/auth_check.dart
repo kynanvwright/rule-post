@@ -44,12 +44,6 @@ Future<void> _ensureFreshAuth({Duration waitForUser = const Duration(seconds: 3)
 }
 
 /// Call a callable Cloud Function after making sure auth/app-check are fresh.
-/// Example usage:
-///   final res = await callFunctionSafely<Map<String, dynamic>>(
-///       name: 'createPost',
-///       data: {'title': 'Hi', 'postType': 'enquiry'},
-///       region: 'europe-west8',
-///   );
 Future<T> callFunctionSafely<T>({
   required String name,
   Map<String, dynamic>? data,

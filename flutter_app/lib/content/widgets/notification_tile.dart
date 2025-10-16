@@ -45,7 +45,7 @@ class _EmailNotificationsTileState extends ConsumerState<EmailNotificationsTile>
                 }
               } catch (e, st) {
                 debugPrint('[EmailNotificationsTile] error: $e\n$st');
-                if (mounted) {
+                if (context.mounted) {
                   setState(() {
                     _optimistic = null; // revert to provider value
                     _busy = false;

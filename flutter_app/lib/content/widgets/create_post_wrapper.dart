@@ -44,6 +44,7 @@ Future<void> onCreatePostPressed(
     );
 
     // Optional follow-up (post dialog)
+    if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       // SnackBar(content: Text('Created post: $newId')),
       SnackBar(content: Text('Created $postType')),

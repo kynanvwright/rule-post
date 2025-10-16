@@ -120,7 +120,7 @@ class AdminAction {
     required bool enabled,
     required BuildContext context,
   }) {
-    int? _pendingDays;
+    int? pendingDays;
 
     return AdminAction(
       label: 'Change Stage Length',
@@ -130,14 +130,15 @@ class AdminAction {
       // Step 1: confirmGuard handles fetch + numeric input
       confirmGuard: (ctx) async {
         final v = await promptStageLength(ctx, loadCurrent: loadCurrent, min: 1, max: 30);
-        _pendingDays = v;
+        pendingDays = v;
         return v != null; // only proceed if user confirmed
       },
       // Step 2: onPressed runs only when confirmGuard returned true
       onPressed: () async {
         try {
-          final days = _pendingDays!;
+          final days = pendingDays!;
           final ok = await run(days);
+          if (!context.mounted) return;
           if (ok) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Stage length set to $days working day${days == 1 ? '' : 's'}')),
@@ -163,7 +164,7 @@ class AdminAction {
             SnackBar(content: Text('Unexpected error: $e')),
           );
         } finally {
-          _pendingDays = null; // clear captured state
+          pendingDays = null; // clear captured state
         }
       },
     );
@@ -254,34 +255,37 @@ class _GuardedActionButton extends StatelessWidget {
     // If the button is disabled, do nothing
     if (!action.enabled) return;
 
-    final ok = action.confirmGuard != null
-      ? await action.confirmGuard!(context)
-      : await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            icon: const Icon(Icons.warning_amber_rounded),
-            title: Text(action.label),
-            content: Text(
-              (action.tooltip?.trim().isNotEmpty ?? false)
-                  ? action.tooltip!.trim()
-                  : "Are you sure you want to run “${action.label}”?",
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(ctx).pop(true),
-                child: const Text('Proceed'),
-              ),
-            ],
+    bool ok;
+    if (action.confirmGuard != null) {
+      ok = await action.confirmGuard!(context);
+    } else {
+      ok = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          icon: const Icon(Icons.warning_amber_rounded),
+          title: Text(action.label),
+          content: Text(
+            (action.tooltip?.trim().isNotEmpty ?? false)
+                ? action.tooltip!.trim()
+                : "Are you sure you want to run “${action.label}”?",
           ),
-        ) ?? false;
-
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Proceed'),
+            ),
+          ],
+        ),
+      ) ?? false;
+    }
     if (ok) {
       action.onPressed();
     }
+    
   }
 
   @override

@@ -160,6 +160,7 @@ class _FancyAttachmentTileState extends State<FancyAttachmentTile> {
   Future<void> _openUrl(String link) async {
     final ok = await launchUrlString(link, mode: LaunchMode.externalApplication);
     if (!ok) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(kIsWeb ? 'Open in new tab:\n$link' : 'Open: $link')),
       );

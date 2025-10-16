@@ -17,7 +17,7 @@ Stream<List<DocView>> combinedEnquiriesStream({
   final db = FirebaseFirestore.instance;
 
   // Helper: apply status filter + stable sort
-  List<DocView> _filterAndSort(List<DocView> items) {
+  List<DocView> filterAndSort(List<DocView> items) {
     var all = items;
     final status = filter['status'];
     if (status == 'open') {
@@ -44,7 +44,7 @@ Stream<List<DocView>> combinedEnquiriesStream({
       )
       .snapshots()
       .map((snap) => snap.docs.map((d) => DocView(d.id, d.reference, d.data())).toList())
-      .map(_filterAndSort); // pre-filter/sort so we can short-circuit later
+      .map(filterAndSort); // pre-filter/sort so we can short-circuit later
   if (teamId == null) {
       debugPrint('[combinedEnquiriesStream] ⏭ Not logged in — skipping draftDocStreams.');
     return public$;
@@ -100,9 +100,9 @@ Stream<List<DocView>> combinedEnquiriesStream({
       teamDrafts$,
       (pub, mine) {
         final byId = <String, DocView>{};
-        for (final d in pub) byId[d.id] = d;
-        for (final d in mine) byId[d.id] = d;
-        return _filterAndSort(byId.values.toList());
+        for (final d in pub) {byId[d.id] = d;}
+        for (final d in mine) {byId[d.id] = d;}
+        return filterAndSort(byId.values.toList());
       },
     );
   });
@@ -116,7 +116,7 @@ Stream<List<DocView>> combinedResponsesStream({
   final db = FirebaseFirestore.instance;
 
   // Helper: apply status filter + stable sort
-  List<DocView> _sortPosts(
+  List<DocView> sortPosts(
     List<DocView> items, {
     bool ascendingRound = true,
     bool ascendingResponse = true,
@@ -157,7 +157,7 @@ Stream<List<DocView>> combinedResponsesStream({
       )
       .snapshots()
       .map((snap) => snap.docs.map((d) => DocView(d.id, d.reference, d.data())).toList())
-      .map(_sortPosts); // pre-filter/sort so we can short-circuit later
+      .map(sortPosts); // pre-filter/sort so we can short-circuit later
   if (teamId == null) {
       debugPrint('[combinedResponsesStream] $enquiryId: ⏭ Not logged in — skipping draftDocStreams.');
     return public$;
@@ -212,7 +212,7 @@ Stream<List<DocView>> combinedResponsesStream({
         final map = { for (final d in pub) d.id : d };
         map[draft.id] = draft; // upsert/override
         debugPrint('[combinedResponsesStream] $enquiryId: draft found -> combined with published list');
-        return _sortPosts(map.values.toList());
+        return sortPosts(map.values.toList());
       },
     );
   });
@@ -227,7 +227,7 @@ Stream<List<DocView>> combinedCommentsStream({
   final db = FirebaseFirestore.instance;
 
   // Helper: apply status filter + stable sort
-  List<DocView> _sortPosts(
+  List<DocView> sortPosts(
     List<DocView> items, {
     bool ascending = true,
   }) {
@@ -263,7 +263,7 @@ Stream<List<DocView>> combinedCommentsStream({
       )
       .snapshots()
       .map((snap) => snap.docs.map((d) => DocView(d.id, d.reference, d.data())).toList())
-      .map(_sortPosts); // pre-filter/sort so we can short-circuit later
+      .map(sortPosts); // pre-filter/sort so we can short-circuit later
   if (teamId == null) {
       debugPrint('[combinedCommentsStream] $responseId: ⏭ Not logged in — skipping draftDocStreams.');
     return public$;
@@ -316,7 +316,7 @@ Stream<List<DocView>> combinedCommentsStream({
       (pub, drafts) {
         final byId = { for (final d in pub) d.id : d };
         for (final d in drafts) { byId[d.id] = d; } // upsert
-        return _sortPosts(byId.values.toList());
+        return sortPosts(byId.values.toList());
       },
     );
   });

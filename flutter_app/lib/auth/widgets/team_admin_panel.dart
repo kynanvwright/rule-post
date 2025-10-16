@@ -111,7 +111,7 @@ class TeamAdminPanel extends ConsumerWidget {
       builder: (_) => const _AddMemberDialog(),
     );
     if (result == null) return;
-
+    if (!context.mounted) return;
     // Call backend
     final scaffold = ScaffoldMessenger.of(context);
     try {
@@ -146,12 +146,14 @@ class _MembersList extends ConsumerWidget {
               try {
                 final deletedUid = await deleteUserByEmail(m.email);
                 if (deletedUid != null) {
+                  if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Removed ${m.displayName} from team')),
                   );
                   await ref.read(teamMembersProvider.notifier).fetch();
                 }
               } catch (e) {
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Failed to remove ${m.displayName}: $e')),
                 );

@@ -26,13 +26,12 @@ Future<T> showProgressFlow<T>({
   assert(steps.isNotEmpty);
 
   final completer = Completer<T>();
-  late StateSetter _setState;
+  late StateSetter statesetter;
   int stepIndex = 0;
   bool running = true;
   String currentText = steps.first;
   Timer? ticker;
   Object? error;
-  StackTrace? stack;
 
   // Open dialog
   // Use StatefulBuilder so we can mutate the inner UI from this function.
@@ -40,11 +39,13 @@ Future<T> showProgressFlow<T>({
     context: context,
     barrierDismissible: barrierDismissibleWhileRunning == true ? true : false,
     builder: (ctx) {
-      return WillPopScope(
-        onWillPop: () async => !running && barrierDismissibleWhileRunning,
+      return PopScope(
+        canPop: !running && barrierDismissibleWhileRunning,
+        onPopInvokedWithResult: (didPop, result) {
+        },
         child: StatefulBuilder(
           builder: (ctx, setState) {
-            _setState = setState;
+            statesetter = setState;
             return AlertDialog(
               contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
               title: Row(
@@ -96,7 +97,7 @@ Future<T> showProgressFlow<T>({
       if (!running) return;
       stepIndex = (stepIndex + 1) % steps.length;
       currentText = steps[stepIndex];
-      _setState(() {});
+      statesetter(() {});
     });
   }
 
@@ -109,9 +110,10 @@ Future<T> showProgressFlow<T>({
       final res = await action();
       running = false;
       ticker?.cancel();
-      _setState(() {});
+      statesetter(() {});
       if (autoCloseOnSuccess) {
         await Future.delayed(autoCloseAfter);
+        if (!context.mounted) return;
         if (Navigator.of(context, rootNavigator: true).canPop()) {
           Navigator.of(context, rootNavigator: true).pop();
         }
@@ -120,8 +122,8 @@ Future<T> showProgressFlow<T>({
     } catch (e, st) {
       running = false;
       ticker?.cancel();
-      error = e; stack = st;
-      _setState(() {});
+      error = e;
+      statesetter(() {});
       // Keep dialog open until user closes (so they can see the error).
       if (!completer.isCompleted) completer.completeError(e, st);
     }

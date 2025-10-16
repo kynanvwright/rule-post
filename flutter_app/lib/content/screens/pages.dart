@@ -587,7 +587,7 @@ class _ChildrenSection extends ConsumerWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: docs.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            separatorBuilder: (_, i_) => const SizedBox(height: 8),
             itemBuilder: (context, i) {
               final d = docs[i].data();
               final id = docs[i].id;

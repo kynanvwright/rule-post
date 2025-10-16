@@ -103,6 +103,7 @@ class _NewPostButtonState extends State<NewPostButton> {
               ),
             );
             if (payload == null) return;
+            if (!context.mounted) return;
 
             await onCreatePostPressed(
               context,
@@ -114,7 +115,6 @@ class _NewPostButtonState extends State<NewPostButton> {
                   : payload.attachments,
               parentIds: widget.parentIds,
             );
-
           },
         ),
       ),

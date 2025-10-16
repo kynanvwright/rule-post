@@ -125,26 +125,30 @@ class FilterDropdownState extends ConsumerState<FilterDropdown> {
               // Status list (driven by provider)
               ...widget.statusOptions.map((opt) {
                 final selected = opt == filter.status;
-                return RadioListTile<String>(
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  value: opt,
-                  groupValue: filter.status,
-                  onChanged: (v) {
+                // Wrap your radio tiles in a RadioGroup<String>
+                return RadioGroup<String>(
+                  groupValue: filter.status,               // <-- moved here
+                  onChanged: (String? v) {                 // <-- moved here
                     if (v == null) return;
                     ctrl.setStatus(v);
                     setState(() {}); // instant visual checkmark
                   },
-                  title: Row(
-                    children: [
-                      Icon(widget.statusIcon(opt), size: 18),
-                      const SizedBox(width: 8),
-                      Text(widget.statusLabel(opt)),
-                      if (selected) ...[
-                        const Spacer(),
-                        const Icon(Icons.check, size: 16),
+                  child: RadioListTile<String>(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    value: opt,
+                    selected: opt == filter.status,
+                    title: Row(
+                      children: [
+                        Icon(widget.statusIcon(opt), size: 18),
+                        const SizedBox(width: 8),
+                        Text(widget.statusLabel(opt)),
+                        if (selected) ...[
+                          const Spacer(),
+                          const Icon(Icons.check, size: 16),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 );
               }),

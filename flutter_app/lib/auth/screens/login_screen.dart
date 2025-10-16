@@ -172,6 +172,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               // if (!mounted) return;
                               // context.go('/enquiries/:category');
                             } else {
+                              if (!context.mounted) return;
                               // ❌ Show error from Firebase
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text(error)),
