@@ -32,8 +32,8 @@ class Nav {
 
   static void goHome(BuildContext c) => _goOnce(c, '/enquiries');
   static void goHelp(BuildContext c) => _goOnce(c, '/help');
-  static void goAccount(BuildContext c) => _goOnce(c, '/user-details');
   static void goLogin(BuildContext c) => _goOnce(c, '/login');
+  static void goAccount(BuildContext c) => _goOnce(c, '/user-details');
 
   static void goEnquiry(BuildContext c, String enquiryId) =>
       _goOnce(c, '/enquiries/${Uri.encodeComponent(enquiryId)}');

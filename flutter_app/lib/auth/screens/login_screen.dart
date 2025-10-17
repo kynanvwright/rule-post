@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:web/web.dart' as web;
 // import 'package:go_router/go_router.dart';
 
 import '../widgets/auth_service.dart';
@@ -169,7 +170,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
                             if (error == null) {
                               // ✅ Login successful → go to home
-                              // if (!mounted) return;
+                              if (!mounted) return;    
+                              if (kIsWeb) {
+                                web.window.history.back();
+                              }
                               // context.go('/enquiries/:category');
                             } else {
                               if (!context.mounted) return;
