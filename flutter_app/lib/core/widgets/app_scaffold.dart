@@ -2,13 +2,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_banner.dart';
-
-enum _Bp { phone, tablet, desktop }
-_Bp _bp(double w) {
-  if (w < 600) return _Bp.phone;
-  if (w < 1024) return _Bp.tablet;
-  return _Bp.desktop;
-}
+import 'screen_width.dart';
 
 
 class AppScaffold extends StatelessWidget {
@@ -49,13 +43,13 @@ class AppScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     debugPrint('🔍 AppScaffold rebuild');
     final width = MediaQuery.of(context).size.width;
-    final bp = _bp(width);
+    final bp = getBreakpoint(width);
 
     // Pick a comfy height per breakpoint if caller didn't override.
     final effectiveBannerHeight = switch (bp) {
-      _Bp.phone  => (bannerHeight * 0.70).clamp(56, 96),   // smaller, but tappable
-      _Bp.tablet => bannerHeight,                          // as-is
-      _Bp.desktop=> bannerHeight,                          // as-is
+      Breakpoint.phone  => (bannerHeight * 0.70).clamp(56, 96),   // smaller, but tappable
+      Breakpoint.tablet => bannerHeight,                          // as-is
+      Breakpoint.desktop=> bannerHeight,                          // as-is
     }.toDouble();
 
     return Scaffold(
@@ -85,7 +79,7 @@ class AppScaffold extends StatelessWidget {
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: maxWidth),
                 child: Padding(
-                  padding: EdgeInsets.all(bp == _Bp.phone ? 8 : 24),
+                  padding: EdgeInsets.all(bp == Breakpoint.phone ? 8 : 24),
                   child: Material(
                     elevation: 10,
                     color: Theme.of(context).colorScheme.surface,

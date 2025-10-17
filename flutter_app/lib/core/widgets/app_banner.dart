@@ -6,13 +6,8 @@ import '../../auth/widgets/auth_service.dart';
 import '../../navigation/nav.dart';
 import '../../riverpod/user_detail.dart';
 import 'colour_helper.dart';
+import 'screen_width.dart';
 
-enum _Bp { phone, tablet, desktop }
-_Bp _bp(double w) {
-  if (w < 600) return _Bp.phone;
-  if (w < 1024) return _Bp.tablet;
-  return _Bp.desktop;
-}
 
 class AppBanner extends ConsumerWidget {
   const AppBanner({
@@ -48,12 +43,12 @@ class AppBanner extends ConsumerWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final w = constraints.maxWidth;
-          final bp = _bp(w);
+          final bp = getBreakpoint(w);
           final h = constraints.maxHeight;
 
           // Tighter padding/gaps on phones
-          final padX = bp == _Bp.phone ? 12.0 : h * 0.125;
-          final gap  = bp == _Bp.phone ? 8.0  : h * 0.2;
+          final padX = bp == Breakpoint.phone ? 12.0 : h * 0.125;
+          final gap  = bp == Breakpoint.phone ? 8.0  : h * 0.2;
 
           // Derived metrics
           final logoH = h * logoScale;          // defaults ~82 @ 128
@@ -63,12 +58,12 @@ class AppBanner extends ConsumerWidget {
           final minTap = 40.0;                  // keep good tap target
 
           // Optionally hide subtitle at very small widths
-          final showSubtitle = !(bp == _Bp.phone && w < 380);
+          final showSubtitle = !(bp == Breakpoint.phone && w < 380);
 
           // Crisp logo: avoid fractional logical px and ask Flutter to decode close to physical px
           final dpr = MediaQuery.of(context).devicePixelRatio;
           // 1) Snap size to whole logical px to avoid fractional layout
-          final targetHLogical = (bp == _Bp.phone ? logoH.clamp(32, 56) : logoH)
+          final targetHLogical = (bp == Breakpoint.phone ? logoH.clamp(32, 56) : logoH)
               .floorToDouble();
           // 2) Ask Flutter to decode close to the physical size to avoid blur
           final targetHPhysical = (targetHLogical * dpr).round();
@@ -99,12 +94,12 @@ class AppBanner extends ConsumerWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (!(bp == _Bp.phone && w < 340)) // optional: hide logo on ultra-narrow
+                      if (!(bp == Breakpoint.phone && w < 340)) // optional: hide logo on ultra-narrow
                         InkWell(
                           onTap: () => Nav.goHome(context),
                           borderRadius: BorderRadius.circular((h * 0.1).floorToDouble()),
                           child: Padding(
-                            padding: EdgeInsets.all((bp == _Bp.phone ? h * 0.03 : h * 0.05).floorToDouble()),
+                            padding: EdgeInsets.all((bp == Breakpoint.phone ? h * 0.03 : h * 0.05).floorToDouble()),
                             child: Image.asset(
                               'assets/images/cup_logo.png',
                               height: targetHLogical,
@@ -175,7 +170,7 @@ class AppBanner extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // Inline actions on tablet/desktop, overflow menu on phone
-                    if (bp != _Bp.phone) ...actions.map(
+                    if (bp != Breakpoint.phone) ...actions.map(
                       (w) => Padding(
                         padding: EdgeInsets.only(left: gap * 0.7),
                         child: IconTheme.merge(
