@@ -93,6 +93,7 @@ A website for facilitating America's Cup Rule Enquiries.
   - deadlines are approaching (and the team hasn't submitted)
 - Add email alerts for admins when server/Firestore billing costs are spiking
 - Extend notifications to WhatsApp/text
+- Add website alert for new posts, allow them to be ignored or read, as a way of tracking what's been read
 
 ### 🛠 Testing & Validation
 - Make testing pages for attempting to read/write from the frontend without proper permissions  

@@ -186,6 +186,14 @@ class _DefaultBanner extends ConsumerWidget {
           // Optionally hide subtitle at very small widths
           final showSubtitle = !(bp == _Bp.phone && w < 380);
 
+          // Crisp logo: avoid fractional logical px and ask Flutter to decode close to physical px
+          final dpr = MediaQuery.of(context).devicePixelRatio;
+          // 1) Snap size to whole logical px to avoid fractional layout
+          final targetHLogical = (bp == _Bp.phone ? logoH.clamp(32, 56) : logoH)
+              .floorToDouble();
+          // 2) Ask Flutter to decode close to the physical size to avoid blur
+          final targetHPhysical = (targetHLogical * dpr).round();
+
           return Container(
             padding: EdgeInsets.symmetric(horizontal: padX),
             decoration: BoxDecoration(
@@ -215,11 +223,15 @@ class _DefaultBanner extends ConsumerWidget {
                             if (!(bp == _Bp.phone && w < 340)) // optional: hide logo on ultra-narrow
                               InkWell(
                                 onTap: () => Nav.goHome(context),
-                                borderRadius: BorderRadius.circular(h * 0.1),
+                                borderRadius: BorderRadius.circular((h * 0.1).floorToDouble()),
                                 child: Padding(
-                                  padding: EdgeInsets.all(bp == _Bp.phone ? h * 0.03 : h * 0.05),
-                                  child: Image.asset('assets/images/cup_logo.png',
-                                      height: bp == _Bp.phone ? (logoH.clamp(32, 56)) : logoH),
+                                  padding: EdgeInsets.all((bp == _Bp.phone ? h * 0.03 : h * 0.05).floorToDouble()),
+                                  child: Image.asset(
+                                    'assets/images/cup_logo.png',
+                                    height: targetHLogical,
+                                    cacheHeight: targetHPhysical,          // <- key for crispness
+                                    filterQuality: FilterQuality.high,     // <- better downscale
+                                  ),
                                 ),
                               ),
                             SizedBox(width: gap),
