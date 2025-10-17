@@ -182,7 +182,7 @@ Future<void> main() async {
   try {
     FirebaseFirestore.instance.settings = const Settings(
       persistenceEnabled: true,
-      cacheSizeBytes: 200 * 1024 * 1024, // 200 MB
+      cacheSizeBytes: 100 * 1024 * 1024, // 200 MB
     );
   } catch (e) {
     debugPrint('Firestore persistence not enabled: $e');
