@@ -1,11 +1,12 @@
 // main.dart
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_app_check/firebase_app_check.dart';
 import 'firebase_options.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -175,6 +176,17 @@ Future<void> main() async {
   );
   // Ensure App Check tokens refresh in the background
   await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
+
+  // ✅ Enable Firestore persistence BEFORE any reads happen
+  // On web this gives you IndexedDB cache + instant cached snapshots on reloads.
+  try {
+    FirebaseFirestore.instance.settings = const Settings(
+      persistenceEnabled: true,
+      cacheSizeBytes: 200 * 1024 * 1024, // 200 MB
+    );
+  } catch (e) {
+    debugPrint('Firestore persistence not enabled: $e');
+  }
 
   runApp(const ProviderScope(child: MyApp()));
 }
