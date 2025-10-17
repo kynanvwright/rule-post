@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rxdart/rxdart.dart';
+
 import '../core/widgets/draft_viewing.dart';
 
 // This stops the left panel rebuilding on every navigation

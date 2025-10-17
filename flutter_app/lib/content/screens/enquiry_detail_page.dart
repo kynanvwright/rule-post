@@ -12,8 +12,7 @@ import '../../api/close_enquiry_api.dart';
 import '../../api/publish_competitor_responses.dart';
 import '../../api/publish_rc_response.dart';
 
-import '../../riverpod/enquiry_doc_provider.dart';
-import '../../riverpod/post_alias.dart';
+import '../../riverpod/doc_providers.dart';
 import '../../riverpod/user_detail.dart';
 
 
@@ -27,14 +26,6 @@ class EnquiryDetailPage extends ConsumerWidget {
     final docAsync = ref.watch(enquiryDocProvider(enquiryId));
     final userRole = ref.watch(roleProvider);
     final userTeam = ref.watch(teamProvider);
-
-    // side-effect: alias update (runs only when doc changes)
-    ref.listen(enquiryDocProvider(enquiryId), (prev, next) {
-      final n = next.value?['enquiryNumber'];
-      if (n != null) {
-        ref.read(enquiryAliasProvider(enquiryId).notifier).state = 'RE #$n';
-      }
-    });
 
     return docAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
