@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import 'create_post_wrapper.dart';
+import 'custom_progress_indicator.dart';
 import '../../core/models/attachments.dart' show TempAttachment;
 
 enum PostType { enquiry, response, comment }
@@ -202,16 +203,23 @@ class _NewPostDialogState extends State<_NewPostDialog> {
                         icon: const Icon(Icons.attach_file),
                         label: const Text('Add attachment'),
                       ),
-                      const SizedBox(width: 12),
-                      if (_uploading)
-                        const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                      const Spacer(),
+                      Tooltip(
+                        message: 'Note: large attachments may take a minute or two to upload',
+                        child: Icon(
+                          Icons.info_outline, 
+                          size: 18,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
+                      ),
+                      const SizedBox(width: 10),
                     ],
                   ),
-                const SizedBox(height: 8),
+                  const SizedBox(height: 16),
+                  if (_uploading) ...[
+                    RotatingProgressIndicator(),
+                    const SizedBox(height: 12),
+                  ],
                 ],
                 if (_pending.isNotEmpty)
                   Align(
@@ -271,7 +279,6 @@ class _NewPostDialogState extends State<_NewPostDialog> {
 
   Future<void> _addAttachmentToTemp() async {
     if (_uploading) return;
-    setState(() => _uploading = true);
 
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -293,6 +300,7 @@ class _NewPostDialogState extends State<_NewPostDialog> {
 
       // Upload sequentially (simple + predictable UI). If you prefer parallel:
       // await Future.wait(picked.files.map(_uploadOneFile));
+      setState(() => _uploading = true);
       for (final f in picked.files) {
         try {
           await _uploadOneFile(uid, f);

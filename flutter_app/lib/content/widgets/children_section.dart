@@ -165,7 +165,7 @@ class ChildrenSection extends ConsumerWidget {
                 final trailingText = Text( 
                   fromRC==false 
                     ? commentCount == 1
-                      ? '$commentCount comment'
+                      ? '$commentCount comment  '
                       : '$commentCount comments'
                     : 'Rules Committee');
 
