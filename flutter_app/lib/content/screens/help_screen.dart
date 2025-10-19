@@ -158,8 +158,8 @@ class HelpFaqScreen extends StatelessWidget {
             "Frequently Asked Questions",
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 16),
           for (final section in faqs) ...[
+          const SizedBox(height: 16),
             Row(
               children: [
                 Icon(section["icon"] as IconData),
@@ -188,7 +188,6 @@ class HelpFaqScreen extends StatelessWidget {
                 ),
               ),
             ),
-            // const SizedBox(height: 16),
           ],
           // const Divider(),
           // ListTile(
