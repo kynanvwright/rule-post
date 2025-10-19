@@ -29,7 +29,7 @@ class EnquiryDetailPage extends ConsumerWidget {
 
     return docAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => const Center(child: Text('Failed to load enquiry')),
+      error: (_, i_) => const Center(child: Text('Failed to load enquiry')),
       data: (data) {
         final d = data ?? const {};
         final title = (d['title'] ?? 'Untitled').toString();
