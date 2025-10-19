@@ -140,7 +140,16 @@ class _EnquiriesTree extends ConsumerWidget {
     );
 
     return itemsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(
+        child: Column(
+          children: [
+            SizedBox(height: 12),
+            CircularProgressIndicator(),
+            SizedBox(height: 12),
+            Text('Loading enquiries from database...\n(This may take a few seconds to populate)'),
+          ],
+        ),
+      ),
       error: (err, st) {
         final error = err.toString();
         debugPrint('❌ Firestore query error: $error');
