@@ -4,6 +4,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:web/web.dart' as web;
+import 'package:firebase_app_check/firebase_app_check.dart';
+import 'dart:async';
+
 
 import 'create_post_wrapper.dart';
 import 'custom_progress_indicator.dart';
@@ -280,48 +284,119 @@ class _NewPostDialogState extends State<_NewPostDialog> {
   Future<void> _addAttachmentToTemp() async {
     if (_uploading) return;
 
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      _toast('You must be signed in to add attachments.');
+      return;
+    }
+
     try {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid == null) {
-        _toast('You must be signed in to add attachments.');
+      // Don’t await anything before opening the picker
+      List<web.File>? webFiles;
+
+      if (kIsWeb) {
+        webFiles = await _pickWebFiles(
+          accept: '.pdf,.doc,.docx',
+          multiple: true,
+        );
+      } else {
+        // Non-web fallback keeps your old plugin flow
+        final picked = await FilePicker.platform.pickFiles(
+          allowMultiple: true,
+          withData: true,
+          type: FileType.custom,
+          allowedExtensions: ['pdf', 'doc', 'docx'],
+        );
+        if (picked == null || picked.files.isEmpty) return;
+
+        // If you ever target mobile/desktop again, this will be used.
+        setState(() => _uploading = true);
+        int success = 0;
+        final errors = <String>[];
+        for (final f in picked.files) {
+          try {
+            await _uploadOneFile(uid, f);
+            success++;
+          } catch (e) {
+            errors.add('${f.name}: $e');
+          }
+        }
+        if (success > 0) _toast('Uploaded $success file${success == 1 ? '' : 's'}.');
+        if (errors.isNotEmpty) _toast('Some files failed:\n${errors.join('\n')}');
         return;
       }
 
-      final picked = await FilePicker.platform.pickFiles(
-        allowMultiple: true,
-        withData: true,
-        type: FileType.custom,
-        allowedExtensions: ['pdf', 'doc', 'docx'],
-      );
-      if (picked == null || picked.files.isEmpty) return;
+      // User canceled or no files selected
+      if (webFiles == null || webFiles.isEmpty) return;
 
+      // Now it’s safe to set uploading + do any warm-ups concurrently
+      setState(() => _uploading = true);
+      // Fire and forget App Check warm-up (don’t break user gesture earlier)
+      unawaited(FirebaseAppCheck.instance.getToken(true));
+
+      // Bounded concurrency
+      const maxConcurrent = 3;
       int success = 0;
       final errors = <String>[];
 
-      // Upload sequentially (simple + predictable UI). If you prefer parallel:
-      // await Future.wait(picked.files.map(_uploadOneFile));
-      setState(() => _uploading = true);
-      for (final f in picked.files) {
-        try {
-          await _uploadOneFile(uid, f);
-          success++;
-        } catch (e) {
-          errors.add('${f.name}: $e');
-        }
+      for (var i = 0; i < webFiles.length; i += maxConcurrent) {
+        final batch = webFiles.sublist(
+          i,
+          (i + maxConcurrent > webFiles.length) ? webFiles.length : i + maxConcurrent,
+        );
+        await Future.wait(batch.map((f) async {
+          try {
+            await _uploadOneWebBlob(uid, f);
+            success++;
+          } catch (e) {
+            errors.add('${f.name}: $e');
+          }
+        }));
       }
 
-      if (success > 0) {
-        _toast('Uploaded $success file${success == 1 ? '' : 's'}.');
-      }
-      if (errors.isNotEmpty) {
-        _toast('Some files failed:\n${errors.join('\n')}');
-      }
+      if (success > 0) _toast('Uploaded $success file${success == 1 ? '' : 's'}.');
+      if (errors.isNotEmpty) _toast('Some files failed:\n${errors.join('\n')}');
     } catch (e) {
       _toast('Attachment failed: $e');
     } finally {
       if (mounted) setState(() => _uploading = false);
     }
   }
+
+
+  Future<List<web.File>?> _pickWebFiles({
+    String accept = '',
+    bool multiple = true,
+  }) async {
+    final input = web.HTMLInputElement()
+      ..type = 'file'
+      ..accept = accept
+      ..multiple = multiple
+      ..style.display = 'none'; // keep it invisible
+
+    // Must be in DOM for some browsers
+    web.document.body?.append(input);
+
+    // Synchronously trigger the dialog — no awaits before this
+    input.click();
+
+    // Wait for user selection
+    await input.onChange.first;
+
+    final list = <web.File>[];
+    final files = input.files;
+    if (files != null) {
+      final len = files.length;
+      for (var i = 0; i < len; i++) {
+        final f = files.item(i);
+        if (f != null) list.add(f);
+      }
+    }
+
+    input.remove();
+    return list.isEmpty ? null : list;
+  }
+
 
   void _toast(String msg) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
@@ -382,6 +457,31 @@ class _NewPostDialogState extends State<_NewPostDialog> {
       contentType: contentType,
     ));
   }
+
+  Future<void> _uploadOneWebBlob(String uid, web.File f) async {
+    final name = f.name;
+    final size = f.size;
+    final browserType = f.type.isNotEmpty ? f.type : null;
+    final ext = name.contains('.') ? name.split('.').last.toLowerCase() : '';
+    final contentType =
+        browserType ?? _guessContentType(ext) ?? 'application/octet-stream';
+
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    final safeName = _sanitiseName(name);
+    final tempPath = '${widget.tempFolder}/$uid/$ts-$safeName';
+
+    final ref = FirebaseStorage.instance.ref(tempPath);
+    await ref.putBlob(f, SettableMetadata(contentType: contentType));
+
+    _pending.add(TempAttachment(
+      name: name,
+      storagePath: tempPath,
+      size: size,
+      contentType: contentType,
+    ));
+  }
+
+
 }
 
 class _NewPostPayload {
