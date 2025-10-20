@@ -25,8 +25,8 @@ import 'core/widgets/two_panel_shell.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // (Optional) Riverpod auth stream — keep if used elsewhere in your app
-final authStateProvider =
-    StreamProvider<User?>((ref) => FirebaseAuth.instance.authStateChanges());
+// final authStateProvider =
+//     StreamProvider<User?>((ref) => FirebaseAuth.instance.authStateChanges());
 
 // Notify GoRouter when a stream emits (so redirect runs), without rebuilding router
 class RouterRefresh extends ChangeNotifier {
