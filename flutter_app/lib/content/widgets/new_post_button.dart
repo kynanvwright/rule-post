@@ -126,7 +126,6 @@ class _NewPostButtonState extends State<NewPostButton> {
 }
 
 
-
 class _NewPostDialog extends StatefulWidget {
   const _NewPostDialog({
     required this.dialogTitle,
