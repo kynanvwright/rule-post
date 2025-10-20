@@ -1,13 +1,12 @@
+import 'dart:async';
 import 'dart:io' show File;
 import 'package:file_picker/file_picker.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:web/web.dart' as web;
-import 'package:firebase_app_check/firebase_app_check.dart';
-import 'dart:async';
-
 
 import 'create_post_wrapper.dart';
 import 'custom_progress_indicator.dart';
@@ -480,9 +479,8 @@ class _NewPostDialogState extends State<_NewPostDialog> {
       contentType: contentType,
     ));
   }
-
-
 }
+
 
 class _NewPostPayload {
   _NewPostPayload({
@@ -495,4 +493,3 @@ class _NewPostPayload {
   final String text;
   final List<TempAttachment>? attachments;
 }
-

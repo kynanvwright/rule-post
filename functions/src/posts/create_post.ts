@@ -2,7 +2,7 @@
 // File: src/posts/create_post.ts
 // Purpose: Thin callable handler orchestrating validation, tx, storage moves
 // ──────────────────────────────────────────────────────────────────────────────
-import { getFirestore } from "firebase-admin/firestore";
+import { getFirestore, DocumentReference } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 
@@ -44,6 +44,24 @@ export const createPost = onCall<CreatePostData>(
 
     // Pre-create doc ref to know postPath for storage placement
     const tempDocRef = postDocRef(db, data.postType, data.parentIds);
+    // Log and type-check DocumentReference
+    logger.info("postDocRef", {
+      path: tempDocRef.path,
+      id: (tempDocRef as DocumentReference).id,
+    });
+
+    if (
+      !tempDocRef ||
+      !(tempDocRef instanceof DocumentReference) ||
+      typeof tempDocRef.id !== "string" ||
+      !tempDocRef.id
+    ) {
+      throw new HttpsError(
+        "internal",
+        "postDocRef did not return a DocumentReference with an id",
+      );
+    }
+
     const postFolder = tempDocRef.path; // we will create same ref inside tx
 
     // Validate attachments (no writes yet)
@@ -55,6 +73,7 @@ export const createPost = onCall<CreatePostData>(
     });
 
     // Firestore transaction
+    logger.info("preTx paths", { pre: postFolder });
     const txRes = await runCreatePostTx(
       db,
       data.postType,
@@ -65,6 +84,7 @@ export const createPost = onCall<CreatePostData>(
       4,
       { uid: authorUid, team: authorTeam },
     );
+    logger.info("postTx paths", { post: txRes.postPath });
 
     assert(
       txRes.postPath === postFolder,

@@ -22,25 +22,24 @@ export async function uniqueNameFor(
   folder: string, // e.g. "enquiries/abc123"
   baseName: string,
 ): Promise<string> {
-  let candidate = baseName;
-  const dot = baseName.lastIndexOf(".");
-  const stem = dot >= 0 ? baseName.slice(0, dot) : baseName;
-  const ext = dot >= 0 ? baseName.slice(dot) : "";
-  let i = 1;
-  // exists() returns [boolean]
-  // Use a small cap to avoid infinite loops in pathological cases
+  const safeFolder = folder.replace(/\/+$/, ""); // strip trailing slash
+  const safeBase = sanitiseName(baseName);
+  const dot = safeBase.lastIndexOf(".");
+  const stem = dot >= 0 ? safeBase.slice(0, dot) : safeBase;
+  const ext = dot >= 0 ? safeBase.slice(dot) : "";
+
+  let i = 0;
+  // Use the provided bucket
   while (
-    await getStorage()
-      .bucket()
-      .file(`${folder}/${candidate}`)
+    await bucket
+      .file(`${safeFolder}/${i ? `${stem}-${i}${ext}` : safeBase}`)
       .exists()
       .then((r) => r[0])
   ) {
-    candidate = `${stem}-${i}${ext}`;
     i += 1;
-    if (i > 200) break; // safety cap
+    if (i > 200) break;
   }
-  return candidate;
+  return i ? `${stem}-${i}${ext}` : safeBase;
 }
 
 /**
@@ -64,8 +63,9 @@ export async function moveValidatedAttachments(options: {
       assert(!!temp, "Validated attachment not found in input.");
 
       const src = bucket.file(String(temp!.storagePath));
-      const finalName = await uniqueNameFor(bucket, options.postFolder, v.name);
-      const destPath = `${options.postFolder}/${finalName}`;
+      const folder = v.path.replace(/\/[^/]+$/, ""); // strip filename
+      const finalName = await uniqueNameFor(bucket, folder, v.name);
+      const destPath = `${folder}/${finalName}`;
       const dest = bucket.file(destPath);
 
       // Copy with contentType metadata when available
