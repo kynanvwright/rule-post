@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:web/web.dart' as web;
 
 import 'create_post_wrapper.dart';
-import 'custom_progress_indicator.dart';
 import '../../core/models/attachments.dart' show TempAttachment;
 
 enum PostType { enquiry, response, comment }
@@ -151,6 +150,11 @@ class _NewPostDialogState extends State<_NewPostDialog> {
   final List<TempAttachment> _pending = [];
   bool _busy = false;
   bool _uploading = false;
+  final Map<String, double> _fileProgress = {}; // key = file path or name
+  double get _aggregateProgress =>
+      _fileProgress.isEmpty
+          ? 0
+          : _fileProgress.values.reduce((a, b) => a + b) / _fileProgress.length;
 
   @override
   void dispose() {
@@ -220,9 +224,17 @@ class _NewPostDialogState extends State<_NewPostDialog> {
                   ),
                   const SizedBox(height: 16),
                   if (_uploading) ...[
-                    RotatingProgressIndicator(),
                     const SizedBox(height: 12),
+                    LinearProgressIndicator(value: _aggregateProgress == 0 ? null : _aggregateProgress),
+                    const SizedBox(height: 4),
+                    Text(
+                      _fileProgress.isEmpty
+                        ? 'Preparing uploads...'
+                        : 'Uploading ${_fileProgress.length} file(s): ${(100*_aggregateProgress).toStringAsFixed(0)}%',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ],
+
                 ],
                 if (_pending.isNotEmpty)
                   Align(
@@ -338,19 +350,37 @@ class _NewPostDialogState extends State<_NewPostDialog> {
       int success = 0;
       final errors = <String>[];
 
-      for (var i = 0; i < webFiles.length; i += maxConcurrent) {
-        final batch = webFiles.sublist(
-          i,
-          (i + maxConcurrent > webFiles.length) ? webFiles.length : i + maxConcurrent,
-        );
-        await Future.wait(batch.map((f) async {
-          try {
-            await _uploadOneWebBlob(uid, f);
-            success++;
-          } catch (e) {
-            errors.add('${f.name}: $e');
-          }
-        }));
+      void onProgress(String key, int sent, int total) {
+        setState(() {
+          _fileProgress[key] = total == 0 ? 0 : sent / total;
+        });
+      }
+
+      try {
+        for (var i = 0; i < webFiles.length; i += maxConcurrent) {
+          final batch = webFiles.sublist(
+            i,
+            (i + maxConcurrent > webFiles.length) ? webFiles.length : i + maxConcurrent,
+          );
+
+          await Future.wait(batch.map((f) async {
+            try {
+              await _uploadOneWebBlobWithProgress(uid, f, onProgress: onProgress);
+              success++;
+            } catch (e) {
+              errors.add('${f.name}: $e');
+            }
+          }));
+        }
+
+        if (success > 0) _toast('Uploaded $success file${success == 1 ? '' : 's'}.');
+        if (errors.isNotEmpty) _toast('Some files failed:\n${errors.join('\n')}');
+      } finally {
+        // Clear progress + uploading flag
+        setState(() {
+          _uploading = false;
+          _fileProgress.clear();
+        });
       }
 
       if (success > 0) _toast('Uploaded $success file${success == 1 ? '' : 's'}.');
@@ -457,20 +487,35 @@ class _NewPostDialogState extends State<_NewPostDialog> {
     ));
   }
 
-  Future<void> _uploadOneWebBlob(String uid, web.File f) async {
+
+  Future<void> _uploadOneWebBlobWithProgress(
+    String uid,
+    web.File f, {
+    required void Function(String key, int sent, int total) onProgress,
+  }) async {
     final name = f.name;
     final size = f.size;
     final browserType = f.type.isNotEmpty ? f.type : null;
     final ext = name.contains('.') ? name.split('.').last.toLowerCase() : '';
-    final contentType =
-        browserType ?? _guessContentType(ext) ?? 'application/octet-stream';
+    final contentType = browserType ?? _guessContentType(ext) ?? 'application/octet-stream';
 
     final ts = DateTime.now().millisecondsSinceEpoch;
     final safeName = _sanitiseName(name);
     final tempPath = '${widget.tempFolder}/$uid/$ts-$safeName';
 
     final ref = FirebaseStorage.instance.ref(tempPath);
-    await ref.putBlob(f, SettableMetadata(contentType: contentType));
+    final task = ref.putBlob(f, SettableMetadata(contentType: contentType));
+
+    final sub = task.snapshotEvents.listen((snap) {
+      final total = snap.totalBytes;
+      onProgress(tempPath, snap.bytesTransferred, total);
+    });
+
+    try {
+      await task;
+    } finally {
+      await sub.cancel();
+    }
 
     _pending.add(TempAttachment(
       name: name,
@@ -479,8 +524,15 @@ class _NewPostDialogState extends State<_NewPostDialog> {
       contentType: contentType,
     ));
   }
+
 }
 
+
+typedef ProgressFn = void Function({
+  required int bytesTransferred,
+  required int totalBytes,
+  required TaskState state,
+});
 
 class _NewPostPayload {
   _NewPostPayload({
