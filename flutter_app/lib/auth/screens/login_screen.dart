@@ -170,7 +170,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                             if (error == null) {
                               // ✅ Login successful → go to home
-                              if (!mounted) return;    
+                              if (!mounted) return;
                               if (kIsWeb) {
                                 web.window.history.back();
                               }

@@ -7,8 +7,9 @@ import 'package:url_launcher/url_launcher_string.dart';
 import '../../content/widgets/new_post_button.dart';
 import '../../riverpod/user_detail.dart';
 import '../../riverpod/enquiry_filter_provider.dart';
-import '../../riverpod/combined_enquiries_provider.dart';
-import '../widgets/draft_viewing.dart';
+// import '../../riverpod/combined_enquiries_provider.dart';
+import '../../riverpod/post_providers.dart';
+import '../widgets/doc_view.dart';
 import 'two_panel_shell.dart';
 // import 'navigator_helper.dart';
 import 'filter_dropdown.dart';
@@ -100,7 +101,6 @@ class LeftPaneNested extends ConsumerStatefulWidget {
 class _LeftPaneNestedState extends ConsumerState<LeftPaneNested> {
   String? get _enquiryId => widget.state.pathParameters['enquiryId'];
   String? get _responseId => widget.state.pathParameters['responseId'];
-  String? get _commentId => widget.state.pathParameters['commentId'];
 
   @override
   Widget build(BuildContext context) {
@@ -109,7 +109,6 @@ class _LeftPaneNestedState extends ConsumerState<LeftPaneNested> {
     return _EnquiriesTree(
       initiallyOpenEnquiryId: _enquiryId,
       initiallyOpenResponseId: _responseId,
-      initiallySelectedCommentId: _commentId,
     );
   }
 }
@@ -123,20 +122,22 @@ class _EnquiriesTree extends ConsumerWidget {
   const _EnquiriesTree({
     required this.initiallyOpenEnquiryId,
     required this.initiallyOpenResponseId,
-    required this.initiallySelectedCommentId,
   });
 
   final String? initiallyOpenEnquiryId;
   final String? initiallyOpenResponseId;
-  final String? initiallySelectedCommentId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     debugPrint('🔍 Building enquiries list');
     final teamId = ref.watch(teamProvider);
-    final filter = ref.watch(enquiryFilterProvider);       // 👈 provider source of truth
-    final itemsAsync = ref.watch(
-      combinedEnquiriesProvider((status: filter.status, teamId: teamId)),
+    final filter = ref.watch(enquiryFilterProvider);
+    final itemsAsync = teamId == null 
+    ? ref.watch(publicEnquiriesProvider(filter.status))
+    : ref.watch(
+      teamEnquiriesProvider(
+        (statusFilter: filter.status, teamId: teamId)
+      ),
     );
 
     return itemsAsync.when(
@@ -176,8 +177,8 @@ class _EnquiriesTree extends ConsumerWidget {
         );
       },
       data: (docs0) {
-        // keep your client-side search
         final rawQ = filter.query.trim().toLowerCase();
+        final routeEnquiryId = initiallyOpenEnquiryId;
         List<DocView> docs = docs0;
         if (rawQ.isNotEmpty) {
           docs = docs.where((d) {
@@ -188,8 +189,6 @@ class _EnquiriesTree extends ConsumerWidget {
           }).toList();
         }
 
-        final routeEnquiryId = initiallyOpenEnquiryId;
-
         return ListView.builder(
           itemCount: docs.length,
           itemBuilder: (context, i) {
@@ -198,7 +197,6 @@ class _EnquiriesTree extends ConsumerWidget {
             final data = d.data();
             final title = (data['title'] ?? 'Untitled').toString();
             final n = (data['enquiryNumber'] ?? 'Unnumbered').toString();
-
             final isOpen = id == routeEnquiryId;
 
             return ExpansionTile(
@@ -212,8 +210,6 @@ class _EnquiriesTree extends ConsumerWidget {
                 if (expanded && id != routeEnquiryId) {
                   TwoPaneScope.of(context)?.closeDrawer();
                   Nav.goEnquiry(context, id); // no querystring
-                } else if (!expanded && id == routeEnquiryId) {
-                  // optional: Nav.goHome(context);
                 }
               },
               title: _RowTile(
@@ -229,7 +225,6 @@ class _EnquiriesTree extends ConsumerWidget {
                 _ResponsesBranch(
                   enquiryId: id,
                   initiallyOpenResponseId: initiallyOpenResponseId,
-                  initiallySelectedCommentId: initiallySelectedCommentId,
                 ),
               ],
             );
@@ -237,7 +232,6 @@ class _EnquiriesTree extends ConsumerWidget {
         );
       },
     );
-
   }
 }
 
@@ -249,12 +243,10 @@ class _ResponsesBranch extends StatelessWidget {
   const _ResponsesBranch({
     required this.enquiryId,
     required this.initiallyOpenResponseId,
-    required this.initiallySelectedCommentId,
   });
 
   final String enquiryId;
   final String? initiallyOpenResponseId;
-  final String? initiallySelectedCommentId;
 
   @override
   Widget build(BuildContext context) {
@@ -308,7 +300,7 @@ class _ResponsesBranch extends StatelessWidget {
                   minVerticalPadding: 0,
                   title: _RowTile(
                     label: label,
-                    selected: isOpen && initiallySelectedCommentId == null,
+                    selected: isOpen,
                     onTap: () {
                       TwoPaneScope.of(context)?.closeDrawer();
                       Nav.goResponse(context, enquiryId, id);
@@ -323,6 +315,7 @@ class _ResponsesBranch extends StatelessWidget {
     );
   }
 }
+
 
 /// ─────────────────────────────────────────────────────────────────────────
 /// Row tile shared style
@@ -360,6 +353,7 @@ class _RowTile extends StatelessWidget {
     );
   }
 }
+
 
 Widget leafInfo(String text, BuildContext context) => Padding(
   padding: const EdgeInsets.only(
@@ -404,6 +398,3 @@ Query<Map<String, dynamic>> buildEnquiriesQuery(Map<String, String> filter) {
   q = q.orderBy('enquiryNumber', descending: true);
   return q;
 }
-
-
-

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../auth/widgets/auth_service.dart';
+import '../../auth/widgets/login_dialog.dart';
 import '../../navigation/nav.dart';
 import '../../riverpod/user_detail.dart';
 import 'colour_helper.dart';
@@ -239,7 +240,7 @@ class AppBanner extends ConsumerWidget {
                             MenuItemButton(
                               leadingIcon: const Icon(Icons.login),
                               child: const Text("Sign In"),
-                              onPressed: () => Nav.goLogin(context),
+                              onPressed: () => showLoginDialog(context),
                             ),
                         ],
                       ),

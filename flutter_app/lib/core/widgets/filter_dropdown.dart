@@ -35,14 +35,14 @@ class FilterDropdownState extends ConsumerState<FilterDropdown> {
     _localSearchCtrl = TextEditingController();
 
     // One-time hydration from widget props if provider is at defaults.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
 
       // Sync controller to provider
       _syncControllerWithProvider(ref.read(enquiryFilterProvider).query, setSelectionToEnd: true);
 
       // Rebuild suffix icon visibility as user types
       _localSearchCtrl.addListener(() => setState(() {}));
-    });
+    // });
   }
 
   void _syncControllerWithProvider(String query, {bool setSelectionToEnd = false}) {

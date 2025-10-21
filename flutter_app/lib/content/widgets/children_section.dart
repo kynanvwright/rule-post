@@ -6,6 +6,7 @@ import '../widgets/section_card.dart';
 import '../widgets/parse_hex_colour.dart';
 import '../widgets/list_tile.dart';
 import '../../core/widgets/draft_viewing.dart';
+import '../../core/widgets/doc_view.dart';
 import '../../navigation/nav.dart';
 import '../../riverpod/user_detail.dart';
 
