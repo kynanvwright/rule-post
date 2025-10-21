@@ -132,11 +132,9 @@ class _EnquiriesTree extends ConsumerWidget {
     debugPrint('🔍 Building enquiries list');
     final teamId = ref.watch(teamProvider);
     final filter = ref.watch(enquiryFilterProvider);
-    final itemsAsync = teamId == null 
-    ? ref.watch(publicEnquiriesProvider(filter.status))
-    : ref.watch(
-      teamEnquiriesProvider(
-        (statusFilter: filter.status, teamId: teamId)
+    final itemsAsync = ref.watch(
+      combinedEnquiriesProvider(
+        ((statusFilter: filter.status, teamId: teamId))
       ),
     );
 
