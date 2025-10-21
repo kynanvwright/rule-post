@@ -25,27 +25,3 @@ final effectiveEnquiriesProvider = Provider.family<
       ? publicEnquiriesProvider(statusFilter)
       : teamEnquiriesProvider((teamId: teamId, statusFilter: statusFilter));
 });
-
-
-// // (Optional) Clear private caches on logout to avoid stale/leak
-// final _authWatcher = Provider<void>((ref) {
-//   ref.listen<String?>(teamProvider, (prev, next) {
-//     if (next == null && prev != null) {
-//       ref.invalidate(teamEnquiriesProvider); // nukes all team instances
-//     }
-//   });
-// });
-
-// // 4) Usage in UI (double-watch)
-// @override
-// Widget build(BuildContext context, WidgetRef ref) {
-//   ref.watch(_authWatcher); // enable optional cleanup
-//   final chosen = ref.watch(effectiveEnquiriesProvider);
-//   final itemsAsync = ref.watch(chosen);
-
-//   return itemsAsync.when(
-//     data: (items) => /* ... */,
-//     loading: () => /* spinner or keep-stale-if-you-want */,
-//     error: (e, _) => /* ... */,
-//   );
-// }

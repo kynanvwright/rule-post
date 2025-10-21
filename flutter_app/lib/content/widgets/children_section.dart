@@ -5,7 +5,7 @@ import '../widgets/new_post_button.dart';
 import '../widgets/section_card.dart';
 import '../widgets/parse_hex_colour.dart';
 import '../widgets/list_tile.dart';
-import '../../core/widgets/draft_viewing.dart';
+import '../../riverpod/post_streams.dart';
 import '../../core/widgets/doc_view.dart';
 import '../../navigation/nav.dart';
 import '../../riverpod/user_detail.dart';
