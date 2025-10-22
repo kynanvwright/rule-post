@@ -5,15 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 import '../../content/widgets/new_post_button.dart';
+import '../../navigation/nav.dart';
 import '../../riverpod/user_detail.dart';
 import '../../riverpod/enquiry_filter_provider.dart';
-// import '../../riverpod/combined_enquiries_provider.dart';
 import '../../riverpod/post_providers.dart';
 import '../widgets/doc_view.dart';
-import 'two_panel_shell.dart';
-// import 'navigator_helper.dart';
 import 'filter_dropdown.dart';
-import '../../navigation/nav.dart';
+import 'two_panel_shell.dart';
 
 final filterDefault = 'open';
 
@@ -132,7 +130,9 @@ class _EnquiriesTree extends ConsumerWidget {
     final teamId = ref.watch(teamProvider);
     debugPrint('[left_pane_nested] teamId: $teamId');
     final filter = ref.watch(enquiryFilterProvider);
-    final itemsAsync = ref.watch(combinedEnquiriesProvider((teamId: teamId, statusFilter: filter.status)));
+    final itemsAsync = ref.watch(
+      combinedEnquiriesProvider((teamId: teamId, statusFilter: filter.status))
+    );
 
     return itemsAsync.when(
       loading: () => const Center(

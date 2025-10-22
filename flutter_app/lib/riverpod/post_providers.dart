@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/widgets/doc_view.dart';
 import 'post_streams.dart';
 
+final enquiriesRefreshSignal  = StateProvider<int>((_) => 0);
+
 // 1) Public (no auth)
 final publicEnquiriesProvider =
     StreamProvider.family<List<DocView>, String>((ref, statusFilter)  => publicEnquiriesStream(statusFilter: statusFilter));
@@ -11,6 +13,7 @@ final publicEnquiriesProvider =
 // 2) Private (needs teamId)
 final combinedEnquiriesProvider =
     StreamProvider.family<List<DocView>, ({String? teamId, String statusFilter})>((ref, args) {
+  ref.watch(enquiriesRefreshSignal);
   return combinedEnquiriesStream(teamId: args.teamId, statusFilter: args.statusFilter);
 });
 

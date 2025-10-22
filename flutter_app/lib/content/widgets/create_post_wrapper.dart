@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../api/post_api.dart';
 import '../../core/models/attachments.dart';
+import '../../riverpod/post_providers.dart';
 import 'progress_dialog.dart';
 
 final _postApi = PostApi(region: 'europe-west8');
 
 Future<void> onCreatePostPressed(
-  BuildContext context, {
+  BuildContext context,  {
   required String postType,
   required String title,
   String? postText,
@@ -45,6 +47,11 @@ Future<void> onCreatePostPressed(
 
     // Optional follow-up (post dialog)
     if (!context.mounted) return;
+
+    if (postType == 'enquiry') {
+      final container = ProviderScope.containerOf(context, listen: false);
+      container.read(enquiriesRefreshSignal.notifier).state++;
+    }
     ScaffoldMessenger.of(context).showSnackBar(
       // SnackBar(content: Text('Created post: $newId')),
       SnackBar(content: Text('Created $postType')),
