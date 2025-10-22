@@ -116,7 +116,6 @@ class _LeftPaneNestedState extends ConsumerState<LeftPaneNested> {
 /// ─────────────────────────────────────────────────────────────────────────
 /// Enquiries list (applies filters + search)
 /// ─────────────────────────────────────────────────────────────────────────
-final openIndexProvider = StateProvider<int?>((ref) => null);
 
 class _EnquiriesTree extends ConsumerWidget {
   const _EnquiriesTree({
@@ -131,12 +130,9 @@ class _EnquiriesTree extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     debugPrint('🔍 Building enquiries list');
     final teamId = ref.watch(teamProvider);
+    debugPrint('[left_pane_nested] teamId: $teamId');
     final filter = ref.watch(enquiryFilterProvider);
-    final itemsAsync = ref.watch(
-      combinedEnquiriesProvider(
-        ((statusFilter: filter.status, teamId: teamId))
-      ),
-    );
+    final itemsAsync = ref.watch(combinedEnquiriesProvider((teamId: teamId, statusFilter: filter.status)));
 
     return itemsAsync.when(
       loading: () => const Center(
@@ -175,6 +171,7 @@ class _EnquiriesTree extends ConsumerWidget {
         );
       },
       data: (docs0) {
+        debugPrint('itemsAsync data received: ${docs0.length} enquiries');
         final rawQ = filter.query.trim().toLowerCase();
         final routeEnquiryId = initiallyOpenEnquiryId;
         List<DocView> docs = docs0;
@@ -186,6 +183,7 @@ class _EnquiriesTree extends ConsumerWidget {
             return title.contains(rawQ) || numStr.contains(rawQ);
           }).toList();
         }
+        debugPrint('text filter applied: ${docs.length} enquiries match');
 
         return ListView.builder(
           itemCount: docs.length,
@@ -220,6 +218,7 @@ class _EnquiriesTree extends ConsumerWidget {
                 },
               ),
               children: [
+                if (isOpen)
                 _ResponsesBranch(
                   enquiryId: id,
                   initiallyOpenResponseId: initiallyOpenResponseId,
@@ -365,34 +364,3 @@ Widget leafInfo(String text, BuildContext context) => Padding(
     ),
   ),
 );
-
-
-/// ─────────────────────────────────────────────────────────────────────────
-/// Query builder: isOpen filter + search (prefix on title_lc)
-/// Ensure you write `title_lc` (lowercased) at create/update time.
-/// ─────────────────────────────────────────────────────────────────────────
-Query<Map<String, dynamic>> buildEnquiriesQuery(Map<String, String> filter) {
-  var q = FirebaseFirestore.instance
-      .collection('enquiries')
-      .where('isPublished', isEqualTo: true)
-      .withConverter<Map<String, dynamic>>(
-        fromFirestore: (s, _) => s.data() ?? {},
-        toFirestore: (v, _) => v,
-      );
-
-  final status = filter['status'] ?? filterDefault;
-
-  switch (status) {
-    case 'open':
-      q = q.where('isOpen', isEqualTo: true);
-      break;
-    case 'closed':
-      q = q.where('isOpen', isEqualTo: false);
-      break;
-    default:
-      break;
-  }
-
-  q = q.orderBy('enquiryNumber', descending: true);
-  return q;
-}

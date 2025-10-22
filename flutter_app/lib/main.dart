@@ -167,6 +167,18 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 // ─────────────────────────────────────────────────────────────────────────────
 // App root
 Future<void> main() async {
+  // temp debug
+  // ---
+  // debugPrintRebuildDirtyWidgets = true;
+  // debugProfileBuildsEnabled = true;
+    installFilteredBuildLogger(allow: {
+    'AppScaffold',
+    'TwoPaneShell',
+    'LeftPaneNested',
+    '_EnquiriesTree',
+    '_EnquiriesList',
+  });
+  // ---
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -188,7 +200,10 @@ Future<void> main() async {
     debugPrint('Firestore persistence not enabled: $e');
   }
 
-  runApp(const ProviderScope(child: MyApp()));
+  runApp(const ProviderScope(
+    // observers: [RpLog()],
+    child: MyApp(),
+    ));
 }
 
 
@@ -228,4 +243,41 @@ class MyApp extends ConsumerWidget {
       themeMode: ThemeMode.system,
     );
   }
+}
+
+class RpLog extends ProviderObserver {
+  @override
+  void didUpdateProvider(ProviderBase provider, Object? previousValue, Object? newValue, ProviderContainer container) {
+    if (provider.name == 'combinedEnquiriesProvider') {
+      final oldT = previousValue?.runtimeType;
+      final newT = newValue?.runtimeType;
+      debugPrint('🔁 ${provider.name}: $oldT → $newT');
+    }
+  }
+}
+
+
+void installFilteredBuildLogger({Set<String>? allow}) {
+  debugPrintRebuildDirtyWidgets = true;
+
+  final orig = debugPrint;
+  debugPrint = (String? msg, {int? wrapWidth}) {
+    if (msg == null) return;
+    var emitted = false;
+
+    for (final raw in msg.split('\n')) {
+      final line = raw.trimLeft();
+      final m = RegExp(r'^(Building|Rebuilding)\s+([^\s\(\[]+)').firstMatch(line);
+      if (m != null) {
+        final verb = m.group(1)!;
+        final name = m.group(2)!;
+        if (allow == null || allow.contains(name)) {
+          debugPrint('🔁 $verb $name'); // plain print => browser console
+        }
+        emitted = true; // swallow this noisy line
+      }
+    }
+
+    if (!emitted) orig(msg, wrapWidth: wrapWidth); // keep other logs
+  };
 }

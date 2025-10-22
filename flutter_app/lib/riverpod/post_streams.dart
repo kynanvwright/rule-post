@@ -76,6 +76,7 @@ Stream<List<DocView>> publicEnquiriesStream({
       .map((snap) => snap.docs.map((d) => DocView(d.id, d.reference, d.data())).toList())
       .map(makeFilterSorter(statusFilter: statusFilter));
 
+    debugPrint('[publicEnquiriesStream] Public stream built fine.');
     return public$;
 }
 
@@ -85,14 +86,18 @@ Stream<List<DocView>> combinedEnquiriesStream({
   String? teamId,
 }) {
 
+  debugPrint('[combinedEnquiriesStream] Starting function with teamId=$teamId');
   // 1) Public, published enquiries
   final public$ = publicEnquiriesStream(statusFilter: statusFilter);
+
+  debugPrint('[combinedEnquiriesStream] Public stream built fine.');
 
   if (teamId == null) {
       debugPrint('[combinedEnquiriesStream] ⏭ Not logged in — skipping draftDocStreams.');
     return public$;
   } 
 
+  debugPrint('[combinedEnquiriesStream] Attempt to retrieve drafts.');
   // 2) Team draft IDs
   final draftIds$ = db
       .collection('drafts')
@@ -138,7 +143,7 @@ Stream<List<DocView>> combinedEnquiriesStream({
         .map((list) => list.whereType<DocView>().toList());
 
     // Merge public + drafts, de-dupe by id, then filter/sort once.
-    return CombineLatestStream.combine2<List<DocView>, List<DocView>, List<DocView>>(
+    return Rx.combineLatest2<List<DocView>, List<DocView>, List<DocView>>(
       public$,
       teamDrafts$,
       (pub, mine) {

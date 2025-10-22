@@ -23,7 +23,7 @@ final effectiveEnquiriesProvider = Provider.family<
       ? publicEnquiriesProvider(args.statusFilter)
       // pass the single positional argument (record)
       : combinedEnquiriesProvider((
-          teamId: args.teamId!,                // non-null here
+          teamId: args.teamId,                // non-null here
           statusFilter: args.statusFilter,
         ));
 });
