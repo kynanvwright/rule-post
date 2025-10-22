@@ -159,7 +159,7 @@ class _EnquiriesTree extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Failed to load enquiries'),
+              const Text('Failed to load enquiries, try refreshing page'),
               const SizedBox(height: 8),
               if (link != null)
                 TextButton(

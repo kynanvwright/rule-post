@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/widgets/doc_view.dart';
 import 'post_streams.dart';
+import 'enquiry_refresh_signal.dart';
 
-final enquiriesRefreshSignal  = StateProvider<int>((_) => 0);
 
 // 1) Public (no auth)
 final publicEnquiriesProvider =
@@ -13,7 +13,8 @@ final publicEnquiriesProvider =
 // 2) Private (needs teamId)
 final combinedEnquiriesProvider =
     StreamProvider.family<List<DocView>, ({String? teamId, String statusFilter})>((ref, args) {
-  ref.watch(enquiriesRefreshSignal);
+  ref.watch(enquiriesRefreshSignal); // triggers refresh when user creates new enquiry
+  ref.watch(draftIdsProvider(args.teamId)); // triggers refresh when new enquiry draft detected
   return combinedEnquiriesStream(teamId: args.teamId, statusFilter: args.statusFilter);
 });
 

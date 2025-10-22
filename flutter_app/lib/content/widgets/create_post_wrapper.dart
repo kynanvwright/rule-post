@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../api/post_api.dart';
 import '../../core/models/attachments.dart';
-import '../../riverpod/post_providers.dart';
+import '../../riverpod/enquiry_refresh_signal.dart';
 import 'progress_dialog.dart';
 
 final _postApi = PostApi(region: 'europe-west8');
