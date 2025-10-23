@@ -3,7 +3,7 @@
 // Purpose: Record new posts and publish daily digest to users
 // ──────────────────────────────────────────────────────────────────────────────
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
-import { defineSecret } from "firebase-functions/params";
+// import { defineSecret } from "firebase-functions/params";
 import { logger } from "firebase-functions/v2";
 import { onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
@@ -24,7 +24,7 @@ import {
 } from "../common/types";
 
 const db = getFirestore();
-const RESEND_API_KEY = defineSecret("RESEND_API_KEY");
+// const RESEND_API_KEY = defineSecret("RESEND_API_KEY");
 
 /* ─────────────────────────── helpers ─────────────────────────── */
 
@@ -159,7 +159,7 @@ async function sendDigestFor(
   const html = renderDigestHTML(groups);
   const subject = "Rule Post — items published";
 
-  const resend = new Resend(RESEND_API_KEY.value());
+  const resend = new Resend(process.env.RESEND_API_KEY as string);
   await resend.emails.send({
     from: "Rule Post <send@americascup.com>", // must be verified in Resend
     to,
@@ -181,7 +181,7 @@ async function sendDigestFor(
 
 // enquiries/{enquiryId}
 export const onEnquiryIsPublishedUpdated = onDocumentUpdated(
-  { document: "enquiries/{enquiryId}", secrets: [RESEND_API_KEY] },
+  { document: "enquiries/{enquiryId}", secrets: ["RESEND_API_KEY"] },
   async (event): Promise<void> => {
     const before = event.data?.before?.data() as EnquiryDoc | undefined;
     const after = event.data?.after?.data() as EnquiryDoc | undefined;
@@ -202,7 +202,7 @@ export const onEnquiryIsPublishedUpdated = onDocumentUpdated(
 export const onResponseIsPublishedUpdated = onDocumentUpdated(
   {
     document: "enquiries/{enquiryId}/responses/{responseId}",
-    secrets: [RESEND_API_KEY],
+    secrets: ["RESEND_API_KEY"],
   },
   async (event): Promise<void> => {
     const before = event.data?.before?.data() as ResponseDoc | undefined;
@@ -226,7 +226,7 @@ export const onCommentIsPublishedUpdated = onDocumentUpdated(
   {
     document:
       "enquiries/{enquiryId}/responses/{responseId}/comments/{commentId}",
-    secrets: [RESEND_API_KEY],
+    secrets: ["RESEND_API_KEY"],
   },
   async (event): Promise<void> => {
     const before = event.data?.before?.data() as CommentDoc | undefined;
@@ -252,7 +252,7 @@ export const sendPublishDigest = onSchedule(
     // 00:05, 12:05, and 20:05 every day
     schedule: "5 0,12,20 * * *",
     timeZone: "Europe/Rome",
-    secrets: [RESEND_API_KEY],
+    secrets: ["RESEND_API_KEY"],
     region: "europe-west6",
   },
   async (): Promise<void> => {

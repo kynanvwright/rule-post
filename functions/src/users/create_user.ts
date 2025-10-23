@@ -1,19 +1,19 @@
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
-import { defineSecret } from "firebase-functions/params";
+// import { defineSecret } from "firebase-functions/params";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { Resend } from "resend";
 
 const auth = getAuth(); // ✅ this returns an Auth instance (not callable)
 const db = getFirestore(); // ✅ Firestore instance
-const RESEND_API_KEY = defineSecret("RESEND_API_KEY");
+// const RESEND_API_KEY = defineSecret("RESEND_API_KEY");
 
 type CreateUserPayload = { email: string };
 
 export const createUserWithProfile = onCall(
-  { cors: true, enforceAppCheck: true, secrets: [RESEND_API_KEY] },
+  { cors: true, enforceAppCheck: true, secrets: ["RESEND_API_KEY"] },
   async (req) => {
-    const resend = new Resend(RESEND_API_KEY.value());
+    const resend = new Resend(process.env.RESEND_API_KEY as string);
     // 1) Auth + role
     const uid = req.auth?.uid;
     if (!uid) throw new HttpsError("unauthenticated", "You must be signed in.");
