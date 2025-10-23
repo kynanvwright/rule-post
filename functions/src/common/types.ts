@@ -71,10 +71,16 @@ export interface BasePublishable {
   publishedAt?: ISODate;
 }
 
-// just type aliases, not redundant interfaces
-export type EnquiryDoc = BasePublishable;
-export type ResponseDoc = BasePublishable;
-export type CommentDoc = BasePublishable;
+export interface EnquiryDoc extends BasePublishable {
+  enquiryNumber?: string;
+}
+export interface ResponseDoc extends BasePublishable {
+  roundNumber?: string;
+  responseNumber?: string;
+}
+export interface CommentDoc extends BasePublishable {
+  commentNumber?: string;
+}
 
 export type PublishKind = "enquiry" | "response" | "comment";
 
@@ -83,11 +89,15 @@ export interface PublishEventData {
   enquiryId: string;
   responseId?: string;
   commentId?: string;
-  title?: string;
+  enquiryTitle?: string;
   createdAt: ISODate;
   publishedAt: ISODate;
   processed: boolean;
   processedAt?: ISODate;
+  enquiryNumber?: string;
+  roundNumber?: string;
+  responseNumber?: string;
+  commentNumber?: string;
 }
 
 export interface EnquiryParams {

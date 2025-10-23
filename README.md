@@ -128,6 +128,7 @@ A website for facilitating America's Cup Rule Enquiries.
 - Padding doesn't look even in left header pane
 - Response/Comment lists temporarily persist on navigation then disappear
 - Fix stage ends to be on the hour and cloud functions to run at 1 minute past
+- Should the email digest delete entries rather than marking them as processed?
 
 ## Other Notes
 - Check how it looks on various devices

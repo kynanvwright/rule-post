@@ -44,6 +44,10 @@ async function recordPublishEvent(payload: {
   commentId?: string;
   title?: string; // optional if present on the doc
   publishedAt?: ISODate; // if your docs have a scheduled time
+  enquiryNumber?: string;
+  roundNumber?: string;
+  responseNumber?: string;
+  commentNumber?: string;
 }): Promise<void> {
   const now = Timestamp.now();
   const doc: PublishEventData = {
@@ -69,10 +73,29 @@ async function getRecipients(): Promise<string[]> {
 
 /** simple digest email HTML */
 function renderDigestHTML(groups: {
-  enquiries: Array<Pick<PublishEventData, "enquiryId" | "title">>;
-  responses: Array<Pick<PublishEventData, "enquiryId" | "responseId">>;
+  enquiries: Array<
+    Pick<PublishEventData, "enquiryId" | "enquiryTitle" | "enquiryNumber">
+  >;
+  responses: Array<
+    Pick<
+      PublishEventData,
+      | "enquiryId"
+      | "enquiryTitle"
+      | "enquiryNumber"
+      | "responseId"
+      | "roundNumber"
+      | "responseNumber"
+    >
+  >;
   comments: Array<
-    Pick<PublishEventData, "enquiryId" | "responseId" | "commentId">
+    Pick<
+      PublishEventData,
+      | "enquiryId"
+      | "enquiryNumber"
+      | "responseId"
+      | "roundNumber"
+      | "responseNumber"
+    >
   >;
 }): string {
   const section = <T>(
@@ -81,10 +104,53 @@ function renderDigestHTML(groups: {
     fmt: (x: T) => string,
   ): string =>
     items.length
-      ? `<h3>${title}</h3><ul>${items
-          .map((x) => `<li>${fmt(x)}</li>`)
-          .join("")}</ul>`
+      ? `<h3>${title}</h3><ul>${items.map((x) => `<li>${fmt(x)}</li>`).join("")}</ul>`
       : "";
+
+  const plural = (n: number, one: string, many: string) =>
+    n === 1 ? one : many;
+
+  // --- Group comments by (enquiryId, responseId) ---
+  type CommentSummary = {
+    enquiryId: string;
+    enquiryNumber: string;
+    responseId: string;
+    roundNumber: string;
+    responseNumber: string;
+    count: number;
+  };
+
+  const groupedComments = Array.from(
+    groups.comments
+      .reduce((m, c) => {
+        const key = `${c.enquiryId}::${c.responseId}`;
+        const found = m.get(key);
+        if (found) {
+          found.count += 1;
+        } else {
+          m.set(key, {
+            enquiryId: c.enquiryId,
+            enquiryNumber: c.enquiryNumber,
+            responseId: c.responseId!,
+            roundNumber: c.roundNumber!,
+            responseNumber: c.responseNumber!,
+            count: 1,
+          } as CommentSummary);
+        }
+        return m;
+      }, new Map<string, CommentSummary>())
+      .values(),
+  );
+
+  // Precompute the comments list items as strings
+  const commentItems = groupedComments.map(
+    (g) =>
+      `<a href="https://rulepost.com/#/enquiries/${g.enquiryId}/responses/${g.responseId}"
+        style="color:#007bff;text-decoration:none;">
+        ${g.count} ${plural(g.count, "comment", "comments")} on Response ${g.roundNumber}.${g.responseNumber}
+     </a>
+     of Rule Enquiry #${g.enquiryNumber}`,
+  );
 
   return `
   <div style="font-family:system-ui,Segoe UI,Roboto,Arial">
@@ -92,19 +158,24 @@ function renderDigestHTML(groups: {
     ${section(
       "Enquiries",
       groups.enquiries,
-      (e) => `Enquiry <b>${e.enquiryId}</b>${e.title ? ` — ${e.title}` : ""}`,
+      (e) =>
+        `Rule Enquiry #${e.enquiryNumber} — 
+         <a href="https://rulepost.com/#/enquiries/${e.enquiryId}"
+            style="color:#007bff;text-decoration:none;">
+            ${e.enquiryTitle}
+         </a>`,
     )}
     ${section(
       "Responses",
       groups.responses,
-      (r) => `Response <b>${r.responseId}</b> in Enquiry <b>${r.enquiryId}</b>`,
+      (r) =>
+        `<a href="https://rulepost.com/#/enquiries/${r.enquiryId}/responses/${r.responseId}"
+           style="color:#007bff;text-decoration:none;">
+           Response ${r.roundNumber}.${r.responseNumber}
+         </a>
+         in Rule Enquiry #${r.enquiryNumber} — ${r.enquiryTitle}`,
     )}
-    ${section(
-      "Comments",
-      groups.comments,
-      (c) =>
-        `Comment <b>${c.commentId}</b> in Response <b>${c.responseId}</b> (Enquiry <b>${c.enquiryId}</b>)`,
-    )}
+    ${section("Comments", commentItems, (html) => html)}
     <hr />
     <p style="color:#666;font-size:12px">You receive this because you opted into updates.</p>
   </div>`;
@@ -132,7 +203,9 @@ async function sendDigestFor(
 
   // group by kind
   const groups = {
-    enquiries: [] as Array<Pick<PublishEventData, "enquiryId" | "title">>,
+    enquiries: [] as Array<
+      Pick<PublishEventData, "enquiryId" | "enquiryTitle">
+    >,
     responses: [] as Array<Pick<PublishEventData, "enquiryId" | "responseId">>,
     comments: [] as Array<
       Pick<PublishEventData, "enquiryId" | "responseId" | "commentId">
@@ -142,7 +215,10 @@ async function sendDigestFor(
   for (const d of events) {
     const e = d.data();
     if (e.kind === "enquiry")
-      groups.enquiries.push({ enquiryId: e.enquiryId, title: e.title });
+      groups.enquiries.push({
+        enquiryId: e.enquiryId,
+        enquiryTitle: e.enquiryTitle,
+      });
     else if (e.kind === "response")
       groups.responses.push({
         enquiryId: e.enquiryId,
@@ -189,12 +265,16 @@ export const onEnquiryIsPublishedUpdated = onDocumentUpdated(
 
     const { enquiryId } = event.params as EnquiryParams;
 
-    await recordPublishEvent({
+    const now = Timestamp.now();
+    const doc: PublishEventData = {
       kind: "enquiry",
       enquiryId,
-      title: after.title,
-      publishedAt: after.publishedAt,
-    });
+      enquiryTitle: after.title,
+      publishedAt: after.publishedAt ?? now,
+      createdAt: now,
+      processed: false,
+    };
+    await db.collection("publishEvents").add(doc);
   },
 );
 
@@ -211,13 +291,24 @@ export const onResponseIsPublishedUpdated = onDocumentUpdated(
 
     const { enquiryId, responseId } = event.params as ResponseParams;
 
-    await recordPublishEvent({
+    // 🔍 Fetch the parent enquiry document
+    const enquirySnap = await db.collection("enquiries").doc(enquiryId).get();
+    const enquiryData = enquirySnap.data() as EnquiryDoc | undefined;
+    const enquiryTitle = enquiryData?.title ?? "(Untitled enquiry)";
+
+    const now = Timestamp.now();
+    const doc: PublishEventData = {
       kind: "response",
       enquiryId,
       responseId,
-      title: after.title,
-      publishedAt: after.publishedAt,
-    });
+      enquiryTitle: enquiryTitle,
+      roundNumber: after.roundNumber,
+      responseNumber: after.responseNumber,
+      publishedAt: after.publishedAt ?? now,
+      createdAt: now,
+      processed: false,
+    };
+    await db.collection("publishEvents").add(doc);
   },
 );
 
@@ -234,6 +325,35 @@ export const onCommentIsPublishedUpdated = onDocumentUpdated(
     if (!becamePublished(before, after) || !after) return;
 
     const { enquiryId, responseId, commentId } = event.params as CommentParams;
+
+    // 🔍 Fetch the parent enquiry document
+    const enquirySnap = await db.collection("enquiries").doc(enquiryId).get();
+    const enquiryData = enquirySnap.data() as EnquiryDoc | undefined;
+    const enquiryTitle = enquiryData?.title ?? "(Untitled enquiry)";
+    const responseSnap = await db
+      .collection("enquiries")
+      .doc(enquiryId)
+      .collection("responses")
+      .doc(responseId)
+      .get();
+    const responseData = responseSnap.data() as ResponseDoc | undefined;
+    const responseRound = responseData?.roundNumber ?? "x";
+    const responseNumber = responseData?.responseNumber ?? "x";
+
+    const now = Timestamp.now();
+    const doc: PublishEventData = {
+      kind: "comment",
+      enquiryId,
+      responseId,
+      commentId,
+      enquiryTitle: enquiryTitle,
+      roundNumber: responseRound,
+      responseNumber: responseNumber,
+      publishedAt: after.publishedAt ?? now,
+      createdAt: now,
+      processed: false,
+    };
+    await db.collection("publishEvents").add(doc);
 
     await recordPublishEvent({
       kind: "comment",
