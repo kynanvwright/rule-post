@@ -1,7 +1,9 @@
-import 'package:flutter/foundation.dart';
+// flutter_app/lib/api/notification_api.dart
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 
 final updateEmailNotificationsProvider =
     FutureProvider.family<void, bool>((ref, enabled) async {

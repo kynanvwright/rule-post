@@ -1,5 +1,7 @@
-import 'package:flutter/foundation.dart';
+// flutter_app/lib/api/create_user_api.dart
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/foundation.dart';
+
 
 Future<void> createUserFromFrontend(String email) async {
   try {

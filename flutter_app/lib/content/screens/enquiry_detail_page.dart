@@ -1,17 +1,17 @@
+// flutter_app/lib/content/screens/enquiry_detail_page.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../widgets/rules_committee_panel.dart';
 import '../widgets/children_section.dart';
 import '../widgets/detail_scaffold.dart';
 import '../widgets/fancy_attachment_tile.dart';
+import '../widgets/rules_committee_panel.dart';
 import '../widgets/status_chip.dart';
 import '../../api/change_stage_length.dart';
 import '../../api/close_enquiry_api.dart';
 import '../../api/publish_competitor_responses.dart';
 import '../../api/publish_rc_response.dart';
-
 import '../../riverpod/doc_providers.dart';
 import '../../riverpod/user_detail.dart';
 

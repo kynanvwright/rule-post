@@ -9,9 +9,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'firebase_options.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Screens & scaffolding
-import 'auth/screens/login_screen.dart';
 import 'content/screens/enquiry_detail_page.dart';
 import 'content/screens/help_screen.dart';
 import 'content/screens/no_selection_page.dart';
@@ -22,11 +19,8 @@ import 'core/widgets/left_pane_nested.dart';
 import 'core/widgets/right_pane_header.dart';
 import 'core/widgets/two_panel_shell.dart';
 
-
 // ─────────────────────────────────────────────────────────────────────────────
-// (Optional) Riverpod auth stream — keep if used elsewhere in your app
-// final authStateProvider =
-//     StreamProvider<User?>((ref) => FirebaseAuth.instance.authStateChanges());
+// Routing
 
 // Notify GoRouter when a stream emits (so redirect runs), without rebuilding router
 class RouterRefresh extends ChangeNotifier {
@@ -90,13 +84,6 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     },
 
     routes: [
-      // Public (no scaffold)
-      GoRoute(
-        path: '/login',
-        parentNavigatorKey: _rootKey,
-        builder: (context, state) => const LoginScreen(),
-      ),
-
       // Outer shell: AppScaffold persists for all pages below
       ShellRoute(
         navigatorKey: _scaffoldShellKey,
@@ -147,7 +134,6 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-
 
           // Pages that replace the TwoPane (still inside AppScaffold)
           GoRoute(

@@ -1,6 +1,8 @@
-import 'package:flutter/foundation.dart';
-import 'package:cloud_functions/cloud_functions.dart';
+// flutter_app/lib/api/change_stage_length.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/foundation.dart';
+
 
 Future<bool> changeStageLength(String enquiryId, int newStageLength) async {
   try {
@@ -23,6 +25,7 @@ Future<bool> changeStageLength(String enquiryId, int newStageLength) async {
     rethrow;
   }
 }
+
 
 // helper to return current stageLength
 Future<int> getStageLength(String enquiryId) async {

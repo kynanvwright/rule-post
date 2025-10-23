@@ -1,9 +1,11 @@
+// flutter_app/lib/auth/widgets/auth_check.dart
 import 'dart:async';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
+
 
 /// Ensures we're logged in and tokens are fresh before a backend call.
 /// Throws a FirebaseAuthException with code 'user-not-logged-in' if no user.
@@ -42,6 +44,7 @@ Future<void> ensureFreshAuth({Duration waitForUser = const Duration(seconds: 3)}
     debugPrint("App Check fail.");
   }
 }
+
 
 /// Call a callable Cloud Function after making sure auth/app-check are fresh.
 Future<T> callFunctionSafely<T>({

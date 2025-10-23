@@ -1,5 +1,8 @@
+// flutter_app/lib/content/screens/help_screen.dart
 import "package:flutter/material.dart";
+
 import '../../core/widgets/back_button.dart';
+
 
 class HelpFaqScreen extends StatelessWidget {
   const HelpFaqScreen({super.key});
@@ -189,22 +192,12 @@ class HelpFaqScreen extends StatelessWidget {
               ),
             ),
           ],
-          // const Divider(),
-          // ListTile(
-          //   leading: const Icon(Icons.support_agent),
-          //   title: const Text("Still need help?"),
-          //   subtitle: const Text("Contact our support team"),
-          //   onTap: () {
-          //     ScaffoldMessenger.of(context).showSnackBar(
-          //       const SnackBar(content: Text("Feature coming soon!")),
-          //     );
-          //   },
-          // ),
         ],
       ),
     );
   }
 }
+
 
 Widget buildAnswerText(BuildContext context, String text) {
   // Supports **bold** inline

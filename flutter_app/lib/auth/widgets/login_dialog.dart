@@ -1,3 +1,4 @@
+// flutter_app/lib/auth/widgets/login_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -6,8 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../widgets/auth_service.dart';
 import '../../riverpod/user_detail.dart';
 
-/// Call this to open the dialog:
-/// await showLoginDialog(context);
+
+// Call this to open the dialog:
 Future<bool?> showLoginDialog(BuildContext context, {bool barrierDismissible = true}) {
   return showDialog<bool>(
     context: context,
@@ -16,11 +17,13 @@ Future<bool?> showLoginDialog(BuildContext context, {bool barrierDismissible = t
   );
 }
 
+
 class LoginDialog extends ConsumerStatefulWidget {
   const LoginDialog({super.key});
   @override
   ConsumerState<LoginDialog> createState() => _LoginDialogState();
 }
+
 
 class _LoginDialogState extends ConsumerState<LoginDialog> {
   bool _isPasswordVisible = false;

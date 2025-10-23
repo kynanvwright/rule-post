@@ -1,13 +1,14 @@
-//content/screens/user_screen.dart
+// flutter_app/lib/content/screens/user_screen.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../riverpod/user_detail.dart';
 import '../../api/create_user_api.dart';
 import '../../auth//widgets/team_admin_panel.dart';
-import '../widgets/notification_tile.dart';
 import '../../core/widgets/back_button.dart';
+import '../../riverpod/user_detail.dart';
+import '../widgets/notification_tile.dart';
+
 
 class ClaimsScreen extends ConsumerStatefulWidget {
   const ClaimsScreen({super.key});
@@ -94,12 +95,6 @@ class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
               Card(child: TeamAdminPanel()),
               const SizedBox(height: 24),
               ],
-
-              // ===== Admin/Rules Committee panel =====
-              // if (userRole == "admin")...[
-              // Text('Admin Panel', style: Theme.of(context).textTheme.titleMedium),
-              // const SizedBox(height: 24),
-              // ],
             ],
           );
         },

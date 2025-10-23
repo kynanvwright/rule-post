@@ -1,9 +1,11 @@
+// flutter_app/lib/content/widgets/create_post_wrapper.dart
 import 'package:flutter/material.dart';
 
 import '../../api/post_api.dart';
 import '../../auth/widgets/auth_check.dart';
 import '../../core/models/attachments.dart';
 import 'progress_dialog.dart';
+
 
 final _postApi = PostApi(region: 'europe-west8');
 

@@ -1,14 +1,16 @@
+// flutter_app/lib/content/widgets/children_section.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../widgets/new_post_button.dart';
-import '../widgets/section_card.dart';
-import '../widgets/parse_hex_colour.dart';
-import '../widgets/list_tile.dart';
-import '../../riverpod/post_streams.dart';
 import '../../core/widgets/doc_view.dart';
 import '../../navigation/nav.dart';
+import '../../riverpod/post_streams.dart';
 import '../../riverpod/user_detail.dart';
+import 'list_tile.dart';
+import 'new_post_button.dart';
+import 'parse_hex_colour.dart';
+import 'section_card.dart';
+
 
 /// -------------------- CHILDREN SECTION (Responses / Comments) --------------------
 class ChildrenSection extends ConsumerWidget {

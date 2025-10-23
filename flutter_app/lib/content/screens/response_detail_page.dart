@@ -1,4 +1,4 @@
-// import 'package:cloud_firestore/cloud_firestore.dart';
+// flutter_app/lib/content/screens/response_detail_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -6,10 +6,9 @@ import '../widgets/children_section.dart';
 import '../widgets/detail_scaffold.dart';
 import '../widgets/fancy_attachment_tile.dart';
 import '../widgets/status_chip.dart';
-
 import '../../riverpod/doc_providers.dart';
-// import '../../riverpod/post_alias.dart';
 import '../../riverpod/user_detail.dart';
+
 
 /// -------------------- RESPONSE DETAIL --------------------
 class ResponseDetailPage extends ConsumerWidget {
@@ -107,4 +106,3 @@ class ResponseDetailPage extends ConsumerWidget {
     );
   }
 }
-

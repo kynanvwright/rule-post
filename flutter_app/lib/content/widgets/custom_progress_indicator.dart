@@ -1,5 +1,7 @@
+// flutter_app/lib/content/widgets/custom_progress_indicator.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
+
 
 class RotatingProgressIndicator extends StatefulWidget {
   const RotatingProgressIndicator({super.key, this.messages, this.interval = const Duration(seconds: 10)});
