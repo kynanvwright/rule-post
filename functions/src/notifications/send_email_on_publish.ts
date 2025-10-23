@@ -10,12 +10,12 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import { Resend } from "resend";
 
 import {
-  ISODate,
+  // ISODate,
   BasePublishable,
   EnquiryDoc,
   ResponseDoc,
   CommentDoc,
-  PublishKind,
+  // PublishKind,
   PublishEventData,
   EnquiryParams,
   ResponseParams,
@@ -34,29 +34,6 @@ function becamePublished(
 ): boolean {
   if (!before || !after) return false;
   return Boolean(after.isPublished) && before.isPublished !== after.isPublished;
-}
-
-/** write a compact publish event to a flat collection */
-async function recordPublishEvent(payload: {
-  kind: PublishKind;
-  enquiryId: string;
-  responseId?: string;
-  commentId?: string;
-  title?: string; // optional if present on the doc
-  publishedAt?: ISODate; // if your docs have a scheduled time
-  enquiryNumber?: string;
-  roundNumber?: string;
-  responseNumber?: string;
-  commentNumber?: string;
-}): Promise<void> {
-  const now = Timestamp.now();
-  const doc: PublishEventData = {
-    ...payload,
-    createdAt: now,
-    publishedAt: payload.publishedAt ?? now,
-    processed: false,
-  };
-  await db.collection("publishEvents").add(doc);
 }
 
 /** all recipients who opted in */
@@ -92,6 +69,7 @@ function renderDigestHTML(groups: {
       PublishEventData,
       | "enquiryId"
       | "enquiryNumber"
+      | "enquiryTitle"
       | "responseId"
       | "roundNumber"
       | "responseNumber"
@@ -114,6 +92,7 @@ function renderDigestHTML(groups: {
   type CommentSummary = {
     enquiryId: string;
     enquiryNumber: string;
+    enquiryTitle: string;
     responseId: string;
     roundNumber: string;
     responseNumber: string;
@@ -131,9 +110,10 @@ function renderDigestHTML(groups: {
           m.set(key, {
             enquiryId: c.enquiryId,
             enquiryNumber: c.enquiryNumber,
-            responseId: c.responseId!,
-            roundNumber: c.roundNumber!,
-            responseNumber: c.responseNumber!,
+            enquiryTitle: c.enquiryTitle,
+            responseId: c.responseId,
+            roundNumber: c.roundNumber,
+            responseNumber: c.responseNumber,
             count: 1,
           } as CommentSummary);
         }
@@ -149,12 +129,12 @@ function renderDigestHTML(groups: {
         style="color:#007bff;text-decoration:none;">
         ${g.count} ${plural(g.count, "comment", "comments")} on Response ${g.roundNumber}.${g.responseNumber}
      </a>
-     of Rule Enquiry #${g.enquiryNumber}`,
+     of Rule Enquiry #${g.enquiryNumber} — ${g.enquiryTitle}`,
   );
 
   return `
   <div style="font-family:system-ui,Segoe UI,Roboto,Arial">
-    <h2>Newly published items</h2>
+    <h2>Newly published posts on RulePost:</h2>
     ${section(
       "Enquiries",
       groups.enquiries,
@@ -177,7 +157,12 @@ function renderDigestHTML(groups: {
     )}
     ${section("Comments", commentItems, (html) => html)}
     <hr />
-    <p style="color:#666;font-size:12px">You receive this because you opted into updates.</p>
+    <p style="color:#666;font-size:12px">You receive this because you opted into updates
+      <a href="https://rulepost.com/#/user-details"
+        style="color:#007bff;text-decoration:underline;margin-left:4px;">
+        unsubscribe
+      </a>
+    </p>
   </div>`;
 }
 
@@ -201,35 +186,19 @@ async function sendDigestFor(
     return;
   }
 
-  // group by kind
-  const groups = {
-    enquiries: [] as Array<
-      Pick<PublishEventData, "enquiryId" | "enquiryTitle">
-    >,
-    responses: [] as Array<Pick<PublishEventData, "enquiryId" | "responseId">>,
-    comments: [] as Array<
-      Pick<PublishEventData, "enquiryId" | "responseId" | "commentId">
-    >,
+  type Groups = {
+    enquiries: PublishEventData[];
+    responses: PublishEventData[];
+    comments: PublishEventData[];
   };
+
+  const groups: Groups = { enquiries: [], responses: [], comments: [] };
 
   for (const d of events) {
     const e = d.data();
-    if (e.kind === "enquiry")
-      groups.enquiries.push({
-        enquiryId: e.enquiryId,
-        enquiryTitle: e.enquiryTitle,
-      });
-    else if (e.kind === "response")
-      groups.responses.push({
-        enquiryId: e.enquiryId,
-        responseId: e.responseId!,
-      });
-    else if (e.kind === "comment")
-      groups.comments.push({
-        enquiryId: e.enquiryId,
-        responseId: e.responseId!,
-        commentId: e.commentId!,
-      });
+    if (e.kind === "enquiry") groups.enquiries.push(e);
+    else if (e.kind === "response") groups.responses.push(e);
+    else if (e.kind === "comment") groups.comments.push(e);
   }
 
   const html = renderDigestHTML(groups);
@@ -270,6 +239,7 @@ export const onEnquiryIsPublishedUpdated = onDocumentUpdated(
       kind: "enquiry",
       enquiryId,
       enquiryTitle: after.title,
+      enquiryNumber: after.enquiryNumber,
       publishedAt: after.publishedAt ?? now,
       createdAt: now,
       processed: false,
@@ -295,6 +265,7 @@ export const onResponseIsPublishedUpdated = onDocumentUpdated(
     const enquirySnap = await db.collection("enquiries").doc(enquiryId).get();
     const enquiryData = enquirySnap.data() as EnquiryDoc | undefined;
     const enquiryTitle = enquiryData?.title ?? "(Untitled enquiry)";
+    const enquiryNumber = enquiryData?.enquiryNumber ?? "(Unnumbered enquiry)";
 
     const now = Timestamp.now();
     const doc: PublishEventData = {
@@ -302,6 +273,7 @@ export const onResponseIsPublishedUpdated = onDocumentUpdated(
       enquiryId,
       responseId,
       enquiryTitle: enquiryTitle,
+      enquiryNumber: enquiryNumber,
       roundNumber: after.roundNumber,
       responseNumber: after.responseNumber,
       publishedAt: after.publishedAt ?? now,
@@ -330,6 +302,7 @@ export const onCommentIsPublishedUpdated = onDocumentUpdated(
     const enquirySnap = await db.collection("enquiries").doc(enquiryId).get();
     const enquiryData = enquirySnap.data() as EnquiryDoc | undefined;
     const enquiryTitle = enquiryData?.title ?? "(Untitled enquiry)";
+    const enquiryNumber = enquiryData?.enquiryNumber ?? "(Unnumbered enquiry)";
     const responseSnap = await db
       .collection("enquiries")
       .doc(enquiryId)
@@ -347,6 +320,7 @@ export const onCommentIsPublishedUpdated = onDocumentUpdated(
       responseId,
       commentId,
       enquiryTitle: enquiryTitle,
+      enquiryNumber: enquiryNumber,
       roundNumber: responseRound,
       responseNumber: responseNumber,
       publishedAt: after.publishedAt ?? now,
@@ -354,14 +328,6 @@ export const onCommentIsPublishedUpdated = onDocumentUpdated(
       processed: false,
     };
     await db.collection("publishEvents").add(doc);
-
-    await recordPublishEvent({
-      kind: "comment",
-      enquiryId,
-      responseId,
-      commentId,
-      publishedAt: after.publishedAt,
-    });
   },
 );
 
