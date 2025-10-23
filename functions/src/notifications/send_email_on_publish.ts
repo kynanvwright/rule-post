@@ -76,14 +76,14 @@ function renderDigestHTML(groups: {
     >
   >;
 }): string {
-  const section = <T>(
-    title: string,
-    items: T[],
-    fmt: (x: T) => string,
-  ): string =>
-    items.length
-      ? `<h3>${title}</h3><ul>${items.map((x) => `<li>${fmt(x)}</li>`).join("")}</ul>`
-      : "";
+  // const section = <T>(
+  //   title: string,
+  //   items: T[],
+  //   fmt: (x: T) => string,
+  // ): string =>
+  //   items.length
+  //     ? `<h3>${title}</h3><ul>${items.map((x) => `<li>${fmt(x)}</li>`).join("")}</ul>`
+  //     : "";
 
   const plural = (n: number, one: string, many: string) =>
     n === 1 ? one : many;
@@ -122,48 +122,107 @@ function renderDigestHTML(groups: {
       .values(),
   );
 
-  // Precompute the comments list items as strings
+  // tiny helper to prevent broken markup / injection from titles
+  const esc = (s: string | undefined) =>
+    (s ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+  // shared inline styles for links and small/muted text
+  const linkStyle = "color:#007bff;text-decoration:underline;";
+  const muted = "color:#666;";
+
+  // table row builder (avoids <ul> quirks in Outlook)
+  const sectionTable = <T>(
+    title: string,
+    items: T[],
+    fmt: (x: T) => string,
+  ): string =>
+    items.length
+      ? `
+        <tr>
+          <td style="padding:16px 0 8px 0;font-weight:600;font-size:16px">${title}</td>
+        </tr>
+        ${items
+          .map(
+            (x) => `
+            <tr>
+              <td style="padding:8px 0;font-size:14px;line-height:1.4">
+                ${fmt(x)}
+              </td>
+            </tr>`,
+          )
+          .join("")}
+      `
+      : "";
+
+  // Precompute the comments list items as strings (kept from your logic)
   const commentItems = groupedComments.map(
     (g) =>
-      `<a href="https://rulepost.com/#/enquiries/${g.enquiryId}/responses/${g.responseId}"
-        style="color:#007bff;text-decoration:none;">
-        ${g.count} ${plural(g.count, "comment", "comments")} on Response ${g.roundNumber}.${g.responseNumber}
-     </a>
-     of Rule Enquiry #${g.enquiryNumber} — ${g.enquiryTitle}`,
+      `${g.count} ${plural(g.count, "comment", "comments")} on 
+      <a href="https://rulepost.com/#/enquiries/${g.enquiryId}/responses/${g.responseId}" style="${linkStyle}">
+      Response ${g.roundNumber}.${g.responseNumber}</a> of Rule Enquiry #${g.enquiryNumber} — ${esc(g.enquiryTitle)}`,
   );
 
   return `
-  <div style="font-family:system-ui,Segoe UI,Roboto,Arial">
-    <h2>Newly published posts on RulePost:</h2>
-    ${section(
-      "Enquiries",
-      groups.enquiries,
-      (e) =>
-        `Rule Enquiry #${e.enquiryNumber} — 
-         <a href="https://rulepost.com/#/enquiries/${e.enquiryId}"
-            style="color:#007bff;text-decoration:none;">
-            ${e.enquiryTitle}
-         </a>`,
-    )}
-    ${section(
-      "Responses",
-      groups.responses,
-      (r) =>
-        `<a href="https://rulepost.com/#/enquiries/${r.enquiryId}/responses/${r.responseId}"
-           style="color:#007bff;text-decoration:none;">
-           Response ${r.roundNumber}.${r.responseNumber}
-         </a>
-         in Rule Enquiry #${r.enquiryNumber} — ${r.enquiryTitle}`,
-    )}
-    ${section("Comments", commentItems, (html) => html)}
-    <hr />
-    <p style="color:#666;font-size:12px">You receive this because you opted into updates
-      <a href="https://rulepost.com/#/user-details"
-        style="color:#007bff;text-decoration:underline;margin-left:4px;">
-        unsubscribe
-      </a>
-    </p>
-  </div>`;
+  <!-- Preheader (hidden) -->
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;font-size:1px;line-height:1px;">
+    New RulePost publications: enquiries, responses, and comments.
+  </div>
+
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f6f7f9;padding:24px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width:100%;max-width:600px;background:#ffffff;border-radius:6px;overflow:hidden;">
+          <tr>
+            <td style="padding:20px 24px;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;">
+              <h2 style="margin:0 0 12px 0;font-size:20px;line-height:1.3;font-weight:700;">
+                Newly published posts on RulePost:
+              </h2>
+
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                ${sectionTable(
+                  "Enquiries",
+                  groups.enquiries,
+                  (e) =>
+                    `Rule Enquiry #${e.enquiryNumber} — 
+                    <a href="https://rulepost.com/#/enquiries/${e.enquiryId}" style="${linkStyle}">
+                      ${esc(e.enquiryTitle)}
+                    </a>`,
+                )}
+
+                ${sectionTable(
+                  "Responses",
+                  groups.responses,
+                  (r) =>
+                    `<a href="https://rulepost.com/#/enquiries/${r.enquiryId}/responses/${r.responseId}" style="${linkStyle}" aria-label="Response ${r.roundNumber}.${r.responseNumber}">
+                      Response ${r.roundNumber}.${r.responseNumber}</a> to Rule Enquiry #${r.enquiryNumber} — ${esc(r.enquiryTitle)}`,
+                )}
+
+                ${sectionTable("Comments", commentItems, (html) => html)}
+              </table>
+
+              <hr style="border:none;border-top:1px solid #e6e7eb;margin:16px 0;" />
+
+              <p style="${muted};font-size:12px;margin:0;">
+                You receive this because you opted into updates.
+                <a href="https://rulepost.com/#/user-details" style="${linkStyle};margin-left:4px;">
+                  Manage email settings
+                </a>
+              </p>
+            </td>
+          </tr>
+        </table>
+
+        <!-- optional footer spacing for mobile tap comfort -->
+        <div style="height:24px;line-height:24px;">&#8202;</div>
+      </td>
+    </tr>
+  </table>
+  `;
 }
 
 /** send one digest to all recipients, then mark events processed */
@@ -202,7 +261,7 @@ async function sendDigestFor(
   }
 
   const html = renderDigestHTML(groups);
-  const subject = "Rule Post — items published";
+  const subject = "New publications on RulePost";
 
   const resend = new Resend(process.env.RESEND_API_KEY as string);
   await resend.emails.send({
