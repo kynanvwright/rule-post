@@ -7,7 +7,7 @@ import 'package:flutter/cupertino.dart';
 
 /// Ensures we're logged in and tokens are fresh before a backend call.
 /// Throws a FirebaseAuthException with code 'user-not-logged-in' if no user.
-Future<void> _ensureFreshAuth({Duration waitForUser = const Duration(seconds: 3)}) async {
+Future<void> ensureFreshAuth({Duration waitForUser = const Duration(seconds: 3)}) async {
   final auth = FirebaseAuth.instance;
 
   // 1) Wait briefly for Firebase to rehydrate user (common on web after reload)
@@ -49,7 +49,7 @@ Future<T> callFunctionSafely<T>({
   Map<String, dynamic>? data,
   String region = 'europe-west8',
 }) async {
-  await _ensureFreshAuth();
+  await ensureFreshAuth();
 
   final functions = FirebaseFunctions.instanceFor(
     app: Firebase.app(),
@@ -64,7 +64,7 @@ Future<T> callFunctionSafely<T>({
   } on FirebaseFunctionsException catch (e) {
     // Common case: auth/app-check rejection due to drift — try one more hard refresh then retry once.
     if (e.code == 'unauthenticated' || e.code == 'failed-precondition') {
-      await _ensureFreshAuth();
+      await ensureFreshAuth();
       final retry = await callable.call<Map<String, dynamic>?>(data);
       return (retry.data as T);
     }

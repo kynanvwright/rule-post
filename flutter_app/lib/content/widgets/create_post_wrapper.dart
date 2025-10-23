@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-// import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../api/post_api.dart';
+import '../../auth/widgets/auth_check.dart';
 import '../../core/models/attachments.dart';
-// import '../../riverpod/enquiry_refresh_signal.dart';
 import 'progress_dialog.dart';
 
 final _postApi = PostApi(region: 'europe-west8');
@@ -32,8 +31,8 @@ Future<void> onCreatePostPressed(
       autoCloseAfter: Duration(seconds: 3),
       barrierDismissibleWhileRunning: false,
       action: () async {
-        // If you have an auth/app-check refresher, call it here:
-        // await ensureFreshAuth();
+        // auth/app-check refresher
+        await ensureFreshAuth();
 
         return await _postApi.createPost(
           postType: postType,
@@ -48,14 +47,6 @@ Future<void> onCreatePostPressed(
     // Optional follow-up (post dialog)
     if (!context.mounted) return;
 
-    // if (postType == 'enquiry') {
-    //   final container = ProviderScope.containerOf(context, listen: false);
-    //   container.read(enquiriesRefreshSignal.notifier).state++;
-    // }
-    ScaffoldMessenger.of(context).showSnackBar(
-      // SnackBar(content: Text('Created post: $newId')),
-      SnackBar(content: Text('Created $postType')),
-    );
   } catch (e) {
     // Failure already shown in the dialog; optionally log or map errors:
     debugPrint('Create post failed: $e');

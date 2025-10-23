@@ -169,8 +169,6 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 Future<void> main() async {
   // temp debug
   // ---
-  // debugPrintRebuildDirtyWidgets = true;
-  // debugProfileBuildsEnabled = true;
     installFilteredBuildLogger(allow: {
     'AppScaffold',
     'TwoPaneShell',
@@ -201,7 +199,6 @@ Future<void> main() async {
   }
 
   runApp(const ProviderScope(
-    // observers: [RpLog()],
     child: MyApp(),
     ));
 }
@@ -244,18 +241,6 @@ class MyApp extends ConsumerWidget {
     );
   }
 }
-
-class RpLog extends ProviderObserver {
-  @override
-  void didUpdateProvider(ProviderBase provider, Object? previousValue, Object? newValue, ProviderContainer container) {
-    if (provider.name == 'combinedEnquiriesProvider') {
-      final oldT = previousValue?.runtimeType;
-      final newT = newValue?.runtimeType;
-      debugPrint('🔁 ${provider.name}: $oldT → $newT');
-    }
-  }
-}
-
 
 void installFilteredBuildLogger({Set<String>? allow}) {
   debugPrintRebuildDirtyWidgets = true;
