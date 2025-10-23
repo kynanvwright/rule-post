@@ -48,6 +48,14 @@ jobs:
       - name: Install Firebase CLI
         run: npm i -g firebase-tools
 
+      # NEW: sanity check that CI can read the secret in rule-post
+      - name: Verify secret exists and is accessible
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
+        run: |
+          npx firebase-tools@latest functions:secrets:access RESEND_API_KEY --project rule-post > /dev/null
+          echo "✅ RESEND_API_KEY is accessible"
+
       - name: Deploy Functions
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
