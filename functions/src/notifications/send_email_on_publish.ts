@@ -249,6 +249,7 @@ export const onCommentIsPublishedUpdated = onDocumentUpdated(
 
 export const sendPublishDigest = onSchedule(
   {
+    // 00:05, 12:05, and 20:05 every day
     schedule: "5 0,12,20 * * *",
     timeZone: "Europe/Rome",
     secrets: ["RESEND_API_KEY"],
@@ -256,33 +257,18 @@ export const sendPublishDigest = onSchedule(
   },
   async (): Promise<void> => {
     const now = Timestamp.now();
-    logger.info("[sendPublishDigest] Start", { now: now.toDate().toISOString() });
+    const snap = await db
+      .collection("publishEvents")
+      .where("processed", "==", false)
+      .where("publishedAt", "<=", now)
+      .orderBy("publishedAt", "asc")
+      .limit(500)
+      .get();
 
-    let snap: FirebaseFirestore.QuerySnapshot;
-    try {
-      snap = await db
-        .collection("publishEvents")
-        .where("processed", "==", false)
-        .where("publishedAt", "<=", now)
-        .orderBy("publishedAt", "asc")
-        .limit(500)
-        .get();
-    } catch (e: any) {
-      logger.error("[sendPublishDigest] Firestore query failed", { error: e?.message, stack: e?.stack });
-      throw e;
-    }
-
-    const docs = snap.docs as FirebaseFirestore.QueryDocumentSnapshot<PublishEventData>[];
-
-    logger.info("[sendPublishDigest] Query result", {
-      count: snap.size,
-      firstPublishedAt: snap.size ? (docs[0].data().publishedAt?.toDate()?.toISOString() ?? null) : null,
-      lastPublishedAt: snap.size ? (docs[docs.length - 1].data().publishedAt?.toDate()?.toISOString() ?? null) : null,
-      ids: docs.map(d => d.id).slice(0, 10), // cap to avoid huge logs
-    });
-
+    // type-annotate here so .data() is strongly typed above
+    const docs =
+      snap.docs as FirebaseFirestore.QueryDocumentSnapshot<PublishEventData>[];
     await sendDigestFor(docs);
-
-    logger.info("[sendPublishDigest] Done", { processedCount: docs.length });
+    logger.info("Digest processed", { count: snap.size });
   },
 );
