@@ -180,7 +180,7 @@ function renderDigestHTML(groups: {
           <tr>
             <td style="padding:20px 24px;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;">
               <h2 style="margin:0 0 12px 0;font-size:20px;line-height:1.3;font-weight:700;">
-                Newly published posts on RulePost:
+                Newly published on RulePost:
               </h2>
 
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
