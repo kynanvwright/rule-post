@@ -13,7 +13,7 @@ type CreateUserPayload = { email: string };
 export const createUserWithProfile = onCall(
   { cors: true, enforceAppCheck: true, secrets: [RESEND_API_KEY] },
   async (req) => {
-    const resend = new Resend(process.env.RESEND_API_KEY as string);
+    const resend = new Resend(RESEND_API_KEY.value());
     // 1) Auth + role
     const uid = req.auth?.uid;
     if (!uid) throw new HttpsError("unauthenticated", "You must be signed in.");

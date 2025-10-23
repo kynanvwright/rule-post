@@ -159,7 +159,7 @@ async function sendDigestFor(
   const html = renderDigestHTML(groups);
   const subject = "Rule Post — items published";
 
-  const resend = new Resend(process.env.RESEND_API_KEY as string);
+  const resend = new Resend(RESEND_API_KEY.value());
   await resend.emails.send({
     from: "Rule Post <send@americascup.com>", // must be verified in Resend
     to,

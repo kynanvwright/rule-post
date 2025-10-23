@@ -48,16 +48,9 @@ jobs:
       - name: Install Firebase CLI
         run: npm i -g firebase-tools
 
-      # ✅ Ensure secret exists/enabled for this project (creates a new version if needed)
-      # Put your Resend key in GitHub Secrets as RESEND_API_KEY
-      - name: Ensure RESEND_API_KEY is set in Firebase
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-        run: |
-          echo -n "$RESEND_API_KEY" | npx firebase-tools@latest functions:secrets:set RESEND_API_KEY --project rule-post --force
-
       - name: Deploy Functions
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
-        run: npx firebase-tools@latest deploy --only functions --project rule-post --non-interactive
+        run: |
+          npx firebase-tools@latest --version
+          npx firebase-tools@latest deploy --only functions --project rule-post --non-interactive
