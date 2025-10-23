@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 
-final enquiriesRefreshSignal  = StateProvider<int>((_) => 0);
+// final enquiriesRefreshSignal  = StateProvider<int>((_) => 0);
 
 final draftIdsProvider =
     StreamProvider.family<List<String>, String?>((ref, teamId) {
