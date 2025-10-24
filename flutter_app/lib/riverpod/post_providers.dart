@@ -14,7 +14,6 @@ final publicEnquiriesProvider =
 // 2) Private (needs teamId)
 final combinedEnquiriesProvider =
     StreamProvider.family<List<DocView>, ({String statusFilter})>((ref, args) {
-  // ref.watch(enquiriesRefreshSignal); // triggers refresh when user creates new enquiry
   final teamId = ref.watch(teamProvider);
   ref.watch(draftIdsProvider(teamId)); // triggers refresh when new enquiry draft detected
   return combinedEnquiriesStream(teamId: teamId, statusFilter: args.statusFilter);

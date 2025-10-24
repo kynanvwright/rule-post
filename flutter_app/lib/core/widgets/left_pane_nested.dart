@@ -127,111 +127,97 @@ class _EnquiriesTree extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     debugPrint('🔍 Building enquiries list');
-    // final teamId = ref.watch(teamProvider);
-    // debugPrint('[left_pane_nested] teamId: $teamId');
     final filter = ref.watch(enquiryFilterProvider);
     final itemsAsync = ref.watch(
-      // combinedEnquiriesProvider((teamId: teamId, statusFilter: filter.status))
-      combinedEnquiriesProvider((statusFilter: filter.status))
-    );
+  combinedEnquiriesProvider((statusFilter: filter.status))
+);
 
-    return itemsAsync.when(
-      skipLoadingOnReload: true,
-      loading: () => const Center(
-        child: Column(
-          children: [
-            SizedBox(height: 12),
-            CircularProgressIndicator(),
-            SizedBox(height: 12),
-            Text('Loading enquiries from database...'),
-            SizedBox(height: 8),
-            Text('(This may take a few seconds to populate)'),
-          ],
-        ),
-      ),
-      error: (err, st) {
-        final error = err.toString();
-        debugPrint('❌ Firestore query error: $error');
-        final link = RegExp(r'https://console\.firebase\.google\.com[^\s\)]*')
-            .firstMatch(error)
-            ?.group(0);
+// If this is the very first load (no stale data yet), show your full-page loader:
+if (itemsAsync.valueOrNull == null) {
+  return const Center(
+    child: Column(
+      children: [
+        SizedBox(height: 12),
+        CircularProgressIndicator(),
+        SizedBox(height: 12),
+        Text('Loading enquiries from database...'),
+        SizedBox(height: 8),
+        Text('(This may take a few seconds to populate)'),
+      ],
+    ),
+  );
+}
 
-        return Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Failed to load enquiries, try refreshing page'),
-              const SizedBox(height: 8),
-              if (link != null)
-                TextButton(
-                  onPressed: () => launchUrlString(link),
-                  child: const Text('Create required Firestore index'),
-                ),
-            ],
-          ),
-        );
-      },
-      data: (docs0) {
-        debugPrint('itemsAsync data received: ${docs0.length} enquiries');
-        final rawQ = filter.query.trim().toLowerCase();
-        final routeEnquiryId = initiallyOpenEnquiryId;
-        List<DocView> docs = docs0;
-        if (rawQ.isNotEmpty) {
-          docs = docs.where((d) {
-            final data = d.data();
-            final title = (data['title'] ?? '').toString().toLowerCase();
-            final numStr = (data['enquiryNumber'] ?? '').toString().toLowerCase();
-            return title.contains(rawQ) || numStr.contains(rawQ);
-          }).toList();
-        }
-        debugPrint('text filter applied: ${docs.length} enquiries match');
+// From here on, we have stale data available (even if we're reloading)
+final isReloading = itemsAsync.isLoading; // true during background refresh
+final docs0 = itemsAsync.valueOrNull!;
 
-        return ListView.builder(
-          itemCount: docs.length,
-          itemBuilder: (context, i) {
-            final d = docs[i];
-            final id = d.id;
-            final data = d.data();
-            final title = (data['title'] ?? 'Untitled').toString();
-            final n = (data['enquiryNumber'] ?? 'Unnumbered').toString();
-            final isOpen = id == routeEnquiryId;
-            final isPublished = data['isPublished'] ?? false;
+final rawQ = filter.query.trim().toLowerCase();
+List<DocView> docs = docs0;
+if (rawQ.isNotEmpty) {
+  docs = docs.where((d) {
+    final data = d.data();
+    final title = (data['title'] ?? '').toString().toLowerCase();
+    final numStr = (data['enquiryNumber'] ?? '').toString().toLowerCase();
+    return title.contains(rawQ) || numStr.contains(rawQ);
+  }).toList();
+}
 
-            return ExpansionTile(
-              key: ValueKey('enq_${id}_$isOpen'),
-              initiallyExpanded: isOpen,
-              maintainState: false,
-              backgroundColor: isOpen
-                  ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.2)
-                  : null,
-              onExpansionChanged: (expanded) {
-                if (expanded && id != routeEnquiryId) {
-                  TwoPaneScope.of(context)?.closeDrawer();
-                  Nav.goEnquiry(context, id); // no querystring
-                }
-              },
-              title: _RowTile(
-                label: 'RE #$n - $title',
-                selected: isOpen && initiallyOpenResponseId == null,
-                showSubtitle: isPublished == false,
-                onTap: () {
-                  TwoPaneScope.of(context)?.closeDrawer();
-                  Nav.goEnquiry(context, id);
-                },
-              ),
-              children: [
-                if (isOpen && isPublished)
-                _ResponsesBranch(
-                  enquiryId: id,
-                  initiallyOpenResponseId: initiallyOpenResponseId,
-                ),
-              ],
-            );
+return Stack(
+  children: [
+    // Your existing list UI (stale-but-usable)
+    ListView.builder(
+      itemCount: docs.length,
+      itemBuilder: (context, i) {
+        final d = docs[i];
+        final id = d.id;
+        final data = d.data();
+        final title = (data['title'] ?? 'Untitled').toString();
+        final n = (data['enquiryNumber'] ?? 'Unnumbered').toString();
+        final isOpen = id == initiallyOpenEnquiryId;
+        final isPublished = data['isPublished'] ?? false;
+
+        return ExpansionTile(
+          key: ValueKey('enq_${id}_$isOpen'),
+          initiallyExpanded: isOpen,
+          maintainState: false,
+          backgroundColor: isOpen
+              ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.2)
+              : null,
+          onExpansionChanged: (expanded) {
+            if (expanded && id != initiallyOpenEnquiryId) {
+              TwoPaneScope.of(context)?.closeDrawer();
+              Nav.goEnquiry(context, id);
+            }
           },
+          title: _RowTile(
+            label: 'RE #$n - $title',
+            selected: isOpen && initiallyOpenResponseId == null,
+            showSubtitle: isPublished == false,
+            onTap: () {
+              TwoPaneScope.of(context)?.closeDrawer();
+              Nav.goEnquiry(context, id);
+            },
+          ),
+          children: [
+            if (isOpen && isPublished)
+              _ResponsesBranch(
+                enquiryId: id,
+                initiallyOpenResponseId: initiallyOpenResponseId,
+              ),
+          ],
         );
       },
-    );
+    ),
+
+    // Subtle top loading bar while fresh data is fetched
+    if (isReloading)
+      Positioned(
+        top: 0, left: 0, right: 0,
+        child: const LinearProgressIndicator(),
+      ),
+  ],
+);
   }
 }
 
