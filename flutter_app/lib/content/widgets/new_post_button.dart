@@ -31,6 +31,7 @@ extension on PostType {
       };
 }
 
+
 /// Use this one button for all three types.
 class NewPostButton extends StatefulWidget {
   const NewPostButton({
@@ -39,16 +40,19 @@ class NewPostButton extends StatefulWidget {
     this.parentIds,
     this.isLocked = false,
     this.lockedReason,
+    this.edit = false,
   });
 
   final PostType type;
   final List<String>? parentIds;
   final bool isLocked;
   final String? lockedReason;
+  final bool edit;
 
   @override
   State<NewPostButton> createState() => _NewPostButtonState();
 }
+
 
 class _NewPostButtonState extends State<NewPostButton> {
   final _tooltipKey = GlobalKey<TooltipState>();
@@ -141,6 +145,7 @@ class _NewPostDialog extends StatefulWidget {
   @override
   State<_NewPostDialog> createState() => _NewPostDialogState();
 }
+
 
 class _NewPostDialogState extends State<_NewPostDialog> {
   final _form = GlobalKey<FormState>();
@@ -290,6 +295,7 @@ class _NewPostDialogState extends State<_NewPostDialog> {
       ],
     );
   }
+
 
   Future<void> _addAttachmentToTemp() async {
     if (_uploading) return;
@@ -454,6 +460,7 @@ class _NewPostDialogState extends State<_NewPostDialog> {
     }
   }
 
+
   Future<void> _uploadOneFile(String uid, PlatformFile f) async {
     final bytes = f.bytes; // present on web (withData: true)
     final path = f.path;   // present on mobile/desktop
@@ -523,15 +530,8 @@ class _NewPostDialogState extends State<_NewPostDialog> {
       contentType: contentType,
     ));
   }
-
 }
 
-
-typedef ProgressFn = void Function({
-  required int bytesTransferred,
-  required int totalBytes,
-  required TaskState state,
-});
 
 class _NewPostPayload {
   _NewPostPayload({

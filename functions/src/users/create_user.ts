@@ -6,7 +6,6 @@ import { Resend } from "resend";
 
 const auth = getAuth(); // ✅ this returns an Auth instance (not callable)
 const db = getFirestore(); // ✅ Firestore instance
-// const RESEND_API_KEY = defineSecret("RESEND_API_KEY");
 
 type CreateUserPayload = { email: string };
 
@@ -105,7 +104,7 @@ export const createUserWithProfile = onCall(
       subject: "Set up your RulePost account",
       html: `
         <p>Hi ${recipientName},</p>
-        <p>You’ve been invited to Rule Post, the website for rule enquiries in the 38th America's Cup. Click the button below to set your password and finish setup.</p>
+        <p>You’ve been invited to RulePost, the website for rule enquiries in the 38th America's Cup. Click the button below to set your password and finish setup.</p>
         <p><a href="${link}" style="display:inline-block;padding:10px 16px;border-radius:6px;text-decoration:none;">Set your password</a></p>
         <p>If you didn’t expect this, you can ignore this email.</p>
       `,

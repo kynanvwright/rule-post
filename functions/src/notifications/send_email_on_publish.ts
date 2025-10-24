@@ -3,19 +3,16 @@
 // Purpose: Record new posts and publish daily digest to users
 // ──────────────────────────────────────────────────────────────────────────────
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
-// import { defineSecret } from "firebase-functions/params";
 import { logger } from "firebase-functions/v2";
 import { onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { Resend } from "resend";
 
 import {
-  // ISODate,
   BasePublishable,
   EnquiryDoc,
   ResponseDoc,
   CommentDoc,
-  // PublishKind,
   PublishEventData,
   EnquiryParams,
   ResponseParams,
@@ -24,7 +21,6 @@ import {
 } from "../common/types";
 
 const db = getFirestore();
-// const RESEND_API_KEY = defineSecret("RESEND_API_KEY");
 
 /* ─────────────────────────── helpers ─────────────────────────── */
 
@@ -76,15 +72,6 @@ function renderDigestHTML(groups: {
     >
   >;
 }): string {
-  // const section = <T>(
-  //   title: string,
-  //   items: T[],
-  //   fmt: (x: T) => string,
-  // ): string =>
-  //   items.length
-  //     ? `<h3>${title}</h3><ul>${items.map((x) => `<li>${fmt(x)}</li>`).join("")}</ul>`
-  //     : "";
-
   const plural = (n: number, one: string, many: string) =>
     n === 1 ? one : many;
 

@@ -1,4 +1,4 @@
-// lib/content/widgets/team_admin_panel.dart
+// flutter_app/lib/content/widgets/team_admin_panel.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
