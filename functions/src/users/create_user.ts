@@ -100,9 +100,9 @@ export const createUserWithProfile = onCall(
     // 5) Send email via Resend
     const recipientName = getNameFromEmail(email);
     await resend.emails.send({
-      from: "Rule Post <no-reply@rulepost.com>",
+      from: "RulePost <send@rulepost.com>",
       to: email,
-      subject: "Set up your account",
+      subject: "Set up your RulePost account",
       html: `
         <p>Hi ${recipientName},</p>
         <p>You’ve been invited to Rule Post, the website for rule enquiries in the 38th America's Cup. Click the button below to set your password and finish setup.</p>
