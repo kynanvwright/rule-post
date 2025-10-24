@@ -1,4 +1,4 @@
-# RulePost App
+# Rule Post App
 A website for facilitating America's Cup Rule Enquiries.
 
 ## General Structure
@@ -112,23 +112,17 @@ A website for facilitating America's Cup Rule Enquiries.
 ### Commercial Product Requests
 
 ## Fixes
-- Rename variables that shouldn't have "enquiry" in them
-- Refactor code once it's all working, and format it as a series of widgets
 - Check which widgets/screens are still in use, delete as required
 - Look for edge cases where RC speeds up stage end and team response gets stuck. 
   - Need to block submission in that case so it doesn't end up getting published in the next round, or alongside the RC without them reading it.
 - If I rapidly change who I'm logged in as, it keeps the old user data (e.g. getting confused about whether I'm RC or not)
   - might be unique to local version, also not a common issue
-- make sure that top bar on both sides of two-panel shall have same height
 - Enforce overall enquiry timeline even if RC responds late
   - notify Competitors that they have slightly less time than is ideal
-- Document attachment is now really slow, look into this and streamline
-  - add a loading message to let people know that it may take a while
-  - could improve by skipping the temporary upload
-- Padding doesn't look even in left header pane
-- Response/Comment lists temporarily persist on navigation then disappear
 - Fix stage ends to be on the hour and cloud functions to run at 1 minute past
 - Should the email digest delete entries rather than marking them as processed?
+- Switch childrenSection streams to providers to avoid reload on log-in
+- Check cloud functions and delete ones that aren't in use
 
 ## Other Notes
 - Check how it looks on various devices
