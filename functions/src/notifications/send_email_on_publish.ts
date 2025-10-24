@@ -157,7 +157,7 @@ function renderDigestHTML(groups: {
   return `
   <!-- Preheader (hidden) -->
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;font-size:1px;line-height:1px;">
-    New RulePost publications: enquiries, responses, and comments.
+    New Rule Post publications: enquiries, responses, and comments.
   </div>
 
   <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f6f7f9;padding:24px 0;">
@@ -167,7 +167,7 @@ function renderDigestHTML(groups: {
           <tr>
             <td style="padding:20px 24px;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;">
               <h2 style="margin:0 0 12px 0;font-size:20px;line-height:1.3;font-weight:700;">
-                Newly published on RulePost:
+                Newly published on Rule Post:
               </h2>
 
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
@@ -248,11 +248,11 @@ async function sendDigestFor(
   }
 
   const html = renderDigestHTML(groups);
-  const subject = "New publications on RulePost";
+  const subject = "New publications on Rule Post";
 
   const resend = new Resend(process.env.RESEND_API_KEY as string);
   await resend.emails.send({
-    from: "RulePost <send@rulepost.com>", // must be verified in Resend
+    from: "Rule Post <send@rulepost.com>", // must be verified in Resend
     to,
     subject,
     html,

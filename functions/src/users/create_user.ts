@@ -99,12 +99,12 @@ export const createUserWithProfile = onCall(
     // 5) Send email via Resend
     const recipientName = getNameFromEmail(email);
     await resend.emails.send({
-      from: "RulePost <send@rulepost.com>",
+      from: "Rule Post <send@rulepost.com>",
       to: email,
-      subject: "Set up your RulePost account",
+      subject: "Set up your Rule Post account",
       html: `
         <p>Hi ${recipientName},</p>
-        <p>You’ve been invited to RulePost, the website for rule enquiries in the 38th America's Cup. Click the button below to set your password and finish setup.</p>
+        <p>You’ve been invited to Rule Post, the website for rule enquiries in the 38th America's Cup. Click the button below to set your password and finish setup.</p>
         <p><a href="${link}" style="display:inline-block;padding:10px 16px;border-radius:6px;text-decoration:none;">Set your password</a></p>
         <p>If you didn’t expect this, you can ignore this email.</p>
       `,

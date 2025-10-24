@@ -37,3 +37,8 @@ export {
   sendPublishDigest,
 } from "./notifications/send_email_on_publish";
 export { findDrafts, hasDrafts } from "./utils/find_drafts";
+export {
+  onEnquiryDeleted,
+  onResponseDeleted,
+  onCommentDeleted,
+} from "./posts/deleted_post_actions";
