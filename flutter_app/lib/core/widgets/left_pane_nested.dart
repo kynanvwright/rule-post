@@ -194,6 +194,7 @@ class _EnquiriesTree extends ConsumerWidget {
             final title = (data['title'] ?? 'Untitled').toString();
             final n = (data['enquiryNumber'] ?? 'Unnumbered').toString();
             final isOpen = id == routeEnquiryId;
+            final isPublished = data['isPublished'] ?? false;
 
             return ExpansionTile(
               key: ValueKey('enq_${id}_$isOpen'),
@@ -211,14 +212,14 @@ class _EnquiriesTree extends ConsumerWidget {
               title: _RowTile(
                 label: 'RE #$n - $title',
                 selected: isOpen && initiallyOpenResponseId == null,
-                showSubtitle: data['isPublished'] == false,
+                showSubtitle: isPublished == false,
                 onTap: () {
                   TwoPaneScope.of(context)?.closeDrawer();
                   Nav.goEnquiry(context, id);
                 },
               ),
               children: [
-                if (isOpen)
+                if (isOpen && isPublished)
                 _ResponsesBranch(
                   enquiryId: id,
                   initiallyOpenResponseId: initiallyOpenResponseId,
