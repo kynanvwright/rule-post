@@ -127,14 +127,16 @@ class _EnquiriesTree extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     debugPrint('🔍 Building enquiries list');
-    final teamId = ref.watch(teamProvider);
-    debugPrint('[left_pane_nested] teamId: $teamId');
+    // final teamId = ref.watch(teamProvider);
+    // debugPrint('[left_pane_nested] teamId: $teamId');
     final filter = ref.watch(enquiryFilterProvider);
     final itemsAsync = ref.watch(
-      combinedEnquiriesProvider((teamId: teamId, statusFilter: filter.status))
+      // combinedEnquiriesProvider((teamId: teamId, statusFilter: filter.status))
+      combinedEnquiriesProvider((statusFilter: filter.status))
     );
 
     return itemsAsync.when(
+      skipLoadingOnReload: true,
       loading: () => const Center(
         child: Column(
           children: [

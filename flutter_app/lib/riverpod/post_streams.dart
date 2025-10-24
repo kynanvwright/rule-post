@@ -85,7 +85,7 @@ Stream<List<DocView>> combinedEnquiriesStream({
   required String statusFilter,
   String? teamId,
 }) {
-
+  
   debugPrint('[combinedEnquiriesStream] Starting function with teamId=$teamId');
   // 1) Public, published enquiries
   final public$ = publicEnquiriesStream(statusFilter: statusFilter);
