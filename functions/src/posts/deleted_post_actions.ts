@@ -2,6 +2,7 @@
 // File: src/posts/deleted_post_actions.ts
 // Purpose: Thin callable handler orchestrating validation, tx, storage moves
 // ──────────────────────────────────────────────────────────────────────────────
+import { getStorage } from "firebase-admin/storage";
 import { onDocumentDeleted } from "firebase-functions/v2/firestore";
 
 import { REGION } from "../common/config";
@@ -62,6 +63,8 @@ async function handleDeletion(args: {
       await counterRef.update({ enquiryNumber: maxEnquiryNumber });
     }
     // delete storage too
+    const path = `enquiries/${enquiryId}`;
+    safeDeleteFile(path);
   } else if (kind === "response" && responseId) {
     deleteDraftDoc(responseId);
     // Delete publishEvents if any
@@ -74,6 +77,8 @@ async function handleDeletion(args: {
     if (!snap.empty) await snap.docs[0].ref.delete();
     // Add some logic to deal with response numbering
     // delete storage too
+    const path = `enquiries/${enquiryId}/responses/${responseId}`;
+    safeDeleteFile(path);
   } else if (kind === "comment" && commentId) {
     // Delete drafts if any
     deleteDraftDoc(commentId);
@@ -87,6 +92,8 @@ async function handleDeletion(args: {
     if (!snap.empty) await snap.docs[0].ref.delete();
     // Add some logic to deal with comment numbering
     // delete storage too
+    const path = `enquiries/${enquiryId}/responses/${responseId}/comments/${commentId}`;
+    safeDeleteFile(path);
   }
 
   console.log("Deleted", { kind, enquiryId, responseId, commentId, data });
@@ -161,5 +168,19 @@ async function deleteDraftDoc(docId: string) {
     if (docSnap.exists) {
       await docRef.delete();
     }
+  }
+}
+
+export async function safeDeleteFile(path: string): Promise<void> {
+  if (!path) return; // skip if empty
+
+  const bucket = getStorage().bucket();
+  const file = bucket.file(path);
+
+  try {
+    await file.delete({ ignoreNotFound: true });
+    console.log(`🗑️ Deleted or already missing: ${path}`);
+  } catch (err) {
+    console.error(`❌ Error deleting ${path}:`, (err as Error).message);
   }
 }
