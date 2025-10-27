@@ -63,8 +63,8 @@ async function handleDeletion(args: {
       await counterRef.update({ enquiryNumber: maxEnquiryNumber });
     }
     // delete storage too
-    const path = `enquiries/${enquiryId}`;
-    safeDeleteFile(path);
+    const path = `enquiries/${enquiryId}/`;
+    deleteFolder(path);
   } else if (kind === "response" && responseId) {
     deleteDraftDoc(responseId);
     // Delete publishEvents if any
@@ -77,8 +77,8 @@ async function handleDeletion(args: {
     if (!snap.empty) await snap.docs[0].ref.delete();
     // Add some logic to deal with response numbering
     // delete storage too
-    const path = `enquiries/${enquiryId}/responses/${responseId}`;
-    safeDeleteFile(path);
+    const path = `enquiries/${enquiryId}/responses/${responseId}/`;
+    deleteFolder(path);
   } else if (kind === "comment" && commentId) {
     // Delete drafts if any
     deleteDraftDoc(commentId);
@@ -92,8 +92,8 @@ async function handleDeletion(args: {
     if (!snap.empty) await snap.docs[0].ref.delete();
     // Add some logic to deal with comment numbering
     // delete storage too
-    const path = `enquiries/${enquiryId}/responses/${responseId}/comments/${commentId}`;
-    safeDeleteFile(path);
+    const path = `enquiries/${enquiryId}/responses/${responseId}/comments/${commentId}/`;
+    deleteFolder(path);
   }
 
   console.log("Deleted", { kind, enquiryId, responseId, commentId, data });
@@ -171,16 +171,36 @@ async function deleteDraftDoc(docId: string) {
   }
 }
 
-export async function safeDeleteFile(path: string): Promise<void> {
-  if (!path) return; // skip if empty
+/**
+ * Deletes all files under a given folder prefix in Firebase Storage.
+ * Example: deleteFolder("enquiries/123/responses/456")
+ */
+async function deleteFolder(prefix: string): Promise<void> {
+  if (!prefix) return; // safety guard
 
   const bucket = getStorage().bucket();
-  const file = bucket.file(path);
 
   try {
-    await file.delete({ ignoreNotFound: true });
-    console.log(`🗑️ Deleted or already missing: ${path}`);
+    const [files] = await bucket.getFiles({ prefix });
+
+    if (files.length === 0) {
+      console.log(`📂 Folder empty or already deleted: ${prefix}`);
+      return;
+    }
+
+    await Promise.all(
+      files.map((file) =>
+        file.delete({ ignoreNotFound: true }).catch((err) => {
+          console.error(`❌ Failed to delete ${file.name}:`, err.message);
+        }),
+      ),
+    );
+
+    console.log(`🗑️ Deleted ${files.length} file(s) under ${prefix}`);
   } catch (err) {
-    console.error(`❌ Error deleting ${path}:`, (err as Error).message);
+    console.error(
+      `❌ Error deleting folder ${prefix}:`,
+      (err as Error).message,
+    );
   }
 }
