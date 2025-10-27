@@ -272,7 +272,7 @@ async function sendDigestFor(
 
 // enquiries/{enquiryId}
 export const onEnquiryIsPublishedUpdated = onDocumentUpdated(
-  { document: "enquiries/{enquiryId}", secrets: ["RESEND_API_KEY"] },
+  { document: "enquiries/{enquiryId}" },
   async (event): Promise<void> => {
     const before = event.data?.before?.data() as EnquiryDoc | undefined;
     const after = event.data?.after?.data() as EnquiryDoc | undefined;
@@ -296,10 +296,7 @@ export const onEnquiryIsPublishedUpdated = onDocumentUpdated(
 
 // enquiries/{enquiryId}/responses/{responseId}
 export const onResponseIsPublishedUpdated = onDocumentUpdated(
-  {
-    document: "enquiries/{enquiryId}/responses/{responseId}",
-    secrets: ["RESEND_API_KEY"],
-  },
+  { document: "enquiries/{enquiryId}/responses/{responseId}" },
   async (event): Promise<void> => {
     const before = event.data?.before?.data() as ResponseDoc | undefined;
     const after = event.data?.after?.data() as ResponseDoc | undefined;
@@ -332,11 +329,7 @@ export const onResponseIsPublishedUpdated = onDocumentUpdated(
 
 // enquiries/{enquiryId}/responses/{responseId}/comments/{commentId}
 export const onCommentIsPublishedUpdated = onDocumentUpdated(
-  {
-    document:
-      "enquiries/{enquiryId}/responses/{responseId}/comments/{commentId}",
-    secrets: ["RESEND_API_KEY"],
-  },
+  { document: "enquiries/{enquiryId}/responses/{responseId}/comments/{commentId}" },
   async (event): Promise<void> => {
     const before = event.data?.before?.data() as CommentDoc | undefined;
     const after = event.data?.after?.data() as CommentDoc | undefined;
