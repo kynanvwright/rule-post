@@ -329,7 +329,10 @@ export const onResponseIsPublishedUpdated = onDocumentUpdated(
 
 // enquiries/{enquiryId}/responses/{responseId}/comments/{commentId}
 export const onCommentIsPublishedUpdated = onDocumentUpdated(
-  { document: "enquiries/{enquiryId}/responses/{responseId}/comments/{commentId}" },
+  {
+    document:
+      "enquiries/{enquiryId}/responses/{responseId}/comments/{commentId}",
+  },
   async (event): Promise<void> => {
     const before = event.data?.before?.data() as CommentDoc | undefined;
     const after = event.data?.after?.data() as CommentDoc | undefined;
