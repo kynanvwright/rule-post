@@ -11,6 +11,11 @@ async function getMaxValue(
   collectionPath: string,
   field: string,
 ): Promise<number | null> {
+  console.log("🧭 getMaxValue called with", collectionPath, field);
+  if (!collectionPath) {
+    console.error("❌ Invalid collectionPath", collectionPath);
+    throw new Error("collectionPath must be non-empty");
+  }
   const snap = await db
     .collection(collectionPath) // can be nested
     .orderBy(field, "desc")
@@ -27,17 +32,12 @@ async function handleDeletion(args: {
   responseId?: string;
   commentId?: string;
   data: FirebaseFirestore.DocumentData | undefined; // pre-delete snapshot data
-  team: string;
 }) {
   const { kind, enquiryId, responseId, commentId, data } = args;
 
   if (kind === "enquiry") {
     // Delete drafts if any
-    db.collection("drafts")
-      .doc("posts")
-      .collection(args.team)
-      .doc(enquiryId)
-      .delete();
+    deleteDraftDoc(enquiryId);
     // Delete publishEvents if any
     const q = db
       .collection("publishEvents")
@@ -61,13 +61,9 @@ async function handleDeletion(args: {
       const maxEnquiryNumber = await getMaxValue("enquiries", "enquiryNumber");
       await counterRef.update({ enquiryNumber: maxEnquiryNumber });
     }
+    // delete storage too
   } else if (kind === "response" && responseId) {
-    // Delete drafts if any
-    db.collection("drafts")
-      .doc("posts")
-      .collection(args.team)
-      .doc(responseId)
-      .delete();
+    deleteDraftDoc(responseId);
     // Delete publishEvents if any
     const q = db
       .collection("publishEvents")
@@ -77,13 +73,10 @@ async function handleDeletion(args: {
     const snap = await q.get();
     if (!snap.empty) await snap.docs[0].ref.delete();
     // Add some logic to deal with response numbering
+    // delete storage too
   } else if (kind === "comment" && commentId) {
     // Delete drafts if any
-    db.collection("drafts")
-      .doc("posts")
-      .collection(args.team)
-      .doc(commentId)
-      .delete();
+    deleteDraftDoc(commentId);
     // Delete publishEvents if any
     const q = db
       .collection("publishEvents")
@@ -93,6 +86,7 @@ async function handleDeletion(args: {
     const snap = await q.get();
     if (!snap.empty) await snap.docs[0].ref.delete();
     // Add some logic to deal with comment numbering
+    // delete storage too
   }
 
   console.log("Deleted", { kind, enquiryId, responseId, commentId, data });
@@ -108,15 +102,8 @@ export const onEnquiryDeleted = onDocumentDeleted(
   async (event) => {
     const { enquiryId } = event.params as { enquiryId: string };
     const data = event.data?.data(); // pre-delete snapshot data
-    const team = (
-      await db
-        .collection("enquiries")
-        .doc(enquiryId)
-        .collection("meta")
-        .doc("data")
-        .get()
-    ).get("authorTeam");
-    await handleDeletion({ kind: "enquiry", enquiryId, data, team });
+
+    await handleDeletion({ kind: "enquiry", enquiryId, data });
   },
 );
 
@@ -132,22 +119,11 @@ export const onResponseDeleted = onDocumentDeleted(
       responseId: string;
     };
     const data = event.data?.data();
-    const team = (
-      await db
-        .collection("enquiries")
-        .doc(enquiryId)
-        .collection("responses")
-        .doc(responseId)
-        .collection("meta")
-        .doc("data")
-        .get()
-    ).get("authorTeam");
     await handleDeletion({
       kind: "response",
       enquiryId,
       responseId,
       data,
-      team,
     });
   },
 );
@@ -166,25 +142,24 @@ export const onCommentDeleted = onDocumentDeleted(
       commentId: string;
     };
     const data = event.data?.data();
-    const team = (
-      await db
-        .collection("enquiries")
-        .doc(enquiryId)
-        .collection("responses")
-        .doc(responseId)
-        .collection("comments")
-        .doc(commentId)
-        .collection("meta")
-        .doc("data")
-        .get()
-    ).get("authorTeam");
     await handleDeletion({
       kind: "comment",
       enquiryId,
       responseId,
       commentId,
       data,
-      team,
     });
   },
 );
+
+async function deleteDraftDoc(docId: string) {
+  const postsRef = db.collection("drafts").doc("posts");
+  const subcollections = await postsRef.listCollections();
+  for (const teamCol of subcollections) {
+    const docRef = teamCol.doc(docId);
+    const docSnap = await docRef.get();
+    if (docSnap.exists) {
+      await docRef.delete();
+    }
+  }
+}
