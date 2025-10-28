@@ -91,6 +91,11 @@ class HelpFaqScreen extends StatelessWidget {
             "answer":
                 "The enquiry is probably at the incorrect stage for your submission type. If you don't believe this is correct, contact the Rules Committee."
           },
+          {
+            "question": "Should I use 'details' or 'attachments' field for post content?",
+            "answer":
+                "Details are better for website performance, but attachments are useful for images and complex content."
+          },
         ]
       },
 
