@@ -240,3 +240,101 @@ export async function runCreatePostTx(
 
   return { postId, postPath, postType, enquiryNumber };
 }
+
+export async function runEditPostTx(
+  db: Firestore,
+  postType: CreatePostData["postType"], // "enquiry" | "response" | "comment"
+  parentIds: string[],
+  title: string | undefined,
+  postText: string | undefined,
+  docRef: DocumentReference<DocumentData>, // <- existing doc we are editing
+  author: AuthorInfo, // { uid, team }
+): Promise<TxResult> {
+  const postId = docRef.id;
+  const postPath = docRef.path;
+
+  await db.runTransaction(async (tx) => {
+    const now = FieldValue.serverTimestamp();
+
+    // 1. Read the existing post we're editing
+    const existingSnap = await tx.get(docRef);
+    if (!existingSnap.exists) {
+      throw new HttpsError("not-found", "Post does not exist.");
+    }
+
+    // 2. Permission / timing checks
+    //    - For responses/comments, confirm their parent enquiry is still open
+    //    - For enquiries themselves, do a similar check.
+    if (postType === "enquiry") {
+      // editing the root enquiry
+      const isOpen = existingSnap.get("isOpen") === true;
+      if (!isOpen) {
+        throw new HttpsError(
+          "failed-precondition",
+          "Can't edit a closed enquiry.",
+        );
+      }
+    } else {
+      // editing a response or comment
+      const enquiryRef = db.collection("enquiries").doc(parentIds[0]);
+      const enquirySnap = await tx.get(enquiryRef);
+      if (!enquirySnap.exists) {
+        throw new HttpsError(
+          "failed-precondition",
+          "Parent enquiry not found.",
+        );
+      }
+      const enquiryIsOpen = enquirySnap.get("isOpen") === true;
+      if (!enquiryIsOpen && author.team !== "RC") {
+        throw new HttpsError(
+          "failed-precondition",
+          "Cannot edit posts for a closed enquiry.",
+        );
+      }
+    }
+
+    // 3. Build a minimal update object for the public doc
+    const publicUpdates: Record<string, unknown> = {};
+    if (title !== undefined) publicUpdates.title = title;
+    if (postText !== undefined) publicUpdates.postText = postText;
+
+    // if (Object.keys(publicUpdates).length === 0) {
+    //   // nothing to change in main doc, but we may still record editedAt
+    //   // if you want to skip entirely in that case you could just return.
+    // }
+
+    // 4. Update the public doc
+    if (Object.keys(publicUpdates).length) {
+      tx.update(docRef, publicUpdates);
+    }
+
+    // 5. Update meta subdoc with audit info
+    const metaRef = docRef.collection("meta").doc("data");
+    // Merge to avoid deletions
+    tx.set(
+      metaRef,
+      {
+        lastEditedAt: now,
+        lastEditedByUid: author.uid,
+      },
+      { merge: true },
+    );
+  });
+
+  // Build the same shape TxResult as runCreatePostTx
+  let enquiryNumber: number | undefined;
+  if (postType === "enquiry") {
+    const snap = await getFirestore().doc(postPath).get();
+    enquiryNumber = Number(snap.get("enquiryNumber") ?? undefined);
+  } else if (postType === "response" || postType === "comment") {
+    // Lift the parent's enquiryNumber
+    const enquiryId = parentIds[0];
+    const enquirySnap = await getFirestore()
+      .collection("enquiries")
+      .doc(enquiryId)
+      .get();
+    enquiryNumber = Number(enquirySnap.get("enquiryNumber") ?? undefined);
+  }
+
+  return { postId, postPath, postType, enquiryNumber };
+}

@@ -62,7 +62,7 @@ async function handleDeletion(args: {
       const maxEnquiryNumber = await getMaxValue("enquiries", "enquiryNumber");
       await counterRef.update({ enquiryNumber: maxEnquiryNumber });
     }
-    // delete storage too
+    // delete files attached to post
     const path = `enquiries/${enquiryId}/`;
     deleteFolder(path);
   } else if (kind === "response" && responseId) {
@@ -76,7 +76,7 @@ async function handleDeletion(args: {
     const snap = await q.get();
     if (!snap.empty) await snap.docs[0].ref.delete();
     // Add some logic to deal with response numbering
-    // delete storage too
+    // delete files attached to post
     const path = `enquiries/${enquiryId}/responses/${responseId}/`;
     deleteFolder(path);
   } else if (kind === "comment" && commentId) {
@@ -91,7 +91,7 @@ async function handleDeletion(args: {
     const snap = await q.get();
     if (!snap.empty) await snap.docs[0].ref.delete();
     // Add some logic to deal with comment numbering
-    // delete storage too
+    // delete files attached to post
     const path = `enquiries/${enquiryId}/responses/${responseId}/comments/${commentId}/`;
     deleteFolder(path);
   }

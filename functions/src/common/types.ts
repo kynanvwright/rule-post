@@ -28,6 +28,12 @@ export type CreatePostData = {
   parentIds?: string[]; // response: [enquiryId], comment: [enquiryId, responseId]
 };
 
+export type EditPostData = CreatePostData & {
+  postId: string;
+  isPublished: boolean;
+  editAttachments: boolean;
+};
+
 export type AuthorInfo = {
   uid: string;
   team: string; // validated non-empty
