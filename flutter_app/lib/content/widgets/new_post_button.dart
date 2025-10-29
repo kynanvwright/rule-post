@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:web/web.dart' as web;
 
 import 'create_post_wrapper.dart';
+import 'edit_post_wrapper.dart';
 import '../../core/models/attachments.dart' show TempAttachment;
 
 enum PostType { enquiry, response, comment }
@@ -135,11 +136,19 @@ class _NewPostDialog extends StatefulWidget {
     required this.dialogTitle,
     required this.tempFolder,
     required this.postType,
+
+    this.initialTitle,
+    this.initialText,
+    this.initialAttachments,
   });
 
   final String dialogTitle;
   final String tempFolder;
   final String postType;
+
+  final String? initialTitle;
+  final String? initialText;
+  final List<TempAttachment>? initialAttachments;
 
 
   @override
@@ -149,9 +158,9 @@ class _NewPostDialog extends StatefulWidget {
 
 class _NewPostDialogState extends State<_NewPostDialog> {
   final _form = GlobalKey<FormState>();
-  final _title = TextEditingController();
-  final _text = TextEditingController();
-  final List<TempAttachment> _pending = [];
+  late final TextEditingController _title;
+  late final TextEditingController _text;
+  late final List<TempAttachment> _pending;
   bool _busy = false;
   bool _uploading = false;
   final Map<String, double> _fileProgress = {}; // key = file path or name
@@ -159,6 +168,16 @@ class _NewPostDialogState extends State<_NewPostDialog> {
       _fileProgress.isEmpty
           ? 0
           : _fileProgress.values.reduce((a, b) => a + b) / _fileProgress.length;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _title = TextEditingController(text: widget.initialTitle ?? '');
+    _text  = TextEditingController(text: widget.initialText ?? '');
+
+    _pending = [...(widget.initialAttachments ?? const [])];
+  }
 
   @override
   void dispose() {
@@ -238,7 +257,6 @@ class _NewPostDialogState extends State<_NewPostDialog> {
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
-
                 ],
                 if (_pending.isNotEmpty)
                   Align(
@@ -290,7 +308,11 @@ class _NewPostDialogState extends State<_NewPostDialog> {
                   }
                 }
               : null,
-          child: _busy ? const CircularProgressIndicator() : const Text('Create'),
+            child: _busy
+            ? const CircularProgressIndicator()
+            : Text(widget.initialTitle != null || widget.initialText != null
+                ? 'Save changes'
+                : 'Create'),
         ),
       ],
     );
@@ -543,4 +565,87 @@ class _NewPostPayload {
   final String title;
   final String text;
   final List<TempAttachment>? attachments;
+}
+
+/// Use this one button for all three types.
+class EditPostButton extends StatefulWidget {
+  const EditPostButton({
+    super.key,
+    required this.type,
+    this.parentIds,
+    this.initialTitle,
+    this.initialText,
+    this.initialAttachments,
+  });
+
+  final PostType type;
+  final List<String>? parentIds;
+  final String? initialTitle;
+  final String? initialText;
+  final List<Map<String, dynamic>>? initialAttachments;
+
+  @override
+  State<EditPostButton> createState() => _EditPostButtonState();
+}
+
+
+class _EditPostButtonState extends State<EditPostButton> {
+  final _tooltipKey = GlobalKey<TooltipState>();
+
+  @override
+  Widget build(BuildContext context) {
+    const labelText = 'Edit';
+
+    final scheme = Theme.of(context).colorScheme;
+    final bg = scheme.primary;
+    final fg = scheme.onPrimary;
+
+    return Semantics(
+      button: true,
+      enabled: true, // SRs know it's unavailable, but we keep it focusable.
+      label: labelText,
+      child: Tooltip(
+        key: _tooltipKey,
+        triggerMode: TooltipTriggerMode.longPress, // hover still works on desktop
+        message: 'Edit your draft ${widget.type.labelSingular}',
+        child: FilledButton.icon(
+          style: ButtonStyle(
+            backgroundColor: WidgetStatePropertyAll(bg),
+            foregroundColor: WidgetStatePropertyAll(fg),
+            overlayColor: WidgetStatePropertyAll(
+              scheme.primary.withValues(alpha: 0.08),
+            ),
+          ),
+          icon: Icon(Icons.edit, color: fg),
+          label: const Text(labelText),
+          onPressed: () async {
+            final payload = await showDialog<_NewPostPayload>(
+              context: context,
+              builder: (_) => _NewPostDialog(
+                dialogTitle: 'Edit ${widget.type.labelSingular}',
+                tempFolder: widget.type.tempFolder,
+                postType: widget.type.labelSingular,
+                initialTitle: widget.initialTitle,
+                initialText: widget.initialText,
+                initialAttachments: widget.initialAttachments!.map((m) => TempAttachment.fromMap(m)).toList(),
+              ),
+            );
+            if (payload == null) return;
+            if (!context.mounted) return;
+
+            await onEditPostPressed(
+              context,
+              postType: widget.type.apiName,
+              title: payload.title,
+              postText: payload.text,
+              attachments: (payload.attachments == null || payload.attachments!.isEmpty)
+                  ? null
+                  : payload.attachments,
+              parentIds: widget.parentIds,
+            );
+          },
+        ),
+      ),
+    );
+  }
 }

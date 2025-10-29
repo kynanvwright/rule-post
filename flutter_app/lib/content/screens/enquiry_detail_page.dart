@@ -8,6 +8,7 @@ import '../widgets/detail_scaffold.dart';
 import '../widgets/fancy_attachment_tile.dart';
 import '../widgets/rules_committee_panel.dart';
 import '../widgets/status_chip.dart';
+import '../widgets/new_post_button.dart';
 import '../../api/change_stage_length.dart';
 import '../../api/close_enquiry_api.dart';
 import '../../api/publish_competitor_responses.dart';
@@ -55,6 +56,14 @@ class EnquiryDetailPage extends ConsumerWidget {
         return DetailScaffold(
           headerLines: [title],
           subHeaderLines: ['Rule Enquiry #$enquiryNumber'],
+          headerButton: isPublished ? 
+          null : 
+          EditPostButton(
+            type: PostType.enquiry,
+            initialTitle: title,
+            initialText: postText,
+            initialAttachments: attachments,
+            ),
           meta: Wrap(
             spacing: 8, runSpacing: 8, children: [
               if (d.containsKey('isOpen') && !isOpen) StatusChip('Closed', color: Colors.red),

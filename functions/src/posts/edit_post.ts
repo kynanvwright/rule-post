@@ -33,12 +33,6 @@ export const editPost = onCall<EditPostData>(
         "failed-precondition",
         "No team assigned to this user.",
       );
-    const isPublished = req.data.isPublished;
-    if (!isPublished)
-      throw new HttpsError(
-        "failed-precondition",
-        "Only unpublished drafts may be edited.",
-      );
     // extract and validate data
     const db = getFirestore();
     const postId = req.data.postId;
@@ -67,6 +61,23 @@ export const editPost = onCall<EditPostData>(
               .collection("comments");
     const postFolder = draftCollectionRef.path;
     const draftDocRef = draftCollectionRef.doc(postId);
+
+    // check that data is permitted to be edited
+    const snap = await draftDocRef.get();
+    if (!snap.exists) {
+        throw new HttpsError(
+          "failed-precondition",
+          "Document does not exist.",
+        );
+    } else {
+      const isPublished = snap.get("isPublished");
+      if (isPublished) {
+        throw new HttpsError(
+          "failed-precondition",
+          "Only unpublished drafts may be edited.",
+        );
+      }
+    }
 
     // Update fields with new values
     logger.info("preTx paths", { pre: postFolder });

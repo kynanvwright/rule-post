@@ -11,6 +11,7 @@ class DetailScaffold extends StatelessWidget {
     required this.headerLines,
     this.meta,
     this.subHeaderLines = const <String>[],
+    this.headerButton,
     this.summary,
     this.commentary,
     this.attachments = const <Widget>[],
@@ -21,6 +22,7 @@ class DetailScaffold extends StatelessWidget {
 
   final List<String> headerLines;
   final List<String> subHeaderLines;
+  final Widget? headerButton;
   final Widget? meta;                   // usually MetaChips (+ optional status chips)
   final Widget? summary;                // null => hide section
   final Widget? commentary;             // null => hide section
@@ -52,6 +54,7 @@ class DetailScaffold extends StatelessWidget {
                       child: HeaderBlock(
                         headerLines: headerLines,
                         subHeaderLines: subHeaderLines,
+                        trailing: headerButton,
                       ),
                     ),
                   ],
