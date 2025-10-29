@@ -1,6 +1,7 @@
 // flutter_app/lib/api/post_api.dart
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 
 import '../core/models/attachments.dart';
 
@@ -56,7 +57,8 @@ class PostApi {
   }) async {
     // Require at least one of enquiryText or attachments
     if ((postText == null || postText.isEmpty) &&
-        (attachments == null || attachments.isEmpty)) {
+        (attachments == null || attachments.isEmpty) &&
+        (editAttachments["remove"] == false)) {
       throw ArgumentError(
         'Either plain post text or attachments must be provided',
       );
@@ -72,6 +74,12 @@ class PostApi {
         'attachments': attachments.map((a) => a.toMap()).toList(),
       if (parentIds != null && parentIds.isNotEmpty) 'parentIds': parentIds,
     };
+    // debugPrint('payload runtime types:');
+    // debugPrint('postType: ${postType.runtimeType}');
+    // debugPrint('title: ${title.runtimeType}');
+    // debugPrint('postId: ${postId.runtimeType}');
+    debugPrint('editAttachments: $editAttachments');
+    // debugPrint('payload full: $payload');
     // call the function
     final result = await _functions.httpsCallable('editPost').call(payload);
     final data = (result.data as Map).cast<String, dynamic>();

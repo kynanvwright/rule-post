@@ -642,20 +642,22 @@ class _EditPostButtonState extends State<EditPostButton> {
             if (!context.mounted) return;
 
             //compare inital and final attachments to update the editAttachmentsMap
+            final payloadAttachMap = payload.attachments.map((a) => a.toMap());
+            final payloadAttachList = payloadAttachMap.toList();
             debugPrint("Initial attachments: ${widget.initialAttachments}");
-            debugPrint("Final attachments: ${payload.attachments.map((a) => a.toMap()).toList()}");
-            if ((widget.initialAttachments?.isNotEmpty ?? false) &&
-                (payload.attachments.isNotEmpty)) {
+            debugPrint("Final attachments: $payloadAttachList");
+            if ((widget.initialAttachments?.isNotEmpty ?? false) ||
+                (payloadAttachList.isNotEmpty)) {
               final initialAttachmentNumber = widget.initialAttachments?.length ?? 0;
-              final finalAttachmentNumber = payload.attachments.length;
-              final newAttachmentNumber = payload.attachments
-              .map((a) => a.toMap())
+              final finalAttachmentNumber = payloadAttachList.length;
+              final newAttachmentNumber = payloadAttachList
               .where((m) {
                 final pathString = m['storagePath'] as String;
                 final firstPart = pathString.split('/').first;
                 return firstPart.contains('temp');
               })
               .length;
+              debugPrint("New attachments: $newAttachmentNumber");
               final removedAttachmentNumber = newAttachmentNumber + initialAttachmentNumber - finalAttachmentNumber;
               if (newAttachmentNumber > 0) {
                 editAttachments['add'] = true;
@@ -664,9 +666,12 @@ class _EditPostButtonState extends State<EditPostButton> {
               if (removedAttachmentNumber > 0) {
                 editAttachments['remove'] = true;
                 debugPrint("Removing $removedAttachmentNumber attachments");
-                final initialPaths = widget.initialAttachments?.map((m) => m['storagePath']).toList() ?? [];
+                final initialPaths = widget.initialAttachments?.map((m) => m['path']).toList() ?? [];
                 final finalPaths = payload.attachments.map((m) => m.storagePath).toList();
-                editAttachments['removeList'] = initialPaths.toSet().difference(finalPaths.toSet());
+                debugPrint("initialPaths: $initialPaths");
+                debugPrint("finalPaths: $finalPaths");
+
+                editAttachments['removeList'] = initialPaths.toSet().difference(finalPaths.toSet()).toList();
                 debugPrint("List of attachments to remove: ${editAttachments['removeList']}");
               }
               payload.attachments.removeWhere((a) {
@@ -674,6 +679,8 @@ class _EditPostButtonState extends State<EditPostButton> {
                 final firstPart = pathString.split('/').first;
                 return !firstPart.contains('temp');
               });
+            } else {
+              debugPrint("editAttachment logic skipped.");
             }
 
             await onEditPostPressed(

@@ -2,7 +2,8 @@
 // File: src/posts/edit_post.ts
 // Purpose: Edit an existing post draft
 // ──────────────────────────────────────────────────────────────────────────────
-import { FieldValue, getFirestore } from "firebase-admin/firestore";
+import { getFirestore } from "firebase-admin/firestore";
+import { getStorage } from "firebase-admin/storage";
 import { logger } from "firebase-functions";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 
@@ -12,7 +13,11 @@ import { coerceAndValidateInput, validateAttachments } from "./validate";
 import { REGION, MEMORY, TIMEOUT_SECONDS } from "../common/config";
 import { assert } from "../common/errors";
 
-import type { CreatePostData, EditPostData } from "../common/types";
+import type {
+  CreatePostData,
+  EditPostData,
+  FinalisedAttachment,
+} from "../common/types";
 
 export const editPost = onCall<EditPostData>(
   {
@@ -99,38 +104,50 @@ export const editPost = onCall<EditPostData>(
     );
 
     // Attachment check and possible update
-    // if no attachments in update, remove attachment field if it exists
-    // if no attachments in old version, skip comparison and just load in
-    // if attachments in both, run hash comparison and leave alone if they match
+    logger.info("editAttachments", {
+      add: editAttachments["add"],
+      remove: editAttachments["remove"],
+      removeList: editAttachments["removeList"],
+    });
     if (editAttachments["add"] || editAttachments["remove"]) {
-      logger.info("editAttachments", {
-        add: editAttachments["remove"],
-        remove: editAttachments["remove"],
-        removeList: editAttachments["removeList"],
-      });
       // Validate attachments (no writes yet)
-      const validated = await validateAttachments({
-        postType: data.postType,
-        authorUid,
-        postFolder,
-        incoming: data.attachments,
-      });
-      if (validated.length > 0) {
-        const finalised = await moveValidatedAttachments({
+      let finalised: FinalisedAttachment[] = [];
+      if (editAttachments["add"]) {
+        const validated = await validateAttachments({
+          postType: data.postType,
+          authorUid,
           postFolder,
           incoming: data.attachments,
-          validated,
         });
-        const existing = snap.data()?.attachments ?? [];
-        const filteredExisting = existing.filter(
-          (a: string) =>
-            !editAttachments["removeList"].some((r: string) => r === a),
+        if (validated.length > 0) {
+          finalised = await moveValidatedAttachments({
+            postFolder,
+            incoming: data.attachments,
+            validated,
+          });
+        }
+      }
+      const existing = snap.data()?.attachments ?? [];
+      const filteredExisting = editAttachments["remove"]
+        ? existing.filter(
+            (a: FinalisedAttachment) =>
+              !editAttachments["removeList"].includes(a.path),
+          )
+        : existing;
+      const merged = [...filteredExisting, ...finalised];
+      await db.doc(txRes.postPath).update({ attachments: merged });
+      if (editAttachments["remove"]) {
+        const bucket = getStorage().bucket();
+        await Promise.all(
+          editAttachments["removeList"].map(async (path) => {
+            try {
+              await bucket.file(path).delete();
+              console.log(`Deleted: ${path}`);
+            } catch (error) {
+              console.error(`Error deleting ${path}:`, error);
+            }
+          }),
         );
-        const merged = [...filteredExisting, ...finalised];
-        await db.doc(txRes.postPath).update({ attachments: merged });
-        // await db.doc(txRes.postPath).update({ attachments: finalised });
-      } else {
-        await db.doc(txRes.postPath).update({ attachments: FieldValue.delete });
       }
     }
 

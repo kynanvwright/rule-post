@@ -14,10 +14,11 @@ import type {
   TempAttachmentIn,
   FinalisedAttachment,
   CreatePostData,
+  EditPostData,
 } from "../common/types";
 
 export function coerceAndValidateInput(
-  raw: CreatePostData,
+  raw: CreatePostData | EditPostData,
 ): Required<CreatePostData> {
   const postType = raw.postType;
   if (!postType || !["enquiry", "response", "comment"].includes(postType)) {
@@ -30,8 +31,17 @@ export function coerceAndValidateInput(
     ? raw.parentIds.map(String)
     : [];
   const attachments = Array.isArray(raw.attachments) ? raw.attachments : [];
+  let removingAttachment: boolean = false;
+  if ("editAttachments" in raw) {
+    removingAttachment = raw.editAttachments.remove;
+  }
 
-  if (postType !== "comment" && !postText && attachments.length === 0) {
+  if (
+    postType !== "comment" &&
+    !postText &&
+    attachments.length === 0 &&
+    removingAttachment == false
+  ) {
     throw new HttpsError(
       "invalid-argument",
       "Post must contain either text or an attachment.",
