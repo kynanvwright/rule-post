@@ -63,6 +63,7 @@ class EnquiryDetailPage extends ConsumerWidget {
             initialTitle: title,
             initialText: postText,
             initialAttachments: attachments,
+            postId: enquiryId,
             ),
           meta: Wrap(
             spacing: 8, runSpacing: 8, children: [

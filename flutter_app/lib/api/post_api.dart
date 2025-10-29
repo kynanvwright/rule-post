@@ -51,6 +51,7 @@ class PostApi {
     String? postText,
     List<TempAttachment>? attachments,
     List<String>? parentIds,
+    required String postId,
   }) async {
     // Require at least one of enquiryText or attachments
     if ((postText == null || postText.isEmpty) &&
@@ -63,6 +64,7 @@ class PostApi {
     final payload = {
       'postType': postType,
       'title': title,
+      'postId': postId,
       if (postText != null) 'postText': postText,
       if (attachments != null && attachments.isNotEmpty)
         'attachments': attachments.map((a) => a.toMap()).toList(),

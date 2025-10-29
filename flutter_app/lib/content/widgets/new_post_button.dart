@@ -572,6 +572,7 @@ class EditPostButton extends StatefulWidget {
   const EditPostButton({
     super.key,
     required this.type,
+    required this.postId,
     this.parentIds,
     this.initialTitle,
     this.initialText,
@@ -579,6 +580,7 @@ class EditPostButton extends StatefulWidget {
   });
 
   final PostType type;
+  final String postId;
   final List<String>? parentIds;
   final String? initialTitle;
   final String? initialText;
@@ -642,6 +644,7 @@ class _EditPostButtonState extends State<EditPostButton> {
                   ? null
                   : payload.attachments,
               parentIds: widget.parentIds,
+              postId: widget.postId,
             );
           },
         ),

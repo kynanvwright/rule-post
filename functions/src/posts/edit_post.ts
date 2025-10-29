@@ -41,7 +41,8 @@ export const editPost = onCall<EditPostData>(
     logger.info("createPost start", {
       postType: data.postType,
       authorTeam,
-      uid: authorUid,
+      authorUid: authorUid,
+      postId: postId,
     });
 
     // get document reference and folder, no need to create new
@@ -65,10 +66,7 @@ export const editPost = onCall<EditPostData>(
     // check that data is permitted to be edited
     const snap = await draftDocRef.get();
     if (!snap.exists) {
-        throw new HttpsError(
-          "failed-precondition",
-          "Document does not exist.",
-        );
+      throw new HttpsError("failed-precondition", "Document does not exist.");
     } else {
       const isPublished = snap.get("isPublished");
       if (isPublished) {
