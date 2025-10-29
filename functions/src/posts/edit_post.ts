@@ -38,7 +38,7 @@ export const editPost = onCall<EditPostData>(
     const postId = req.data.postId;
     const editAttachments = req.data.editAttachments;
     const data = coerceAndValidateInput((req.data ?? {}) as CreatePostData);
-    logger.info("createPost start", {
+    logger.info("editPost start", {
       postType: data.postType,
       authorTeam,
       authorUid: authorUid,
