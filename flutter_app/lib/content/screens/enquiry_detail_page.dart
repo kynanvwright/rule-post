@@ -53,6 +53,8 @@ class EnquiryDetailPage extends ConsumerWidget {
           isRC ? 'Competitor response window currently open' :
           !d['isOpen'] ? 'Enquiry closed' : 'Responses currently closed';
 
+        debugPrint("attachments: $attachments");
+
         return DetailScaffold(
           headerLines: [title],
           subHeaderLines: ['Rule Enquiry #$enquiryNumber'],

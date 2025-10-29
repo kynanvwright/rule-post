@@ -28,10 +28,16 @@ export type CreatePostData = {
   parentIds?: string[]; // response: [enquiryId], comment: [enquiryId, responseId]
 };
 
+type EditAttachmentMap = {
+  add: boolean;
+  remove: boolean;
+  removeList: string[];
+};
+
 export type EditPostData = CreatePostData & {
   postId: string;
   isPublished: boolean;
-  editAttachments: boolean;
+  editAttachments: EditAttachmentMap;
 };
 
 export type AuthorInfo = {

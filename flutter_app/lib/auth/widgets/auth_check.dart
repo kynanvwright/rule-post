@@ -37,12 +37,13 @@ Future<void> ensureFreshAuth({Duration waitForUser = const Duration(seconds: 3)}
   // 3) If App Check is enabled server-side (enforceAppCheck: true), refresh it too
   // Safe to call even if App Check isn't enabled; remove if you don't use App Check.
   try {
-    final token = await FirebaseAppCheck.instance.getToken(true); // true = force refresh
-    debugPrint("App Check token: $token");
+    await FirebaseAppCheck.instance.getToken(true); // true = force refresh
+    // debugPrint("App Check token: $token");
   } catch (e) {
     // Swallow if App Check not configured on this platform.
     debugPrint("App Check fail.");
   }
+  debugPrint("App Check successful.");
 }
 
 

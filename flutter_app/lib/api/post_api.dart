@@ -52,6 +52,7 @@ class PostApi {
     List<TempAttachment>? attachments,
     List<String>? parentIds,
     required String postId,
+    required Map<String, dynamic> editAttachments,
   }) async {
     // Require at least one of enquiryText or attachments
     if ((postText == null || postText.isEmpty) &&
@@ -65,6 +66,7 @@ class PostApi {
       'postType': postType,
       'title': title,
       'postId': postId,
+      'editAttachments': editAttachments,
       if (postText != null) 'postText': postText,
       if (attachments != null && attachments.isNotEmpty)
         'attachments': attachments.map((a) => a.toMap()).toList(),

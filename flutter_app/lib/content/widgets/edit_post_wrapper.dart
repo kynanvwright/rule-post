@@ -17,6 +17,7 @@ Future<void> onEditPostPressed(
   List<TempAttachment>? attachments,
   List<String>? parentIds,
   required String postId,
+  required Map<String, dynamic> editAttachments,
 }) async {
   try {
     await showProgressFlow<String>(
@@ -44,6 +45,7 @@ Future<void> onEditPostPressed(
           attachments: attachments,
           parentIds: parentIds,
           postId: postId,
+          editAttachments: editAttachments,
         );
       },
     );

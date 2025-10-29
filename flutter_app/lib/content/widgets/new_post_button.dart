@@ -118,7 +118,7 @@ class _NewPostButtonState extends State<NewPostButton> {
               postType: widget.type.apiName,
               title: payload.title,
               postText: payload.text,
-              attachments: (payload.attachments == null || payload.attachments!.isEmpty)
+              attachments: (payload.attachments.isEmpty)
                   ? null
                   : payload.attachments,
               parentIds: widget.parentIds,
@@ -177,6 +177,7 @@ class _NewPostDialogState extends State<_NewPostDialog> {
     _text  = TextEditingController(text: widget.initialText ?? '');
 
     _pending = [...(widget.initialAttachments ?? const [])];
+    // _pending = const [];
   }
 
   @override
@@ -559,12 +560,12 @@ class _NewPostPayload {
   _NewPostPayload({
     required this.title,
     required this.text,
-    this.attachments,
+    required this.attachments,
   });
 
   final String title;
   final String text;
-  final List<TempAttachment>? attachments;
+  final List<TempAttachment> attachments;
 }
 
 /// Use this one button for all three types.
@@ -593,6 +594,11 @@ class EditPostButton extends StatefulWidget {
 
 class _EditPostButtonState extends State<EditPostButton> {
   final _tooltipKey = GlobalKey<TooltipState>();
+  final Map<String, dynamic> editAttachments = {
+    'add': false,
+    'remove': false,
+    'removeList': [],
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -635,16 +641,52 @@ class _EditPostButtonState extends State<EditPostButton> {
             if (payload == null) return;
             if (!context.mounted) return;
 
+            //compare inital and final attachments to update the editAttachmentsMap
+            debugPrint("Initial attachments: ${widget.initialAttachments}");
+            debugPrint("Final attachments: ${payload.attachments.map((a) => a.toMap()).toList()}");
+            if ((widget.initialAttachments?.isNotEmpty ?? false) &&
+                (payload.attachments.isNotEmpty)) {
+              final initialAttachmentNumber = widget.initialAttachments?.length ?? 0;
+              final finalAttachmentNumber = payload.attachments.length;
+              final newAttachmentNumber = payload.attachments
+              .map((a) => a.toMap())
+              .where((m) {
+                final pathString = m['storagePath'] as String;
+                final firstPart = pathString.split('/').first;
+                return firstPart.contains('temp');
+              })
+              .length;
+              final removedAttachmentNumber = newAttachmentNumber + initialAttachmentNumber - finalAttachmentNumber;
+              if (newAttachmentNumber > 0) {
+                editAttachments['add'] = true;
+                debugPrint("Adding $newAttachmentNumber attachments");
+              }
+              if (removedAttachmentNumber > 0) {
+                editAttachments['remove'] = true;
+                debugPrint("Removing $removedAttachmentNumber attachments");
+                final initialPaths = widget.initialAttachments?.map((m) => m['storagePath']).toList() ?? [];
+                final finalPaths = payload.attachments.map((m) => m.storagePath).toList();
+                editAttachments['removeList'] = initialPaths.toSet().difference(finalPaths.toSet());
+                debugPrint("List of attachments to remove: ${editAttachments['removeList']}");
+              }
+              payload.attachments.removeWhere((a) {
+                final pathString = a.storagePath;
+                final firstPart = pathString.split('/').first;
+                return !firstPart.contains('temp');
+              });
+            }
+
             await onEditPostPressed(
               context,
               postType: widget.type.apiName,
               title: payload.title,
               postText: payload.text,
-              attachments: (payload.attachments == null || payload.attachments!.isEmpty)
+              attachments: (payload.attachments.isEmpty)
                   ? null
                   : payload.attachments,
               parentIds: widget.parentIds,
               postId: widget.postId,
+              editAttachments: editAttachments,
             );
           },
         ),

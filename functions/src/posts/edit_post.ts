@@ -102,7 +102,12 @@ export const editPost = onCall<EditPostData>(
     // if no attachments in update, remove attachment field if it exists
     // if no attachments in old version, skip comparison and just load in
     // if attachments in both, run hash comparison and leave alone if they match
-    if (editAttachments) {
+    if (editAttachments["add"] || editAttachments["remove"]) {
+      logger.info("editAttachments", {
+        add: editAttachments["remove"],
+        remove: editAttachments["remove"],
+        removeList: editAttachments["removeList"],
+      });
       // Validate attachments (no writes yet)
       const validated = await validateAttachments({
         postType: data.postType,
@@ -116,7 +121,14 @@ export const editPost = onCall<EditPostData>(
           incoming: data.attachments,
           validated,
         });
-        await db.doc(txRes.postPath).update({ attachments: finalised });
+        const existing = snap.data()?.attachments ?? [];
+        const filteredExisting = existing.filter(
+          (a: string) =>
+            !editAttachments["removeList"].some((r: string) => r === a),
+        );
+        const merged = [...filteredExisting, ...finalised];
+        await db.doc(txRes.postPath).update({ attachments: merged });
+        // await db.doc(txRes.postPath).update({ attachments: finalised });
       } else {
         await db.doc(txRes.postPath).update({ attachments: FieldValue.delete });
       }

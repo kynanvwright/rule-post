@@ -19,12 +19,12 @@ class TempAttachment {
   };
 
   factory TempAttachment.fromMap(Map<String, dynamic> map) {
+    final storagePath = (map['storagePath'] ?? map['path']) as String?;
     return TempAttachment(
-      name: map['name'] as String,
-      storagePath: map['url'] as String,
-      size: map['size'] as int?,
+      name: (map['name'] ?? '') as String,
+      storagePath: storagePath ?? '',
+      size: map['size'] is num ? (map['size'] as num).toInt() : null,
       contentType: map['contentType'] as String?,
     );
   }
 }
-
