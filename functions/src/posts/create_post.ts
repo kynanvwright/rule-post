@@ -84,7 +84,10 @@ export const createPost = onCall<CreatePostData>(
       4,
       { uid: authorUid, team: authorTeam },
     );
-    logger.info("postTx paths", { post: txRes.postPath });
+    logger.info("postTx paths", {
+      pre: postFolder,
+      post: txRes.postPath,
+    });
 
     assert(
       txRes.postPath === postFolder,

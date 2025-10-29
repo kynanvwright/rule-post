@@ -60,8 +60,8 @@ export const editPost = onCall<EditPostData>(
               .collection("responses")
               .doc(data.parentIds[1])
               .collection("comments");
-    const postFolder = draftCollectionRef.path;
     const draftDocRef = draftCollectionRef.doc(postId);
+    const postFolder = draftDocRef.path;
 
     // check that data is permitted to be edited
     const snap = await draftDocRef.get();
@@ -88,7 +88,10 @@ export const editPost = onCall<EditPostData>(
       draftDocRef,
       { uid: authorUid, team: authorTeam },
     );
-    logger.info("postTx paths", { post: txRes.postPath });
+    logger.info("postTx paths", {
+      pre: postFolder,
+      post: txRes.postPath,
+    });
 
     assert(
       txRes.postPath === postFolder,

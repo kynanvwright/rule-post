@@ -1,4 +1,4 @@
-// flutter_app/lib/content/widgets/create_post_wrapper.dart
+// flutter_app/lib/content/widgets/edit_post_wrapper.dart
 import 'package:flutter/material.dart';
 
 import '../../api/post_api.dart';
@@ -26,8 +26,8 @@ Future<void> onEditPostPressed(
         'Populating additional post data…',
         'Saving post to database…',
       ],
-      successTitle: 'Post created',
-      successMessage: 'Your post is saved and scheduled for publication.',
+      successTitle: 'Post edited',
+      successMessage: 'Your post is edited, saved and scheduled for publication.',
       failureTitle: 'Couldn’t create post',
       failureMessage: 'Please check details and try again.',
       autoCloseOnSuccess: true,
@@ -53,6 +53,6 @@ Future<void> onEditPostPressed(
 
   } catch (e) {
     // Failure already shown in the dialog; optionally log or map errors:
-    debugPrint('Create post failed: $e');
+    debugPrint('Edit post failed: $e');
   }
 }
