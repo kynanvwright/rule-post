@@ -126,3 +126,9 @@ export interface UserData {
   emailNotificationsOn?: boolean;
   email?: string;
 }
+
+export interface PublishResult {
+  success: boolean;
+  failReason?: string;
+  publishedNumber: number;
+}
