@@ -35,7 +35,7 @@ export async function publishResponses(
     .collection("responses")
     .where("isPublished", "==", false)
     .where("fromRC", "==", isRcResponse)
-    .where("roundNumber", "==", roundNumber + 1)
+    .where("roundNumber", "==", roundNumber + (isRcResponse ? 1 : 0))
     .get();
   // Copy docs into a mutable array
   const shuffled = [...unpublishedSnap.docs];
