@@ -12,7 +12,6 @@ import { publishResponses } from "../utils/publish_responses";
 import { isWorkingDay } from "../working_day";
 
 const db = getFirestore();
-const writer = db.bulkWriter();
 
 export const committeeResponsePublisher = onSchedule(
   { region: SCHED_REGION_ROME, schedule: "0 0 * * *", timeZone: ROME_TZ },
@@ -42,9 +41,10 @@ export const committeeResponsePublisher = onSchedule(
       return;
     }
 
-    // loop through enquiries and lok for responses to publish
+    // loop through enquiries and look for responses to publish
     let processed = 0;
     let published = 0;
+    const writer = db.bulkWriter();
     for (const enquiryDoc of enquiriesSnap.docs) {
       const publishResult = await publishResponses(
         writer,
@@ -58,6 +58,7 @@ export const committeeResponsePublisher = onSchedule(
         logger.info(
           `[committeeResponsePublisher] Enquiry ${enquiryDoc.id} failed with reason: ${publishResult.failReason}.`,
         );
+        // could trigger email to RC if they miss a deadline
       }
     }
     await writer.close();

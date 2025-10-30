@@ -2,18 +2,12 @@
 // File: src/scheduled_funcs/team_response_publisher.ts
 // Purpose: Publishes competitor responses after stage end; nightly 20:00 Rome
 // ──────────────────────────────────────────────────────────────────────────────
-import { FieldValue, getFirestore, Timestamp } from "firebase-admin/firestore";
+import { getFirestore, Timestamp } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 
 import { SCHED_REGION_ROME, ROME_TZ } from "../common/config";
-import { computeStageEnds } from "../utils/compute_stage_ends";
-import {
-  tokeniseAttachmentsIfAny,
-  readAuthorTeam,
-  queueDraftDelete,
-  stageUpdatePayload,
-} from "../utils/publish_helpers";
+import { publishResponses } from "../utils/publish_responses";
 
 const db = getFirestore();
 
@@ -21,8 +15,8 @@ export const teamResponsePublisher = onSchedule(
   { region: SCHED_REGION_ROME, schedule: "0 20 * * *", timeZone: ROME_TZ },
   async (): Promise<void> => {
     const nowTs = Timestamp.now();
-    const publishedAt = FieldValue.serverTimestamp();
 
+    // find relevant enquiries
     const enquiriesSnap = await db
       .collection("enquiries")
       .where("isPublished", "==", true)
@@ -36,98 +30,28 @@ export const teamResponsePublisher = onSchedule(
       return;
     }
 
+    // loop through enquiries and look for responses to publish
+    let processed = 0;
+    let published = 0;
     const writer = db.bulkWriter();
-    let totalResponsesPublished = 0;
-
     for (const enquiryDoc of enquiriesSnap.docs) {
-      const enquiryData = enquiryDoc.data();
-      const enquiryRef = enquiryDoc.ref;
-
-      // Try ordered by createdAt
-      let unpublishedSnap: FirebaseFirestore.QuerySnapshot;
-      try {
-        unpublishedSnap = await enquiryRef
-          .collection("responses")
-          .where("isPublished", "==", false)
-          .orderBy("createdAt", "asc")
-          .get();
-      } catch {
-        unpublishedSnap = await enquiryRef
-          .collection("responses")
-          .where("isPublished", "==", false)
-          .get();
-        // stable ordering fallback
-        const sorted = [...unpublishedSnap.docs].sort(
-          (a, b) =>
-            (a.get("createdAt")?.toMillis?.() ?? 0) -
-            (b.get("createdAt")?.toMillis?.() ?? 0),
+      const publishResult = await publishResponses(
+        writer,
+        "teamResponsePublisher",
+        enquiryDoc,
+        true,
+      );
+      processed += 1;
+      published += publishResult.publishedNumber;
+      if (publishResult.success == false) {
+        logger.info(
+          `[teamResponsePublisher] Enquiry ${enquiryDoc.id} failed with reason: ${publishResult.failReason}.`,
         );
-        for (let i = 0; i < sorted.length; i++) {
-          writer.update(sorted[i].ref, {
-            isPublished: true,
-            responseNumber: i + 1,
-            publishedAt,
-          });
-          await tokeniseAttachmentsIfAny(
-            writer,
-            sorted[i].ref,
-            sorted[i].get("attachments"),
-          );
-
-          const team = await readAuthorTeam(sorted[i].ref);
-          if (!team) {
-            logger.warn(
-              `[teamResponsePublisher] No team found for ${sorted[i].id}, skipping draft delete.`,
-            );
-          } else {
-            queueDraftDelete(writer, team, sorted[i].id);
-          }
-          totalResponsesPublished += 1;
-        }
       }
-
-      if (unpublishedSnap && !unpublishedSnap.empty) {
-        const docs = unpublishedSnap.docs; // already ordered if try succeeded
-        for (let i = 0; i < docs.length; i++) {
-          writer.update(docs[i].ref, {
-            isPublished: true,
-            responseNumber: i + 1,
-            publishedAt,
-          });
-          await tokeniseAttachmentsIfAny(
-            writer,
-            docs[i].ref,
-            docs[i].get("attachments"),
-          );
-
-          const team = await readAuthorTeam(docs[i].ref);
-          if (!team) {
-            logger.warn(
-              `[teamResponsePublisher] No team found for ${docs[i].id}, skipping draft delete.`,
-            );
-          } else {
-            queueDraftDelete(writer, team, docs[i].id);
-          }
-          totalResponsesPublished += 1;
-        }
-      }
-
-      // advance stage for enquiry
-      const stageLength = enquiryData.stageLength ?? 4;
-      const newStageEnds = computeStageEnds(stageLength + 1, {
-        hour: 11,
-        minute: 55,
-      });
-      writer.update(enquiryRef, {
-        teamsCanRespond: false,
-        teamsCanComment: true,
-        ...stageUpdatePayload(newStageEnds),
-      });
     }
-
     await writer.close();
     logger.info(
-      `[teamResponsePublisher] Processed ${enquiriesSnap.size} enquiries; published ${totalResponsesPublished} responses.`,
+      `[teamResponsePublisher] Processed ${processed} enquiries; published ${published} responses.`,
     );
   },
 );
