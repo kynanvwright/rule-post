@@ -44,9 +44,16 @@ export const responseInstantPublisher = onCall(
       enquiryDoc,
       rcResponse,
     );
-    logger.info(
-      `[responseInstantPublisher] Published ${publishResult.publishedNumber} responses.`,
-    );
+    await writer.close();
+    if (publishResult.success == false) {
+      logger.info(
+        `[teamResponsePublisher] Enquiry ${enquiryDoc.id} failed with reason: ${publishResult.failReason}.`,
+      );
+    } else {
+      logger.info(
+        `[responseInstantPublisher] Published ${publishResult.publishedNumber} responses.`,
+      );
+    }
     return {
       ok: publishResult.success,
       num_published: publishResult.publishedNumber,
