@@ -118,7 +118,7 @@ export async function runCreatePostTx(
         throw new HttpsError("failed-precondition", "Enquiry is closed.");
       }
 
-      const roundNumber = Number(enquirySnap.get("roundNumber") || 0);
+      const roundNumber = Number(enquirySnap.get("roundNumber") ?? 0);
       const metaRef = enquiryRef.collection("meta").doc("data");
       const metaSnap = await tx.get(metaRef);
       if (!metaSnap.exists)
@@ -153,18 +153,20 @@ export async function runCreatePostTx(
           .collection("meta")
           .doc("response_guards")
           .collection("guards")
-          .doc(`${author.team}_${roundNumber}`);
+          .doc(`${author.team}_${publicDoc.roundNumber}`);
         try {
           tx.create(guardRef, {
             authorTeam: author.team,
-            roundNumber,
+            roundNumber: publicDoc.roundNumber,
             createdAt: now,
+            latestResponseId: postId,
           });
         } catch (e: unknown) {
           if (isNotFoundError(e)) {
             throw new HttpsError(
               "already-exists",
-              `Your team has already submitted a response for round ${roundNumber}.`,
+              `Your team has already submitted a response for round ${publicDoc.roundNumber}.\n
+              This error may falsely trigger if a post was deleted, if so, delete the relevant response guard.`,
             );
           }
           throw e; // rethrow anything unexpected

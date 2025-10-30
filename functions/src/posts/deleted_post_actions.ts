@@ -75,10 +75,18 @@ async function handleDeletion(args: {
       .limit(1); // since we expect only one
     const snap = await q.get();
     if (!snap.empty) await snap.docs[0].ref.delete();
-    // Add some logic to deal with response numbering
+    // delete relevant guards on response authors
+    const guardPath = `enquiries/${enquiryId}/meta/response_guards/guards/`;
+    const guardQuery = db
+      .collection(guardPath)
+      .where("latestResponseId", "==", responseId)
+      .limit(1); // since we expect only one
+    const guardSnap = await guardQuery.get();
+    if (!guardSnap.empty) await guardSnap.docs[0].ref.delete();
     // delete files attached to post
     const path = `enquiries/${enquiryId}/responses/${responseId}/`;
     deleteFolder(path);
+    // Add some logic to deal with response numbering
   } else if (kind === "comment" && commentId) {
     // Delete drafts if any
     deleteDraftDoc(commentId);
