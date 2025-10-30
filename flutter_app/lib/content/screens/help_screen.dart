@@ -12,7 +12,7 @@ class HelpFaqScreen extends StatelessWidget {
     final faqs = <Map<String, Object>>[
       // General
       {
-        "icon": Icons.explore, // was 🧭
+        "icon": Icons.info_outline, // was 🧭
         "header": "General",
         "items": <Map<String, String>>[
           {
@@ -227,10 +227,11 @@ Widget buildAnswerText(BuildContext context, String text) {
     spans.add(TextSpan(text: text.substring(lastIndex)));
   }
 
-  return RichText(
-    text: TextSpan(
+  return Text.rich(
+    TextSpan(
       style: DefaultTextStyle.of(context).style,
       children: spans,
     ),
+    textAlign: TextAlign.center,
   );
 }
