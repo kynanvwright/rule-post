@@ -1,21 +1,20 @@
+// flutter_app/lib/core/widgets/filter_dropdown.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../riverpod/enquiry_filter_provider.dart';
+import '../models/enquiry_status_filter.dart';
 
 class FilterDropdown extends ConsumerStatefulWidget {
   const FilterDropdown({
     super.key,
-    required this.statusOptions,
-    required this.statusIcon,
-    required this.statusLabel,
+    required this.groups,
     required this.height,
     required this.radius,
     required this.horizontalPad,
   });
 
-  final List<String> statusOptions;
-  final IconData Function(String) statusIcon;
-  final String Function(String) statusLabel;
+  // Each group is (header: String, options: List<EnquiryStatusFilter>)
+  final List<({String header, List<EnquiryStatusFilter> options})> groups;
 
   final double height;
   final double radius;
@@ -123,35 +122,48 @@ class FilterDropdownState extends ConsumerState<FilterDropdown> {
               const SizedBox(height: 8),
 
               // Status list (driven by provider)
-              ...widget.statusOptions.map((opt) {
-                final selected = opt == filter.status;
-                // Wrap your radio tiles in a RadioGroup<String>
-                return RadioGroup<String>(
-                  groupValue: filter.status,               // <-- moved here
-                  onChanged: (String? v) {                 // <-- moved here
-                    if (v == null) return;
-                    ctrl.setStatus(v);
-                    setState(() {}); // instant visual checkmark
-                  },
-                  child: RadioListTile<String>(
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    value: opt,
-                    selected: opt == filter.status,
-                    title: Row(
-                      children: [
-                        Icon(widget.statusIcon(opt), size: 18),
-                        const SizedBox(width: 8),
-                        Text(widget.statusLabel(opt)),
-                        if (selected) ...[
-                          const Spacer(),
-                          const Icon(Icons.check, size: 16),
-                        ],
-                      ],
+              ...widget.groups.map((group) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // group header
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12, bottom: 4),
+                      child: Text(
+                        group.header,
+                        style: Theme.of(context).textTheme.labelMedium,
+                      ),
                     ),
-                  ),
+
+                    // each radio option in the group
+                    for (final opt in group.options)
+                      RadioListTile<EnquiryStatusFilter>(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        value: opt,
+                        groupValue: filter.status, // this works because it's the same type
+                        onChanged: (val) {
+                          if (val == null) return;
+                          ctrl.setStatus(val);
+                          setState(() {}); // so the checkmark updates immediately
+                        },
+                        title: Row(
+                          children: [
+                            Icon(opt.icon, size: 18),
+                            const SizedBox(width: 8),
+                            Text(opt.label),
+                            if (identical(opt.runtimeType, filter.status.runtimeType))
+                              ...[
+                                const Spacer(),
+                                const Icon(Icons.check, size: 16),
+                              ],
+                          ],
+                        ),
+                      ),
+                  ]
                 );
               }),
+
               const Divider(height: 20),
 
               // Search row
@@ -198,7 +210,7 @@ class FilterDropdownState extends ConsumerState<FilterDropdown> {
                 children: [
                   TextButton.icon(
                     onPressed: () {
-                      ctrl.reset(defaultStatus: 'all');
+                      ctrl.reset(defaultStatus: EnquiryStatusFilter.all());
                       _localSearchCtrl.clear();
                       setState(() {});
                     },

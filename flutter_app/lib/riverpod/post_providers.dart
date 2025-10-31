@@ -5,15 +5,16 @@ import '../../core/widgets/doc_view.dart';
 import 'post_streams.dart';
 import 'enquiry_refresh_signal.dart';
 import '../../riverpod/user_detail.dart';
+import '../core/models/enquiry_status_filter.dart';
 
 
 // 1) Public (no auth)
 final publicEnquiriesProvider =
-    StreamProvider.family<List<DocView>, String>((ref, statusFilter)  => publicEnquiriesStream(statusFilter: statusFilter));
+    StreamProvider.family<List<DocView>, EnquiryStatusFilter>((ref, statusFilter)  => publicEnquiriesStream(statusFilter: statusFilter));
 
 // 2) Private (needs teamId)
 final combinedEnquiriesProvider =
-    StreamProvider.family<List<DocView>, ({String statusFilter})>((ref, args) {
+    StreamProvider.family<List<DocView>, ({EnquiryStatusFilter statusFilter})>((ref, args) {
   final teamId = ref.watch(teamProvider);
   ref.watch(draftIdsProvider(teamId)); // triggers refresh when new enquiry draft detected
   return combinedEnquiriesStream(teamId: teamId, statusFilter: args.statusFilter);

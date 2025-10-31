@@ -2,6 +2,7 @@ import 'package:rxdart/rxdart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import '../../core/widgets/doc_view.dart';
+import '../core/models/enquiry_status_filter.dart';
 
 final db = FirebaseFirestore.instance;
 
@@ -9,16 +10,19 @@ final db = FirebaseFirestore.instance;
 // Helper: apply status filter + stable sort
 List<DocView> filterAndSort(
   List<DocView> items, {
-  String statusFilter = '',
+  EnquiryStatusFilter statusFilter = const EnquiryStatusFilter.all(),
   Map<String, String> sortDirections = const {}, // e.g. {'enquiryNumber': 'desc'}
 }) {
   var all = items;
-
   // ── Apply status filter ───────────────────────────
-  if (statusFilter == 'open') {
+  final filterParts = statusFilter.code.split('.');
+  if (statusFilter.code == 'open') {
     all = all.where((e) => e.data()['isOpen'] == true).toList();
-  } else if (statusFilter == 'closed') {
+  } else if (filterParts.first == 'closed') {
     all = all.where((e) => e.data()['isOpen'] == false).toList();
+    if (filterParts.length > 1) {
+      all = all.where((e) => e.data()['enquiryConclusion'] == filterParts.last).toList();
+    } 
   }
 
   // ── Multi-key stable sort with direction ───────────
@@ -49,7 +53,7 @@ List<DocView> filterAndSort(
 
 
 List<DocView> Function(List<DocView>) makeFilterSorter({
-  String statusFilter = '',
+  EnquiryStatusFilter statusFilter = const EnquiryStatusFilter.all(),
   Map<String, String> sortDirections = const {},
 }) {
   return (items) => filterAndSort(
@@ -61,7 +65,7 @@ List<DocView> Function(List<DocView>) makeFilterSorter({
 
 
 Stream<List<DocView>> publicEnquiriesStream({
-  required String statusFilter,
+  required EnquiryStatusFilter statusFilter,
 }) {
   // 1) Public, published enquiries
   final public$ = db
@@ -82,7 +86,7 @@ Stream<List<DocView>> publicEnquiriesStream({
 
 
 Stream<List<DocView>> combinedEnquiriesStream({
-  required String statusFilter,
+  required EnquiryStatusFilter statusFilter,
   String? teamId,
 }) {
   

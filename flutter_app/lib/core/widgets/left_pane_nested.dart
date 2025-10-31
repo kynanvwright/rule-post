@@ -11,6 +11,7 @@ import '../../riverpod/post_providers.dart';
 import '../widgets/doc_view.dart';
 import 'filter_dropdown.dart';
 import 'two_panel_shell.dart';
+import '../models/enquiry_status_filter.dart';
 
 final filterDefault = 'open';
 
@@ -59,17 +60,24 @@ class LeftPaneHeader extends ConsumerWidget {
                   const SizedBox(width: 12),
                 ],
                 FilterDropdown(
-                  statusOptions: const ['all', 'open', 'closed'],
-                  statusIcon: (v) => switch (v) {
-                    'open' => Icons.lock_open,
-                    'closed' => Icons.lock,
-                    _ => Icons.filter_alt,
-                  },
-                  statusLabel: (v) => switch (v) {
-                    'open' => 'Open',
-                    'closed' => 'Closed',
-                    _ => 'All',
-                  },
+                  groups: const [
+                    (
+                      header: 'General',
+                      options: [
+                        EnquiryStatusFilter.all(),
+                        EnquiryStatusFilter.open(),
+                        EnquiryStatusFilter.closedAny(),
+                      ],
+                    ),
+                    (
+                      header: 'Closed subsets',
+                      options: [
+                        EnquiryStatusFilter.closedAmendment(),
+                        EnquiryStatusFilter.closedInterpretation(),
+                        EnquiryStatusFilter.closedNoResult(),
+                      ],
+                    ),
+                  ],
                   height: _kControlHeight,
                   radius: 8,
                   horizontalPad: _kHorzPad,

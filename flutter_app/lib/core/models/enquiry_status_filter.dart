@@ -1,4 +1,4 @@
-
+// flutter_app/lib/core/models/enquiry_status_filter.dart
 import 'package:flutter/material.dart';
 
 // 1. Define the allowed filters

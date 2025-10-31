@@ -2,23 +2,25 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/models/enquiry_status_filter.dart';
+
 @immutable
 class EnquiryFilter {
-  final String status; // e.g. 'all', 'open', 'closed'
+  final EnquiryStatusFilter status; // e.g. 'all', 'open', 'closed'
   final String query;  // free-text search
-  const EnquiryFilter({this.status = 'all', this.query = ''});
+  const EnquiryFilter({this.status = const EnquiryStatusFilter.all(), this.query = ''});
 
-  EnquiryFilter copyWith({String? status, String? query}) =>
+  EnquiryFilter copyWith({EnquiryStatusFilter? status, String? query}) =>
       EnquiryFilter(status: status ?? this.status, query: query ?? this.query);
 }
 
 class EnquiryFilterCtrl extends StateNotifier<EnquiryFilter> {
   EnquiryFilterCtrl() : super(const EnquiryFilter());
 
-  void setStatus(String s) => state = state.copyWith(status: s);
+  void setStatus(EnquiryStatusFilter s) => state = state.copyWith(status: s);
   void setQuery(String q) => state = state.copyWith(query: q);
   void clearQuery() => state = state.copyWith(query: '');
-  void reset({String defaultStatus = 'all'}) =>
+  void reset({EnquiryStatusFilter defaultStatus = const EnquiryStatusFilter.all()}) =>
       state = EnquiryFilter(status: defaultStatus, query: '');
 }
 
