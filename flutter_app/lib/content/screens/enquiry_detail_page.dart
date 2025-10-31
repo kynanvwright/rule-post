@@ -69,7 +69,7 @@ class EnquiryDetailPage extends ConsumerWidget {
             ),
           meta: Wrap(
             spacing: 8, runSpacing: 8, children: [
-              if (d.containsKey('isOpen') && !isOpen) StatusChip('Closed', color: Colors.red),
+              if (d.containsKey('isOpen') && !isOpen && d.containsKey('enquiryConclusion')) StatusChip(enquiryConclusionLabels[d['enquiryConclusion']] ?? 'Closed', color: Colors.red),
               if (d.containsKey('isPublished') && !isPublished) StatusChip('Unpublished', color: Colors.orange),
               if (d.containsKey('fromRC') && fromRC) StatusChip('Rules Committee Enquiry', color: Colors.blue),
             ],
@@ -126,3 +126,9 @@ class EnquiryDetailPage extends ConsumerWidget {
     );
   }
 }
+
+final enquiryConclusionLabels = {
+  'amendment': 'Amendment closed',
+  'interpretation': 'Interpretation closed',
+  'noResult': 'Enquiry closed with no result',
+};
