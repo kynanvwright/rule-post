@@ -36,24 +36,24 @@ A website for facilitating America's Cup Rule Enquiries.
 
 ### MVP
 - New accounts can be created [done]
-  - only by RC for now, through firebase console [superseded]
-- Scheduled publishing [deployed] [testing]
-- RC can skip scheduling as detailed in the rule (only in firebase console for now)
-- Basic email alerts [deployed] [testing]
+- Scheduled publishing [done]
+- RC can skip scheduling as detailed in the rule [done]
+- Basic email alerts [done]
 - Colour-coding (optional but good) [done]
 
 ### Published version
 - Site mostly used while logged out [done]
   - only log in for posting or notification settings [done]
 - One team lead user per team, can add new users [done]
-- Email notifications with customisation [partial]
-- Publishing permissions move via schedule or RC acceleration
-  - allow alternative stage lengths
+- Email notifications with customisation [done]
+- Publishing permissions move via schedule or RC acceleration [done]
+  - allow alternative stage lengths [done]
 - Identify RC in all of their posts [done]
-- Pre-publication editing available after submission (maybe)
-- Search/filter in navigation pane
+- Pre-publication editing available after submission [done]
+- Search/filter in navigation pane [done]
 - Robust testing
 - Allow RC to close the enquiry in their response
+  - allow RC to close enqury with button [done]
   - add mechanism for circulating for Docusign?
 - Add commercial product area
 
@@ -61,16 +61,16 @@ A website for facilitating America's Cup Rule Enquiries.
 
 ### 🔒 Permissions & Roles
 - Require email verification (via Firebase Auth)
-- Create static mirror of site for public viewing, updated whenever post details change
-- Look into limiting the access of cloud functions. Full admin may not be necessary and increase exploitation risk.
+  - superseded by allowing team leads to add accounts
+- Limit the access of cloud functions. Full admin may not be necessary and increase exploitation risk.
 - Check that users can't edit or delete (Firebase Rules)
 - Add rate limiting on functions and queries
 
 ### 📤 Publishing & Workflow
-- Permit editing prior to submission (be careful of permissions here)
 - Anonymity toggle (default ON to start)  
   - optionally allows teams to identify themselves
 - Add amendment/interpretation/neither tag on enquiry closure, to allow filtering later
+  - done, need to add matching filters and status chips
 - have a page summarising all open enquiry deadlines
 
 ### 📑 Enquiries & Responses
@@ -90,7 +90,7 @@ A website for facilitating America's Cup Rule Enquiries.
 
 ### 📧 Notifications & Alerts
 - Add (toggleable) email alerts to users for when:
-  - posts are published
+  - posts are published [done]
   - deadlines are approaching (and the team hasn't submitted)
 - Add email alerts for admins when server/Firestore billing costs are spiking
 - Extend notifications to WhatsApp/text
@@ -116,13 +116,11 @@ A website for facilitating America's Cup Rule Enquiries.
 - Check which widgets/screens are still in use, delete as required
 - Look for edge cases where RC speeds up stage end and team response gets stuck. 
   - Need to block submission in that case so it doesn't end up getting published in the next round, or alongside the RC without them reading it.
-- If I rapidly change who I'm logged in as, it keeps the old user data (e.g. getting confused about whether I'm RC or not)
-  - might be unique to local version, also not a common issue
 - Enforce overall enquiry timeline even if RC responds late
   - notify Competitors that they have slightly less time than is ideal
 - Fix stage ends to be on the hour and cloud functions to run at 1 minute past
 - Should the email digest delete entries rather than marking them as processed?
-- Switch childrenSection streams to providers to avoid reload on log-in
+- Switch childrenSection streams to providers to avoid reload on log-in?
 - Check cloud functions and delete ones that aren't in use
 
 ## Other Notes

@@ -6,6 +6,7 @@ import './prompt_stage_length.dart';
 typedef ConfirmGuard = Future<bool> Function(BuildContext context);
 typedef ActionArgs = Object?;
 
+
 class AdminAction {
   const AdminAction({
     required this.label,
@@ -29,7 +30,6 @@ class AdminAction {
   /// If `buildAndGetArgs` is null, we'll call this with `null`.
   final Future<void> Function(ActionArgs args) runWithArgs;
 
-  
   factory AdminAction.publishCompetitorResponses({
     required String enquiryId,
     required Future<int?> Function() run,
@@ -231,6 +231,7 @@ class AdminAction {
   }
 }
 
+
 class AdminCard extends StatefulWidget {
   const AdminCard({
     super.key,
@@ -298,6 +299,7 @@ class _AdminCardState extends State<AdminCard> {
     );
   }
 }
+
 
 /// A full-width button that shows a warning/confirmation dialog before running.
 class _GuardedActionButton extends StatelessWidget {
@@ -376,6 +378,7 @@ class _GuardedActionButton extends StatelessWidget {
   }
 }
 
+
 Future<T?> promptChooseOption<T>({
   required BuildContext context,
   required String title,
@@ -436,4 +439,6 @@ Future<T?> promptChooseOption<T>({
     },
   );
 }
+
+
 enum EnquiryConclusion { amendment, interpretation, noResult }
