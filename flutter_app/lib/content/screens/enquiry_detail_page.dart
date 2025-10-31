@@ -115,7 +115,7 @@ class EnquiryDetailPage extends ConsumerWidget {
                       context: context),
                     AdminAction.closeEnquiry(
                       enquiryId: enquiryId,
-                      run: () => closeEnquiry(enquiryId),
+                      run: (enquiryConclusion) => closeEnquiry(enquiryId, enquiryConclusion),
                       enabled: isOpen && isPublished,
                       context: context),
                   ],

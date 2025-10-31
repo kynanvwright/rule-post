@@ -5,9 +5,9 @@
 import { getFirestore } from "firebase-admin/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 
-const db = getFirestore();
+import { CloseEnquiryPayload } from "../common/types";
 
-type CloseEnquiryPayload = { enquiryID: string };
+const db = getFirestore();
 
 export const closeEnquiry = onCall(
   { cors: true, enforceAppCheck: true },
@@ -38,6 +38,14 @@ export const closeEnquiry = onCall(
         "enquiryID must be a single segment (no slashes).",
       );
     }
+    const enquiryConclusion = (req.data as Partial<CloseEnquiryPayload>)
+      ?.enquiryConclusion;
+    if (typeof enquiryConclusion !== "string") {
+      throw new HttpsError(
+        "invalid-argument",
+        "enquiryConclusion must be a string.",
+      );
+    }
 
     // Optional: log for forensics (safe—doesn’t reveal secrets)
     console.log("[closeEnquiry] caller", {
@@ -45,6 +53,7 @@ export const closeEnquiry = onCall(
       isAdmin,
       isRC,
       enquiryID,
+      enquiryConclusion,
     });
 
     // 3) Update
@@ -59,6 +68,7 @@ export const closeEnquiry = onCall(
       isOpen: false,
       teamsCanRespond: false,
       teamsCanComment: false,
+      enquiryConclusion: enquiryConclusion,
     });
 
     return { ok: true, enquiryID };

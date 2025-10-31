@@ -132,3 +132,10 @@ export interface PublishResult {
   failReason?: string;
   publishedNumber: number;
 }
+
+export type CloseEnquiryPayload = {
+  enquiryID: string;
+  enquiryConclusion: EnquiryConclusion;
+};
+
+export type EnquiryConclusion = "amendment" | "interpretation" | "noResult";

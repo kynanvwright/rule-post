@@ -208,6 +208,20 @@ class AppBanner extends ConsumerWidget {
 
                     SizedBox(width: gap * 0.6),
 
+                    // // Commercial Products
+                    // ConstrainedBox(
+                    //   constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                    //   child: IconButton(
+                    //     tooltip: 'Commercial Products (not wired yet)',
+                    //     onPressed: null,
+                    //     icon: Icon(Icons.inventory_2_outlined, color: scheme.onPrimary, size: iconSize),
+                    //     padding: EdgeInsets.zero,
+                    //     splashRadius: (iconSize + minTap) / 4,
+                    //   ),
+                    // ),
+
+                    // SizedBox(width: gap * 0.6),
+
                     // Account
                     ConstrainedBox(
                       constraints: const BoxConstraints(minWidth: 40, minHeight: 40),

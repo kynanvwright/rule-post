@@ -4,23 +4,30 @@ import 'package:cloud_functions/cloud_functions.dart';
 import './prompt_stage_length.dart';
 
 typedef ConfirmGuard = Future<bool> Function(BuildContext context);
+typedef ActionArgs = Object?;
 
 class AdminAction {
   const AdminAction({
     required this.label,
-    required this.onPressed,
+    required this.runWithArgs,
     this.icon,
     this.tooltip,
     this.enabled = true,
     this.confirmGuard, // if provided, used instead of the default dialog
+    this.buildAndGetArgs, // dialog/input step
   });
 
   final String label;
-  final VoidCallback onPressed;
   final IconData? icon;
   final String? tooltip;
   final bool enabled;
-  final ConfirmGuard? confirmGuard;
+  final ConfirmGuard? confirmGuard;  
+  /// Step 1 (optional): show a dialog / sheet / form, gather user input,
+  /// and return it. If this returns `null`, we treat that as "cancel".
+  final Future<ActionArgs?> Function(BuildContext context)? buildAndGetArgs;
+  /// Step 2: actually perform the action using those args.
+  /// If `buildAndGetArgs` is null, we'll call this with `null`.
+  final Future<void> Function(ActionArgs args) runWithArgs;
 
   
   factory AdminAction.publishCompetitorResponses({
@@ -33,7 +40,7 @@ class AdminAction {
           icon: Icons.publish,
           tooltip: enabled ? 'Publish all submitted responses' : 'Locked: No pending responses',
           enabled: enabled,
-          onPressed: () async {
+          runWithArgs: (_) async {
             try {
               final functionSuccess = await run();
               if (functionSuccess != null) {
@@ -59,7 +66,7 @@ class AdminAction {
           icon: Icons.publish,
           tooltip: enabled ? 'Finish this enquiry stage and skip to the next' : 'Locked: Wait for Competitors to respond',
           enabled: enabled,
-          onPressed: () async {
+          runWithArgs: (_) async {
             try {
               final functionSuccess = await run();
               if (functionSuccess) {
@@ -88,25 +95,78 @@ class AdminAction {
 
   factory AdminAction.closeEnquiry({
     required String enquiryId,
-    required Future<String?> Function() run,
+    required Future<String?> Function(EnquiryConclusion t) run,
     required bool enabled,
-    required context,
+    required BuildContext context,
   }) => AdminAction(
           label: 'Close Enquiry',
           icon: Icons.lock,
           tooltip: enabled ? 'End enquiry and lock all submissions' : 'Locked: Enquiry already closed',
           enabled: enabled,
-          onPressed: () async {
+          // Step 1: show dropdown dialog and return the chosen EnquiryConclusion (or null)
+          buildAndGetArgs: (ctx) async {
+            final chosen = await promptChooseOption<EnquiryConclusion>(
+              context: ctx,
+              title: 'Close enquiry?',
+              message:
+                  'Indicate how it ended:',
+              confirmLabel: 'Proceed',
+              items: const [
+                DropdownMenuItem(
+                  value: EnquiryConclusion.amendment,
+                  child: Text('Amendment'),
+                ),
+                DropdownMenuItem(
+                  value: EnquiryConclusion.interpretation,
+                  child: Text('Interpretation'),
+                ),
+                DropdownMenuItem(
+                  value: EnquiryConclusion.noResult,
+                  child: Text('Enquiry closed with no interpretation or amendment.'),
+                ),
+              ],
+            );
+            // If user hit Cancel, `chosen` will be null.
+            return chosen;
+          },
+          runWithArgs: (args) async {
+            final enquiryConclusion = args as EnquiryConclusion?;
+            if (enquiryConclusion == null) {
+              // user cancelled / never selected
+              return;
+            }
             try {
-              final closedEnquiryId = await run();
+              final closedEnquiryId = await run(enquiryConclusion);
+              if (!context.mounted) return;
               if (closedEnquiryId != null) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Enquiry closed')),
+                  SnackBar(
+                    content: Text(
+                      'Enquiry closed',
+                    ),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Failed to close enquiry'),
+                  ),
                 );
               }
-            } catch (e) {
+            } on FirebaseFunctionsException catch (e, st) {
+              debugPrint(
+                  'Functions error: ${e.code} ${e.message}\nDetails: ${e.details}\n$st');
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Failed to close enquiry')),
+                SnackBar(
+                  content: Text(
+                    'Cloud Function error: ${e.code}: ${e.message ?? ''}',
+                  ),
+                ),
+              );
+            } catch (e, st) {
+              debugPrint('Unexpected error: $e\n$st');
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Unexpected error: $e')),
               );
             }
           },
@@ -134,7 +194,7 @@ class AdminAction {
         return v != null; // only proceed if user confirmed
       },
       // Step 2: onPressed runs only when confirmGuard returned true
-      onPressed: () async {
+      runWithArgs: (_) async {
         try {
           final days = pendingDays!;
           final ok = await run(days);
@@ -251,41 +311,46 @@ class _GuardedActionButton extends StatelessWidget {
   final double minWidth;
   final double minHeight;
 
-  Future<void> _confirmAndRun(BuildContext context) async {
-    // If the button is disabled, do nothing
+  Future<void> _handlePress(BuildContext context) async {
     if (!action.enabled) return;
 
-    bool ok;
-    if (action.confirmGuard != null) {
-      ok = await action.confirmGuard!(context);
+    // 1. If there's a dialog/input step, run it.
+    ActionArgs? args;
+    if (action.buildAndGetArgs != null) {
+      args = await action.buildAndGetArgs!(context);
+      // User hit cancel
+      if (args == null) return;
     } else {
-      ok = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          icon: const Icon(Icons.warning_amber_rounded),
-          title: Text(action.label),
-          content: Text(
-            (action.tooltip?.trim().isNotEmpty ?? false)
-                ? action.tooltip!.trim()
-                : "Are you sure you want to run “${action.label}”?",
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel'),
+      // 2. Otherwise show the stock "are you sure?" dialog.
+      final ok = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              icon: const Icon(Icons.warning_amber_rounded),
+              title: Text(action.label),
+              content: Text(
+                (action.tooltip?.trim().isNotEmpty ?? false)
+                    ? action.tooltip!.trim()
+                    : 'Are you sure you want to run “${action.label}”?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  child: const Text('Proceed'),
+                ),
+              ],
             ),
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Proceed'),
-            ),
-          ],
-        ),
-      ) ?? false;
+          ) ??
+          false;
+      if (!ok) return;
+      args = null; // no custom data
     }
-    if (ok) {
-      action.onPressed();
-    }
-    
+
+    // 3. Actually run the action with the gathered args.
+    await action.runWithArgs(args);
   }
 
   @override
@@ -296,19 +361,79 @@ class _GuardedActionButton extends StatelessWidget {
         minHeight: minHeight,
       ),
       child: SizedBox(
-        width: double.infinity, // full width in the column
+        width: double.infinity,
         child: FilledButton.icon(
-          onPressed: action.enabled ? () => _confirmAndRun(context) : null,
+          onPressed: action.enabled ? () => _handlePress(context) : null,
           icon: Icon(action.icon ?? Icons.settings),
           label: Text(action.label),
         ),
       ),
     );
 
-    // Keep hover tooltip if provided (useful on desktop),
-    // dialog still appears on click to guard the action.
     return (action.tooltip == null || action.tooltip!.isEmpty)
         ? btn
         : Tooltip(message: action.tooltip!, child: btn);
   }
 }
+
+Future<T?> promptChooseOption<T>({
+  required BuildContext context,
+  required String title,
+  required String message,
+  required List<DropdownMenuItem<T>> items,
+  required String confirmLabel,
+}) async {
+  T? tempValue;
+
+  return showDialog<T>(
+    context: context,
+    barrierDismissible: false, // force explicit Cancel/Confirm
+    builder: (ctx) {
+      return AlertDialog(
+        icon: const Icon(Icons.warning_amber_rounded),
+        title: Text(title),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(message),
+            const SizedBox(height: 12),
+            StatefulBuilder(
+              builder: (ctx, setState) {
+                return DropdownButtonFormField<T>(
+                  initialValue: tempValue,
+                  items: items,
+                  onChanged: (newVal) {
+                    setState(() {
+                      tempValue = newVal;
+                    });
+                  },
+                  decoration: const InputDecoration(
+                    labelText: 'Select an option',
+                    border: OutlineInputBorder(),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(null),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              // Only allow confirm if something is chosen
+              if (tempValue != null) {
+                Navigator.of(ctx).pop(tempValue);
+              }
+            },
+            child: Text(confirmLabel),
+          ),
+        ],
+      );
+    },
+  );
+}
+enum EnquiryConclusion { amendment, interpretation, noResult }
