@@ -7,14 +7,10 @@ import '../models/enquiry_status_filter.dart';
 class FilterDropdown extends ConsumerStatefulWidget {
   const FilterDropdown({
     super.key,
-    required this.groups,
     required this.height,
     required this.radius,
     required this.horizontalPad,
   });
-
-  // Each group is (header: String, options: List<EnquiryStatusFilter>)
-  final List<({String header, List<EnquiryStatusFilter> options})> groups;
 
   final double height;
   final double radius;
@@ -28,23 +24,28 @@ class FilterDropdownState extends ConsumerState<FilterDropdown> {
   final _menuController = MenuController();
   late final TextEditingController _localSearchCtrl;
 
+  // Keep the menu compact by default
+  bool _showClosedSubfilters = false;
+
   @override
   void initState() {
     super.initState();
     _localSearchCtrl = TextEditingController();
 
-    // One-time hydration from widget props if provider is at defaults.
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncControllerWithProvider(
+        ref.read(enquiryFilterProvider).query,
+        setSelectionToEnd: true,
+      );
 
-      // Sync controller to provider
-      _syncControllerWithProvider(ref.read(enquiryFilterProvider).query, setSelectionToEnd: true);
-
-      // Rebuild suffix icon visibility as user types
       _localSearchCtrl.addListener(() => setState(() {}));
     });
   }
 
-  void _syncControllerWithProvider(String query, {bool setSelectionToEnd = false}) {
+  void _syncControllerWithProvider(
+    String query, {
+    bool setSelectionToEnd = false,
+  }) {
     if (_localSearchCtrl.text != query) {
       final base = TextEditingValue(text: query);
       final sel = setSelectionToEnd
@@ -67,16 +68,16 @@ class FilterDropdownState extends ConsumerState<FilterDropdown> {
     final filter = ref.watch(enquiryFilterProvider);
     final ctrl = ref.read(enquiryFilterProvider.notifier);
 
-    // Keep text field in sync if provider changed externally
+    // keep text field synced with provider
     _syncControllerWithProvider(filter.query);
 
-    // Anchor styling
     final scheme = Theme.of(context).colorScheme;
     final onVariant = scheme.onSurfaceVariant;
     final bg = scheme.primary;
     final fg = scheme.onPrimary;
     final overlay = scheme.primary.withValues(alpha: 0.08);
 
+    // The little pill button in the header bar
     final anchor = FilledButton(
       style: ButtonStyle(
         backgroundColor: WidgetStatePropertyAll(bg),
@@ -94,7 +95,7 @@ class FilterDropdownState extends ConsumerState<FilterDropdown> {
       ),
     );
 
-    // Card content
+    // Popup content
     final menuCard = ConstrainedBox(
       constraints: const BoxConstraints(minWidth: 280, maxWidth: 360),
       child: Card(
@@ -105,6 +106,7 @@ class FilterDropdownState extends ConsumerState<FilterDropdown> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // ── Title Row / Close button ──────────────────────────────
               Row(
                 children: [
                   Icon(Icons.filter_alt, size: 18, color: onVariant),
@@ -121,62 +123,175 @@ class FilterDropdownState extends ConsumerState<FilterDropdown> {
               ),
               const SizedBox(height: 8),
 
-              // Status list (driven by provider)
-              ...widget.groups.map((group) {
-                return Column(
+              // ── STATUS SECTION ────────────────────────────────────────
+              //
+              // One RadioGroup<EnquiryStatusFilter> for everything, so we
+              // don't have deprecated groupValue/onChanged on each tile.
+              RadioGroup<EnquiryStatusFilter>(
+                groupValue: filter.status,
+                onChanged: (val) {
+                  if (val == null) return;
+                  ctrl.setStatus(val);
+                  setState(() {}); // reflect new tick immediately
+                },
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // group header
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12, bottom: 4),
-                      child: Text(
-                        group.header,
-                        style: Theme.of(context).textTheme.labelMedium,
+                    // Subheader
+                    Row(
+                      children: [
+                        Icon(Icons.filter_list, size: 18, color: onVariant),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Status',
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+
+                    // All
+                    RadioListTile<EnquiryStatusFilter>(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      value: const EnquiryStatusFilter.all(),
+                      title: Row(
+                        children: const [
+                          Icon(Icons.filter_alt, size: 18),
+                          SizedBox(width: 8),
+                          Text('All'),
+                        ],
                       ),
                     ),
 
-                    // each radio option in the group
-                    for (final opt in group.options)
-                      RadioListTile<EnquiryStatusFilter>(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        value: opt,
-                        groupValue: filter.status, // this works because it's the same type
-                        onChanged: (val) {
-                          if (val == null) return;
-                          ctrl.setStatus(val);
-                          setState(() {}); // so the checkmark updates immediately
-                        },
-                        title: Row(
+                    // Open
+                    RadioListTile<EnquiryStatusFilter>(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      value: const EnquiryStatusFilter.open(),
+                      title: Row(
+                        children: const [
+                          Icon(Icons.lock_open, size: 18),
+                          SizedBox(width: 8),
+                          Text('Open'),
+                        ],
+                      ),
+                    ),
+
+                    // Closed (any)
+                    RadioListTile<EnquiryStatusFilter>(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      value: const EnquiryStatusFilter.closedAny(),
+                      title: Row(
+                        children: const [
+                          Icon(Icons.lock, size: 18),
+                          SizedBox(width: 8),
+                          Text('Closed'),
+                        ],
+                      ),
+                    ),
+
+                    // Toggle to reveal closed subtypes
+                    InkWell(
+                      borderRadius: BorderRadius.circular(6),
+                      onTap: () {
+                        setState(() {
+                          _showClosedSubfilters = !_showClosedSubfilters;
+                        });
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 4,
+                        ),
+                        child: Row(
                           children: [
-                            Icon(opt.icon, size: 18),
+                            Icon(
+                              _showClosedSubfilters
+                                  ? Icons.expand_less
+                                  : Icons.expand_more,
+                              size: 18,
+                              color: onVariant,
+                            ),
                             const SizedBox(width: 8),
-                            Text(opt.label),
-                            if (identical(opt.runtimeType, filter.status.runtimeType))
-                              ...[
-                                const Spacer(),
-                                const Icon(Icons.check, size: 16),
-                              ],
+                            Text(
+                              'More closed filters…',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(color: onVariant),
+                            ),
                           ],
                         ),
                       ),
-                  ]
-                );
-              }),
+                    ),
 
-              const Divider(height: 20),
+                    // Conditionally show subfilters, indented
+                    if (_showClosedSubfilters) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(left: 24.0),
+                        child: Column(
+                          children: [
+                            RadioListTile<EnquiryStatusFilter>(
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                              value: const EnquiryStatusFilter.closedAmendment(),
+                              title: Row(
+                                children: const [
+                                  Icon(Icons.edit_document, size: 18),
+                                  SizedBox(width: 8),
+                                  Flexible(child: Text('Amendment')),
+                                ],
+                              ),
+                            ),
+                            RadioListTile<EnquiryStatusFilter>(
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                              value: const EnquiryStatusFilter.closedInterpretation(),
+                              title: Row(
+                                children: const [
+                                  Icon(Icons.menu_book, size: 18),
+                                  SizedBox(width: 8),
+                                  Flexible(child: Text('Interpretation')),
+                                ],
+                              ),
+                            ),
+                            RadioListTile<EnquiryStatusFilter>(
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                              value: const EnquiryStatusFilter.closedNoResult(),
+                              title: Row(
+                                children: const [
+                                  Icon(Icons.do_not_disturb_alt, size: 18),
+                                  SizedBox(width: 8),
+                                  Flexible(child: Text('No Result')),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
 
-              // Search row
+                    const Divider(height: 20),
+                  ],
+                ),
+              ),
+
+              // ── SEARCH SECTION ────────────────────────────────────────
               Row(
                 children: [
                   Icon(Icons.search, size: 18, color: onVariant),
                   const SizedBox(width: 6),
-                  Text('Search', style: Theme.of(context).textTheme.labelLarge),
+                  Text(
+                    'Search',
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
 
-              // Search input (provider-backed)
               TextField(
                 controller: _localSearchCtrl,
                 textInputAction: TextInputAction.search,
@@ -200,17 +315,22 @@ class FilterDropdownState extends ConsumerState<FilterDropdown> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(widget.radius),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
 
-              // Footer
+              // ── FOOTER ROW ───────────────────────────────────────────
               Row(
                 children: [
                   TextButton.icon(
                     onPressed: () {
-                      ctrl.reset(defaultStatus: EnquiryStatusFilter.all());
+                      ctrl.reset(
+                        defaultStatus: const EnquiryStatusFilter.all(),
+                      );
                       _localSearchCtrl.clear();
                       setState(() {});
                     },

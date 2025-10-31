@@ -11,7 +11,6 @@ import '../../riverpod/post_providers.dart';
 import '../widgets/doc_view.dart';
 import 'filter_dropdown.dart';
 import 'two_panel_shell.dart';
-import '../models/enquiry_status_filter.dart';
 
 final filterDefault = 'open';
 
@@ -59,25 +58,7 @@ class LeftPaneHeader extends ConsumerWidget {
                   NewPostButton(type: PostType.enquiry),
                   const SizedBox(width: 12),
                 ],
-                FilterDropdown(
-                  groups: const [
-                    (
-                      header: 'General',
-                      options: [
-                        EnquiryStatusFilter.all(),
-                        EnquiryStatusFilter.open(),
-                        EnquiryStatusFilter.closedAny(),
-                      ],
-                    ),
-                    (
-                      header: 'Closed subsets',
-                      options: [
-                        EnquiryStatusFilter.closedAmendment(),
-                        EnquiryStatusFilter.closedInterpretation(),
-                        EnquiryStatusFilter.closedNoResult(),
-                      ],
-                    ),
-                  ],
+                const FilterDropdown(
                   height: _kControlHeight,
                   radius: 8,
                   horizontalPad: _kHorzPad,
