@@ -1,8 +1,10 @@
 // flutter_app/lib/core/widgets/filter_dropdown.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../riverpod/enquiry_filter_provider.dart';
 import '../models/enquiry_status_filter.dart';
+
 
 class FilterDropdown extends ConsumerStatefulWidget {
   const FilterDropdown({
@@ -19,6 +21,7 @@ class FilterDropdown extends ConsumerStatefulWidget {
   @override
   ConsumerState<FilterDropdown> createState() => FilterDropdownState();
 }
+
 
 class FilterDropdownState extends ConsumerState<FilterDropdown> {
   final _menuController = MenuController();
@@ -178,49 +181,28 @@ class FilterDropdownState extends ConsumerState<FilterDropdown> {
                       ),
                     ),
 
-                    // Closed (any)
+                    // ── Closed (any) with chevron ─────────────────────────────────────
                     RadioListTile<EnquiryStatusFilter>(
                       dense: true,
                       contentPadding: EdgeInsets.zero,
                       value: const EnquiryStatusFilter.closedAny(),
-                      title: Row(
-                        children: const [
-                          Icon(Icons.lock, size: 18),
-                          SizedBox(width: 8),
-                          Text('Closed'),
-                        ],
-                      ),
-                    ),
-
-                    // Toggle to reveal closed subtypes
-                    InkWell(
-                      borderRadius: BorderRadius.circular(6),
-                      onTap: () {
-                        setState(() {
-                          _showClosedSubfilters = !_showClosedSubfilters;
-                        });
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 8,
-                          horizontal: 4,
-                        ),
+                      title: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          setState(() {
+                            _showClosedSubfilters = !_showClosedSubfilters;
+                          });
+                        },
                         child: Row(
                           children: [
-                            Icon(
-                              _showClosedSubfilters
-                                  ? Icons.expand_less
-                                  : Icons.expand_more,
-                              size: 18,
-                              color: onVariant,
-                            ),
+                            const Icon(Icons.lock, size: 18),
                             const SizedBox(width: 8),
-                            Text(
-                              'More closed filters…',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(color: onVariant),
+                            const Text('Closed'),
+                            const Spacer(),
+                            Icon(
+                              _showClosedSubfilters ? Icons.expand_less : Icons.expand_more,
+                              size: 18,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                           ],
                         ),
