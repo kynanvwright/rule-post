@@ -14,17 +14,31 @@ import '../../api/close_enquiry_api.dart';
 import '../../api/publish_competitor_responses.dart';
 import '../../api/publish_rc_response.dart';
 import '../../riverpod/doc_providers.dart';
+import '../../riverpod/read_receipts.dart';
 import '../../riverpod/user_detail.dart';
 
 
 /// -------------------- ENQUIRY DETAIL --------------------
-class EnquiryDetailPage extends ConsumerWidget {
+class EnquiryDetailPage extends ConsumerStatefulWidget  {
   const EnquiryDetailPage({super.key, required this.enquiryId});
   final String enquiryId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final docAsync = ref.watch(enquiryDocProvider(enquiryId));
+  ConsumerState<EnquiryDetailPage> createState() => _EnquiryDetailPageState();
+}
+
+class _EnquiryDetailPageState extends ConsumerState<EnquiryDetailPage> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      final markEnquiryRead = ref.read(markEnquiryReadProvider);
+      markEnquiryRead?.call(widget.enquiryId);
+    });
+  }
+  @override
+  Widget build(BuildContext context) {
+    final docAsync = ref.watch(enquiryDocProvider(widget.enquiryId));
     final userRole = ref.watch(roleProvider);
     final userTeam = ref.watch(teamProvider);
 
@@ -65,7 +79,7 @@ class EnquiryDetailPage extends ConsumerWidget {
             initialTitle: title,
             initialText: postText,
             initialAttachments: attachments,
-            postId: enquiryId,
+            postId: widget.enquiryId,
             ),
           meta: Wrap(
             spacing: 8, runSpacing: 8, children: [
@@ -87,7 +101,7 @@ class EnquiryDetailPage extends ConsumerWidget {
             FancyAttachmentTile.fromMap(m, previewHeight: MediaQuery.of(context).size.height * 0.6),
           ).toList(),
           footer: ChildrenSection.responses(
-            enquiryId: enquiryId,
+            enquiryId: widget.enquiryId,
             lockedResponses: lockedResponses,
             lockedReason: lockedResponseReason,
           ),
@@ -97,25 +111,25 @@ class EnquiryDetailPage extends ConsumerWidget {
                   boldTitle: true,
                   actions: [
                     AdminAction.changeStageLength(
-                      enquiryId: enquiryId,
-                      loadCurrent: () => getStageLength(enquiryId),
-                      run: (days) => changeStageLength(enquiryId, days),
+                      enquiryId: widget.enquiryId,
+                      loadCurrent: () => getStageLength(widget.enquiryId),
+                      run: (days) => changeStageLength(widget.enquiryId, days),
                       enabled: isOpen,
                       context: context,
                     ),
                     AdminAction.publishCompetitorResponses(
-                      enquiryId: enquiryId,
-                      run: () => publishCompetitorResponses(enquiryId),
+                      enquiryId: widget.enquiryId,
+                      run: () => publishCompetitorResponses(widget.enquiryId),
                       enabled: teamsCanRespond && isOpen && isPublished,
                       context: context),
                     AdminAction.publishRCResponse(
-                      enquiryId: enquiryId,
-                      run: () => publishRcResponse(enquiryId),
+                      enquiryId: widget.enquiryId,
+                      run: () => publishRcResponse(widget.enquiryId),
                       enabled: !teamsCanRespond && isOpen && isPublished,
                       context: context),
                     AdminAction.closeEnquiry(
-                      enquiryId: enquiryId,
-                      run: (enquiryConclusion) => closeEnquiry(enquiryId, enquiryConclusion),
+                      enquiryId: widget.enquiryId,
+                      run: (enquiryConclusion) => closeEnquiry(widget.enquiryId, enquiryConclusion),
                       enabled: isOpen && isPublished,
                       context: context),
                   ],
