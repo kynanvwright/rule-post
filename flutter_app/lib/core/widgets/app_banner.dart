@@ -5,9 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/widgets/auth_service.dart';
 import '../../auth/widgets/login_dialog.dart';
 import '../../navigation/nav.dart';
+import '../../riverpod/read_receipts.dart';
 import '../../riverpod/user_detail.dart';
 import 'colour_helper.dart';
 import 'screen_width.dart';
+// import 'unread_button.dart';
 
 
 class AppBanner extends ConsumerWidget {
@@ -221,6 +223,65 @@ class AppBanner extends ConsumerWidget {
                     // ),
 
                     // SizedBox(width: gap * 0.6),
+
+                    // Notifications
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                      child: IconButton(
+                        tooltip: 'Unread posts',
+                        padding: EdgeInsets.zero,
+                        splashRadius: (iconSize + minTap) / 4,
+                        icon: Icon(Icons.notifications_outlined, color: scheme.onPrimary, size: iconSize),
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (ctx) {
+                              return Consumer(
+                                builder: (ctx, ref, _) {
+                                  final asyncVal = ref.watch(readReceiptProvider);
+
+                                  return AlertDialog(
+                                    title: const Text('Unread summary'),
+                                    content: asyncVal.when(
+                                      loading: () => const SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                      error: (err, stack) => Text('Error: $err'),
+                                      data: (map) {
+                                        final counts = map['counts'] as List<int>;
+                                        final enquiriesUnread = counts[0];
+                                        final responsesUnread = counts[1];
+                                        final commentsUnread  = counts[2];
+
+                                        return Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text('Enquiries unread: $enquiriesUnread'),
+                                            Text('Responses unread: $responsesUnread'),
+                                            Text('Comments unread:  $commentsUnread'),
+                                          ],
+                                        );
+                                      },
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(ctx),
+                                        child: const Text('Close'),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            },
+                          );
+                        },
+                      )
+                    ),
+
+                    SizedBox(width: gap * 0.6),
 
                     // Account
                     ConstrainedBox(

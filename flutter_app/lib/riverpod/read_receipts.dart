@@ -7,12 +7,122 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'user_detail.dart';
 
 
-/// Emits on login, logout, and token refreshes
-final readReceiptProvider = Provider<bool>((ref) {
-  // final uid = FirebaseAuth.instance.currentUser?.uid;
-  // psuedo-code:
-  //  check if post has a document in it's read receipt collection
-  return true;
+/// Emits whenever the Firebase user changes (login / logout / token refresh).
+final readReceiptProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+  ref.watch(firebaseUserProvider);
+
+  final uid = FirebaseAuth.instance.currentUser?.uid;
+
+  final result = <String, dynamic>{
+    'counts': [0, 0, 0], // [enquiries, responses, comments]
+  };
+
+  if (uid == null) {
+    return result;
+  }
+
+  final firestore = FirebaseFirestore.instance;
+
+  final unreadCounts = [0, 0, 0];
+
+  // 1. All published enquiries
+  final enquirySnap = await firestore
+      .collection('enquiries')
+      .where("isPublished", isEqualTo: true)
+      .get();
+
+  for (final enquiryDoc in enquirySnap.docs) {
+    final enquiryId = enquiryDoc.id;
+
+    // --- ENQUIRY LEVEL ---
+    {
+      // read_receipts is a subcollection under this enquiry:
+      // enquiries/{enquiryId}/read_receipts/{uid}
+      final receiptDoc = await firestore
+          .collection('enquiries')
+          .doc(enquiryId)
+          .collection('read_receipts')
+          .doc(uid)
+          .get();
+
+      final hasUserRead = receiptDoc.exists
+          ? (receiptDoc.data()?['read'] == true)
+          : false;
+
+      if (!hasUserRead) {
+        unreadCounts[0] += 1;
+      }
+    }
+
+    // 2. Responses under this enquiry
+    final responseSnap = await firestore
+        .collection('enquiries')
+        .doc(enquiryId)
+        .collection("responses")
+        .where("isPublished", isEqualTo: true)
+        .get();
+
+    for (final responseDoc in responseSnap.docs) {
+      final responseId = responseDoc.id;
+
+      // --- RESPONSE LEVEL ---
+      {
+        final receiptDoc = await firestore
+            .collection('enquiries')
+            .doc(enquiryId)
+            .collection("responses")
+            .doc(responseId)
+            .collection("read_receipts")
+            .doc(uid)
+            .get();
+
+        final hasUserRead = receiptDoc.exists
+            ? (receiptDoc.data()?['read'] == true)
+            : false;
+
+        if (!hasUserRead) {
+          unreadCounts[1] += 1;
+        }
+      }
+
+      // 3. Comments under this response
+      final commentSnap = await firestore
+          .collection('enquiries')
+          .doc(enquiryId)
+          .collection("responses")
+          .doc(responseId)
+          .collection("comments")
+          .where("isPublished", isEqualTo: true)
+          .get();
+
+      for (final commentDoc in commentSnap.docs) {
+        final commentId = commentDoc.id;
+
+        // --- COMMENT LEVEL ---
+        final receiptDoc = await firestore
+            .collection('enquiries')
+            .doc(enquiryId)
+            .collection("responses")
+            .doc(responseId)
+            .collection("comments")
+            .doc(commentId)
+            .collection("read_receipts")
+            .doc(uid)
+            .get();
+
+        final hasUserRead = receiptDoc.exists
+            ? (receiptDoc.data()?['read'] == true)
+            : false;
+
+        if (!hasUserRead) {
+          unreadCounts[2] += 1;
+        }
+      }
+    }
+  }
+
+  result['counts'] = unreadCounts;
+  return result;
 });
 
 
