@@ -1,7 +1,8 @@
 // riverpod/read_receipts.dart
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'user_detail.dart';
 
@@ -32,9 +33,7 @@ final markEnquiryReadProvider =
         .collection('read_receipts')
         .doc(uid)
         .set(
-      {
-        'read': true,
-      },
+      { 'read': true },
       SetOptions(merge: true),
     );
   };
@@ -45,51 +44,53 @@ final markResponsesAndCommentsReadProvider =
     Provider<Future<void> Function(
       String enquiryId,
       String responseId,
-      String? commentId,
     )?>((ref) {
       
   ref.watch(firebaseUserProvider);
   final uid = FirebaseAuth.instance.currentUser?.uid;
-  if (uid == null) {
-    return null;
-  }
+  if (uid == null) { return null; }
   final firestore = FirebaseFirestore.instance;
 
   return (
-      String enquiryId,
-      String responseId,
-      String? commentId,
-    ) async {
-    if (commentId != null) {
+    String enquiryId,
+    String responseId,
+  ) async {
+    await firestore
+      .collection('enquiries')
+      .doc(enquiryId)
+      .collection('responses')
+      .doc(responseId)
+      .collection('read_receipts')
+      .doc(uid)
+      .set(
+        { 'read': true },
+        SetOptions(merge: true),
+      );
+
+    // find all child comments and run this on them
+    final querySnapshot = await firestore
+      .collection('enquiries')
+      .doc(enquiryId)
+      .collection('responses')
+      .doc(responseId)
+      .collection('comments')
+      .where('isPublished', isEqualTo: true)
+      .get();
+    // loop through the comment documents
+    for (final commentDoc in querySnapshot.docs) {
       await firestore
         .collection('enquiries')
         .doc(enquiryId)
         .collection('responses')
         .doc(responseId)
         .collection('comments')
-        .doc(commentId)
+        .doc(commentDoc.id)
         .collection('read_receipts')
         .doc(uid)
         .set(
-        {
-          'read': true,
-        },
+        { 'read': true },
         SetOptions(merge: true),
       );
-    } else {
-      await firestore
-        .collection('enquiries')
-        .doc(enquiryId)
-        .collection('responses')
-        .doc(responseId)
-        .collection('read_receipts')
-        .doc(uid)
-        .set(
-        {
-          'read': true,
-        },
-        SetOptions(merge: true),
-      ); 
     }
   };
 });

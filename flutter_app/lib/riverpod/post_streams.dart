@@ -302,16 +302,16 @@ Stream<List<DocView>> combinedCommentsStream({
 
   // 2) Team draft IDs
   final draftIds$ = db
-      .collection('drafts')
-      .doc('posts')
-      .collection(teamId)
-      .where("postType", isEqualTo: "comment")
-      .where("parentIds", arrayContains: responseId)
-      .limit(5) // guardrails; tune as needed
-      .snapshots()
-      .map((snap) => snap.docs.map((d) => d.id).toList())
-      .map((ids) { ids.sort(); return ids; })
-      .distinct(listEquals);
+    .collection('drafts')
+    .doc('posts')
+    .collection(teamId)
+    .where("postType", isEqualTo: "comment")
+    .where("parentIds", arrayContains: responseId)
+    .limit(5) // guardrails; tune as needed
+    .snapshots()
+    .map((snap) => snap.docs.map((d) => d.id).toList())
+    .map((ids) { ids.sort(); return ids; })
+    .distinct(listEquals);
 
   // 3) If there are no draft IDs, just return public$.
   return draftIds$.switchMap((ids) {

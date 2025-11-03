@@ -7,24 +7,47 @@ import '../widgets/detail_scaffold.dart';
 import '../widgets/fancy_attachment_tile.dart';
 import '../widgets/status_chip.dart';
 import '../../riverpod/doc_providers.dart';
+import '../../riverpod/read_receipts.dart';
 import '../../riverpod/user_detail.dart';
 
 
 /// -------------------- RESPONSE DETAIL --------------------
-class ResponseDetailPage extends ConsumerWidget {
+// class ResponseDetailPage extends ConsumerWidget {
+//   const ResponseDetailPage({
+//     super.key,
+//     required this.enquiryId,
+//     required this.responseId,
+//   });
+
+//   final String enquiryId;
+//   final String responseId;
+
+class ResponseDetailPage extends ConsumerStatefulWidget  {
   const ResponseDetailPage({
-    super.key,
+    super.key, 
     required this.enquiryId,
     required this.responseId,
-  });
-
+    });
   final String enquiryId;
   final String responseId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final eAsync = ref.watch(enquiryDocProvider(enquiryId));
-    final rAsync = ref.watch(responseDocProvider((enquiryId: enquiryId, responseId: responseId)));
+  ConsumerState<ResponseDetailPage> createState() => _ResponseDetailPageState();
+}
+
+class _ResponseDetailPageState extends ConsumerState<ResponseDetailPage> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      final markResponsesAndCommentsRead = ref.read(markResponsesAndCommentsReadProvider);
+      markResponsesAndCommentsRead?.call(widget.enquiryId, widget.responseId);
+    });
+  }
+  @override
+  Widget build(BuildContext context) {
+    final eAsync = ref.watch(enquiryDocProvider(widget.enquiryId));
+    final rAsync = ref.watch(responseDocProvider((enquiryId: widget.enquiryId, responseId: widget.responseId)));
     // final userRole = ref.watch(roleProvider);
     final userTeam = ref.watch(teamProvider);
 
@@ -98,8 +121,8 @@ class ResponseDetailPage extends ConsumerWidget {
       footer: fromRC
         ? null
         : ChildrenSection.comments(
-            enquiryId: enquiryId,
-            responseId: responseId,
+            enquiryId: widget.enquiryId,
+            responseId: widget.responseId,
             lockedComments: lockedComments,
             lockedReason: lockedCommentReason,
           ),
