@@ -39,7 +39,7 @@ export const teamResponsePublisher = onSchedule(
         writer,
         "teamResponsePublisher",
         enquiryDoc,
-        true,
+        false,
       );
       processed += 1;
       published += publishResult.publishedNumber;
