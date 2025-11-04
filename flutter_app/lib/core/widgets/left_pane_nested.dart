@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../content/widgets/new_post_button.dart';
 import '../../navigation/nav.dart';
 import '../../riverpod/user_detail.dart';
 import '../../riverpod/enquiry_filter_provider.dart';
 import '../../riverpod/post_providers.dart';
+import '../../riverpod/unread_post_provider.dart';
 import '../widgets/doc_view.dart';
 import 'filter_dropdown.dart';
 import 'two_panel_shell.dart';
@@ -117,95 +119,98 @@ class _EnquiriesTree extends ConsumerWidget {
     debugPrint('🔍 Building enquiries list');
     final filter = ref.watch(enquiryFilterProvider);
     final itemsAsync = ref.watch(
-  combinedEnquiriesProvider((statusFilter: filter.status))
-);
+      combinedEnquiriesProvider((statusFilter: filter.status))
+    );
 
-// If this is the very first load (no stale data yet), show your full-page loader:
-if (itemsAsync.valueOrNull == null) {
-  return const Center(
-    child: Column(
-      children: [
-        SizedBox(height: 12),
-        CircularProgressIndicator(),
-        SizedBox(height: 12),
-        Text('Loading enquiries from database...'),
-        SizedBox(height: 8),
-        Text('(This may take a few seconds to populate)'),
-      ],
-    ),
-  );
-}
-
-// From here on, we have stale data available (even if we're reloading)
-final isReloading = itemsAsync.isLoading; // true during background refresh
-final docs0 = itemsAsync.valueOrNull!;
-
-final rawQ = filter.query.trim().toLowerCase();
-List<DocView> docs = docs0;
-if (rawQ.isNotEmpty) {
-  docs = docs.where((d) {
-    final data = d.data();
-    final title = (data['title'] ?? '').toString().toLowerCase();
-    final numStr = (data['enquiryNumber'] ?? '').toString().toLowerCase();
-    return title.contains(rawQ) || numStr.contains(rawQ);
-  }).toList();
-}
-
-return Stack(
-  children: [
-    // Your existing list UI (stale-but-usable)
-    ListView.builder(
-      itemCount: docs.length,
-      itemBuilder: (context, i) {
-        final d = docs[i];
-        final id = d.id;
-        final data = d.data();
-        final title = (data['title'] ?? 'Untitled').toString();
-        final n = (data['enquiryNumber'] ?? 'Unnumbered').toString();
-        final isOpen = id == initiallyOpenEnquiryId;
-        final isPublished = data['isPublished'] ?? false;
-
-        return ExpansionTile(
-          key: ValueKey('enq_${id}_$isOpen'),
-          initiallyExpanded: isOpen,
-          maintainState: false,
-          backgroundColor: isOpen
-              ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.2)
-              : null,
-          onExpansionChanged: (expanded) {
-            if (expanded && id != initiallyOpenEnquiryId) {
-              TwoPaneScope.of(context)?.closeDrawer();
-              Nav.goEnquiry(context, id);
-            }
-          },
-          title: _RowTile(
-            label: 'RE #$n - $title',
-            selected: isOpen && initiallyOpenResponseId == null,
-            showSubtitle: isPublished == false,
-            onTap: () {
-              TwoPaneScope.of(context)?.closeDrawer();
-              Nav.goEnquiry(context, id);
-            },
-          ),
+    // If this is the very first load (no stale data yet), show your full-page loader:
+    if (itemsAsync.valueOrNull == null) {
+      return const Center(
+        child: Column(
           children: [
-            if (isOpen && isPublished)
-              _ResponsesBranch(
-                enquiryId: id,
-                initiallyOpenResponseId: initiallyOpenResponseId,
-              ),
+            SizedBox(height: 12),
+            CircularProgressIndicator(),
+            SizedBox(height: 12),
+            Text('Loading enquiries from database...'),
+            SizedBox(height: 8),
+            Text('(This may take a few seconds to populate)'),
           ],
-        );
-      },
-    ),
+        ),
+      );
+    }
 
-    // Subtle top loading bar while fresh data is fetched
-    if (isReloading)
-      Positioned(
-        top: 0, left: 0, right: 0,
-        child: const LinearProgressIndicator(),
-      ),
-  ],
-);
+    // From here on, we have stale data available (even if we're reloading)
+    final isReloading = itemsAsync.isLoading; // true during background refresh
+    final docs0 = itemsAsync.valueOrNull!;
+    // final uid = FirebaseAuth.instance.currentUser?.uid;
+
+    final rawQ = filter.query.trim().toLowerCase();
+    List<DocView> docs = docs0;
+    if (rawQ.isNotEmpty) {
+      docs = docs.where((d) {
+        final data = d.data();
+        final title = (data['title'] ?? '').toString().toLowerCase();
+        final numStr = (data['enquiryNumber'] ?? '').toString().toLowerCase();
+        return title.contains(rawQ) || numStr.contains(rawQ);
+      }).toList();
+    }
+
+    return Stack(
+      children: [
+        // Your existing list UI (stale-but-usable)
+        ListView.builder(
+          itemCount: docs.length,
+          itemBuilder: (context, i) {
+            final d = docs[i];
+            final id = d.id;
+            final data = d.data();
+            final title = (data['title'] ?? 'Untitled').toString();
+            final n = (data['enquiryNumber'] ?? 'Unnumbered').toString();
+            final isOpen = id == initiallyOpenEnquiryId;
+            final isPublished = data['isPublished'] ?? false;
+            // final isUnread = ref.watch(isUnreadEnquiryProvider(d.id)).maybeWhen(data: (v) => v, orElse: () => false);
+
+            return ExpansionTile(
+              key: ValueKey('enq_${id}_$isOpen'),
+              initiallyExpanded: isOpen,
+              maintainState: false,
+              backgroundColor: isOpen
+                  ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.2)
+                  : null,
+              onExpansionChanged: (expanded) {
+                if (expanded && id != initiallyOpenEnquiryId) {
+                  TwoPaneScope.of(context)?.closeDrawer();
+                  Nav.goEnquiry(context, id);
+                }
+              },
+              title: _RowTile(
+                label: 'RE #$n - $title',
+                isUnread: UnreadDot(id, (isOpen && isPublished)),
+                selected: isOpen && initiallyOpenResponseId == null,
+                showSubtitle: isPublished == false,
+                onTap: () {
+                  TwoPaneScope.of(context)?.closeDrawer();
+                  Nav.goEnquiry(context, id);
+                },
+              ),
+              children: [
+                if (isOpen && isPublished)
+                  _ResponsesBranch(
+                    enquiryId: id,
+                    initiallyOpenResponseId: initiallyOpenResponseId,
+                  ),
+              ],
+            );
+          },
+        ),
+
+        // Subtle top loading bar while fresh data is fetched
+        if (isReloading)
+          Positioned(
+            top: 0, left: 0, right: 0,
+            child: const LinearProgressIndicator(),
+          ),
+      ],
+    );
   }
 }
 
@@ -264,6 +269,7 @@ class _ResponsesBranch extends StatelessWidget {
               final label =
                   'Response ${data['roundNumber'] ?? 'x'}.${data['responseNumber'] ?? 'x'}';
               final isOpen = id == initiallyOpenResponseId;
+              final isPublished = data['isPublished'] ?? false;
 
               return Padding(
                 padding: const EdgeInsets.only(left: 12.0),
@@ -275,6 +281,7 @@ class _ResponsesBranch extends StatelessWidget {
                   title: _RowTile(
                     label: label,
                     selected: isOpen,
+                    isUnread: UnreadDot(id, (isOpen && isPublished)),
                     onTap: () {
                       TwoPaneScope.of(context)?.closeDrawer();
                       Nav.goResponse(context, enquiryId, id);
@@ -295,10 +302,11 @@ class _ResponsesBranch extends StatelessWidget {
 /// Row tile shared style
 /// ─────────────────────────────────────────────────────────────────────────
 class _RowTile extends StatelessWidget {
-  const _RowTile({required this.label, this.selected = false, this.showSubtitle = false, this.onTap});
+  const _RowTile({required this.label, this.selected = false, this.showSubtitle = false, this.isUnread = const SizedBox.shrink(), this.onTap});
   final String label;
   final bool selected;
   final bool showSubtitle;
+  final Widget isUnread;
   final VoidCallback? onTap;
 
   @override
@@ -308,12 +316,21 @@ class _RowTile extends StatelessWidget {
       visualDensity: const VisualDensity(vertical: -3), // tighter
       minVerticalPadding: 0,
       contentPadding: EdgeInsets.zero,
-      title: Text(
-        label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+      title: Align(
+        alignment: Alignment.centerLeft,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+              ),
+            ),
+            isUnread,
+          ],
         ),
       ),
       subtitle: showSubtitle

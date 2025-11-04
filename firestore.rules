@@ -60,6 +60,10 @@ service cloud.firestore {
     function commentAuthorCanEdit(id, responseId, commentId) {
       return equalAndNotNull(userTeam(), commentAuthorTeam(id, responseId, commentId));
     }
+    
+    function docIsUsers(uid) {
+      return request.auth.uid == uid;
+    }
 
     match /enquiries/{id} {
       allow read: if isPublished()
@@ -69,24 +73,37 @@ service cloud.firestore {
       match /meta/{doc} {
         allow read, write: if false;
       }
+          
+      match /read_receipts/{doc} {
+        allow read, write: if docIsUsers(doc);
+      }
       
       match /responses/{responseId} {
       	allow read: if resource.data.isPublished == true
-                 || (isDraft() && responseAuthorCanEdit(id, responseId));
+                 || (resource.data.isPublished != true && responseAuthorCanEdit(id, responseId));
       	allow write: if false;
         
         match /meta/{doc} {
         	allow read, write: if false;
       	}
+                   
+        match /read_receipts/{doc} {
+          allow read, write: if docIsUsers(doc);
+        }
         
         match /comments/{commentId} {
       		allow read: if resource.data.isPublished == true
-                   || (isDraft() && commentAuthorCanEdit(id, responseId, commentId));
+                   || (resource.data.isPublished != true && commentAuthorCanEdit(id, responseId, commentId));
       		allow write: if false;
         
           match /meta/{doc} {
             allow read, write: if false;
           }
+              
+          match /read_receipts/{doc} {
+            allow read, write: if docIsUsers(doc);
+          }
+          
         }
       }
     }
@@ -100,5 +117,14 @@ service cloud.firestore {
       	allow read: if userTeam() == collectionID;
       }
     }
+
+    match /user_data/{uid} {
+      allow read: if docIsUsers(uid);
+
+      match /unreadPosts/{eid=**} {
+        allow read, write: if docIsUsers(uid);
+      }
+    }
+
   }
 }

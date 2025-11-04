@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'user_detail.dart';
+import 'unread_post_provider.dart';
 
 
 /// Emits whenever the Firebase user changes (login / logout / token refresh).
@@ -126,6 +127,25 @@ final readReceiptProvider = FutureProvider<Map<String, dynamic>>((ref) async {
 });
 
 
+final readReceiptProviderAlt = FutureProvider<List<int>>((ref) async {
+  // ref.keepAlive();
+  ref.watch(firebaseUserProvider);
+  final uid = FirebaseAuth.instance.currentUser?.uid;
+  if (uid == null) return const [0, 0, 0];
+
+  final fs = FirebaseFirestore.instance;
+  final base = fs.collection('user_data').doc(uid).collection('unreadPosts');
+
+  final results = await Future.wait([
+    base.where('postType', isEqualTo: "enquiry").count().get(),
+    base.where('postType', isEqualTo: "response").count().get(),
+    base.where('postType', isEqualTo: "comment").count().get(),
+  ]);
+
+  return results.map((r) => r.count ?? 0).toList();
+});
+
+
 final markEnquiryReadProvider =
     Provider<Future<void> Function(String enquiryId)?>((ref) {
       
@@ -146,6 +166,13 @@ final markEnquiryReadProvider =
       { 'read': true },
       SetOptions(merge: true),
     );
+    await firestore
+        .collection('user_data')
+        .doc(uid)
+        .collection('unreadPosts')
+        .doc(enquiryId)
+        .delete();
+    ref.invalidate(unreadPostsProvider);
   };
 });
 
@@ -165,6 +192,7 @@ final markResponsesAndCommentsReadProvider =
     String enquiryId,
     String responseId,
   ) async {
+    // mechanism 1, per-post
     await firestore
       .collection('enquiries')
       .doc(enquiryId)
@@ -176,6 +204,18 @@ final markResponsesAndCommentsReadProvider =
         { 'read': true },
         SetOptions(merge: true),
       );
+    // mechanism 2, per-user
+    await firestore
+        .collection('user_data')
+        .doc(uid)
+        .collection('unreadPosts')
+        .doc(responseId)
+        .delete();
+        // needs a follow-up to check if the parent should have its state changed
+        // roughly: 
+        //    are there no docs where parentId/grandparentId matches this enquiry?
+        //    is the parent enquiry only "hasUnreadChild", not "isUnread"
+        //    if both, delete parent entry
 
     // find all child comments and run this on them
     final querySnapshot = await firestore
@@ -201,6 +241,14 @@ final markResponsesAndCommentsReadProvider =
         { 'read': true },
         SetOptions(merge: true),
       );
+      await firestore
+          .collection('user_data')
+          .doc(uid)
+          .collection('unreadPosts')
+          .doc(commentDoc.id)
+          .delete();
+        // needs a follow-up to check if the parent/grandparent should have its state changed
     }
+    ref.invalidate(unreadPostsProvider);
   };
 });

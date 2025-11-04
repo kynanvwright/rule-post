@@ -6,6 +6,7 @@ import '../../auth/widgets/auth_service.dart';
 import '../../auth/widgets/login_dialog.dart';
 import '../../navigation/nav.dart';
 import '../../riverpod/read_receipts.dart';
+import '../../riverpod/unread_post_provider.dart';
 import '../../riverpod/user_detail.dart';
 import 'colour_helper.dart';
 import 'screen_width.dart';
@@ -238,34 +239,21 @@ class AppBanner extends ConsumerWidget {
                             builder: (ctx) {
                               return Consumer(
                                 builder: (ctx, ref, _) {
-                                  final asyncVal = ref.watch(readReceiptProvider);
+                                  final asyncVal = ref.watch(unreadCountsProvider);
 
                                   return AlertDialog(
                                     title: const Text('Unread summary'),
-                                    content: asyncVal.when(
-                                      loading: () => const SizedBox(
-                                        width: 24,
-                                        height: 24,
-                                        child: CircularProgressIndicator(),
-                                      ),
-                                      error: (err, stack) => Text('Error: $err'),
-                                      data: (map) {
-                                        final counts = map['counts'] as List<int>;
-                                        final enquiriesUnread = counts[0];
-                                        final responsesUnread = counts[1];
-                                        final commentsUnread  = counts[2];
-
-                                        return Column(
+                                    content: Column(
                                           mainAxisSize: MainAxisSize.min,
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Text('Enquiries unread: $enquiriesUnread'),
-                                            Text('Responses unread: $responsesUnread'),
-                                            Text('Comments unread:  $commentsUnread'),
+                                            Text('Enquiries unread: ${asyncVal['enquiry']}'),
+                                            Text('Responses unread: ${asyncVal['response']}'),
+                                            Text('Comments unread:  ${asyncVal['comment']}'),
                                           ],
-                                        );
-                                      },
-                                    ),
+                                        ),
+                                      
+                                    
                                     actions: [
                                       TextButton(
                                         onPressed: () => Navigator.pop(ctx),
