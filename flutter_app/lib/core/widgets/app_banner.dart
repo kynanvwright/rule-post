@@ -6,10 +6,11 @@ import '../../auth/widgets/auth_service.dart';
 import '../../auth/widgets/login_dialog.dart';
 import '../../navigation/nav.dart';
 // import '../../riverpod/read_receipts.dart';
-import '../../riverpod/unread_post_provider.dart';
+// import '../../riverpod/unread_post_provider.dart';
 import '../../riverpod/user_detail.dart';
 import 'colour_helper.dart';
 import 'screen_width.dart';
+import 'notifications_menu_button.dart';
 // import 'unread_button.dart';
 
 
@@ -226,46 +227,13 @@ class AppBanner extends ConsumerWidget {
                     // SizedBox(width: gap * 0.6),
 
                     // Notifications
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-                      child: IconButton(
-                        tooltip: 'Unread posts',
-                        padding: EdgeInsets.zero,
-                        splashRadius: (iconSize + minTap) / 4,
-                        icon: Icon(Icons.notifications_outlined, color: scheme.onPrimary, size: iconSize),
-                        onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (ctx) {
-                              return Consumer(
-                                builder: (ctx, ref, _) {
-                                  final asyncVal = ref.watch(unreadCountsProvider);
-
-                                  return AlertDialog(
-                                    title: const Text('Unread summary'),
-                                    content: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text('Enquiries unread: ${asyncVal['enquiry']}'),
-                                            Text('Responses unread: ${asyncVal['response']}'),
-                                            Text('Comments unread:  ${asyncVal['comment']}'),
-                                          ],
-                                        ),
-                                    
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(ctx),
-                                        child: const Text('Close'),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-                            },
-                          );
-                        },
-                      )
+                    NotificationsMenuButton(
+                      iconSize: iconSize,
+                      minTap: minTap,
+                      onItemSelected: (value) {
+                        // Handle nav or action for a selected item
+                        // e.g., Nav.goToSomething(context, value);
+                      },
                     ),
 
                     SizedBox(width: gap * 0.6),

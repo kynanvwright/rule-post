@@ -130,6 +130,25 @@ final unreadPostsProvider = FutureProvider<Map<String, Map<String, dynamic>>>((r
   };
 });
 
+final unreadPostsStrictProvider = FutureProvider<Map<String, Map<String, dynamic>>>((ref) async {
+  // Re-run when user logs in/out
+  ref.watch(firebaseUserProvider);
+
+  final uid = FirebaseAuth.instance.currentUser?.uid;
+  if (uid == null) return const {};
+
+  final fs = FirebaseFirestore.instance;
+  final snap = await fs
+      .collection('user_data')
+      .doc(uid)
+      .collection('unreadPosts')
+      .where('isUnread', isEqualTo: true)
+      .get();
+
+  return {
+    for (final d in snap.docs) d.id: d.data(),
+  };
+});
 
 final unreadCountsProvider = Provider<Map<String, int>>((ref) {
   final unreadAsync = ref.watch(unreadPostsProvider);
@@ -145,6 +164,16 @@ final unreadCountsProvider = Provider<Map<String, int>>((ref) {
     }
     return counts;
   }).value ?? counts;
+});
+
+final unreadSingleCountProvider = Provider<int>((ref) {
+  final unreadAsync = ref.watch(unreadPostsStrictProvider);
+
+  return unreadAsync.when(
+    data: (docs) => docs.length, // just count all unread docs
+    loading: () => 0,
+    error: (_, __) => 0,
+  );
 });
 
 final unreadByIdProvider =
