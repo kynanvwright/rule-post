@@ -172,7 +172,7 @@ final unreadSingleCountProvider = Provider<int>((ref) {
   return unreadAsync.when(
     data: (docs) => docs.length, // just count all unread docs
     loading: () => 0,
-    error: (_, __) => 0,
+    error: (_, e_) => 0,
   );
 });
 

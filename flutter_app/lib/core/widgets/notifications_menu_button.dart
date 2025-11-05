@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../riverpod/unread_post_provider.dart';
+import '../../navigation/nav.dart';
+// import 'ordered_by_hierarchy.dart';
+
 
 class NotificationsMenuButton extends ConsumerWidget {
   const NotificationsMenuButton({
@@ -25,7 +28,7 @@ class NotificationsMenuButton extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
 
     final count = ref.watch(unreadSingleCountProvider);
-    final itemsAsync = ref.watch(unreadPostsProvider);
+    // final itemsAsync = ref.watch(unreadPostsProvider);
 
     return ConstrainedBox(
       constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
@@ -45,42 +48,253 @@ class NotificationsMenuButton extends ConsumerWidget {
             ),
           );
         },
-        menuChildren: itemsAsync.when(
-          loading: () => const [
-            Padding(
-              padding: EdgeInsets.all(12),
-              child: SizedBox(
-                height: 16,
-                width: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
+        menuChildren: [
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Text(
+              'Unread Posts:',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
               ),
             ),
-          ],
-          error: (err, st) => [
-            MenuItemButton(
-              leadingIcon: const Icon(Icons.error_outline),
-              onPressed: null,
-              child: const Text('Failed to load'),
-            ),
-          ],
-          data: (items) => items.isEmpty
-              ? const [
-                  MenuItemButton(
-                    // leadingIcon: Icon(Icons.inbox_outlined),
-                    onPressed: null,
-                    child: Text('No items'),
-                  ),
-                ]
-              : [
-                  for (final v in items.entries)
-                    MenuItemButton(
-                      // leadingIcon: const Icon(Icons.circle),
-                      child: Text(v.key),
-                      onPressed: () => onItemSelected?.call(v.key),
-                    ),
-                ],
-        ),
+          ),
+          const Divider(height: 1),
+          UnreadMenu(
+            onSelect: (postId, data) {
+              // Navigate / mark read etc.
+              // e.g. Nav.goToPost(context, postId);
+              // Important: close the menu after action
+              Navigator.of(context, rootNavigator: true).pop(); // or hold the controller and call controller.close()
+            },
+          ),
+        ],
       ),
+      
     );
   }
 }
+
+
+class UnreadMenu extends ConsumerWidget {
+  const UnreadMenu({
+    super.key,
+    required this.onSelect,
+    this.maxHeight = 360,
+    this.maxWidth = 260,
+    this.groupByType = true,
+  });
+
+  final void Function(String postId, Map<String, dynamic> data) onSelect;
+  final double maxHeight;
+  final double maxWidth;
+  final bool groupByType;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final itemsAsync = ref.watch(unreadPostsProvider);
+
+    // Widget scrollableMenu(List<Widget> children) {
+    //   return SizedBox(
+    //     width: minWidth,
+    //     child: ConstrainedBox(
+    //       constraints: BoxConstraints(maxHeight: maxHeight),
+    //       child: Scrollbar(
+    //         child: SingleChildScrollView(
+    //           padding: const EdgeInsets.symmetric(vertical: 4),
+    //           child: Column(
+    //             mainAxisSize: MainAxisSize.min,
+    //             children: children,
+    //           ),
+    //         ),
+    //       ),
+    //     ),
+    //   );
+    // }
+
+    Widget scrollableMenu(List<Widget> children, {double? maxWidth, double? maxHeight}) {
+      return ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: maxWidth ?? 400,
+          maxHeight: maxHeight ?? 360,
+        ),
+        child: Scrollbar(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: IntrinsicWidth( // makes width wrap content up to maxWidth
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: children,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return itemsAsync.when<Widget>(
+      loading: () => const Padding(
+        padding: EdgeInsets.all(12),
+        child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+      ),
+      error: (err, st) => Padding(
+        padding: const EdgeInsets.all(8),
+        child: ListTile(
+          leading: const Icon(Icons.error_outline),
+          title: Text('Failed to load: $err', maxLines: 2, overflow: TextOverflow.ellipsis),
+          dense: true,
+        ),
+      ),
+      data: (items) {
+        if (items.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.all(12),
+            child: ListTile(
+              leading: Icon(Icons.inbox_outlined),
+              title: Text('No items'),
+              dense: true,
+            ),
+          );
+        }
+
+        final orderedKeys = generateOrderedKeys(items);
+        final children = <Widget>[];
+
+        for (final orderedKey in orderedKeys) {
+
+          final postData = items[orderedKey];
+
+          final alias = postData?['postAlias'] ?? '';
+          final isUnread = postData?['isUnread'] == true;
+          final isClickable = (postData?['isUnread'] == true) || (postData?['postType'] == 'response');
+          String menuText;
+          VoidCallback? onTapNavigation;
+
+          if (postData?['postType'] == 'enquiry') {
+            if (isUnread) {
+              // look for unread child posts as well
+              // final childrenCount = items.values
+              //   .where((e) => e['postType'] == 'response' && e['parentId'] == orderedKey)
+              //   .length;
+              // final grandchildrenCount = items.values
+              //   .where((e) => e['postType'] == 'comment' && e['grandparentId'] == orderedKey)
+              //   .length;
+              // final familyCount = childrenCount + grandchildrenCount;
+              // if (familyCount > 0) {
+              //   menuText = '$alias (+ $familyCount)';
+              // } else {
+                menuText = alias;
+                onTapNavigation = () => Nav.goEnquiry(context, orderedKey);
+              // }
+            } else {
+                menuText = '$alias:';
+              }
+          } else if (postData?['postType'] == 'response') {
+            if (isUnread) {
+                menuText = '  $alias';
+            } else {
+              final childrenCount = items.values
+                .where((e) => e['postType'] == 'comment' && e['parentId'] == orderedKey)
+                .length;
+              if (childrenCount > 0) {
+                menuText = '  $alias ($childrenCount new comments)';
+              } else {
+                menuText = '  $alias';
+              }
+            }
+            onTapNavigation = () => Nav.goResponse(context, postData?['parentId'], orderedKey);
+          } else {
+            continue;
+          }
+
+          children.add(
+            MenuItemButton(
+              onPressed: isClickable ? onTapNavigation : null, // later navigate
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      menuText,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        if (children.isEmpty) {
+          // In case all enquiries were filtered out somehow
+          return const Padding(
+            padding: EdgeInsets.all(12),
+            child: ListTile(
+              leading: Icon(Icons.inbox_outlined),
+              title: Text('No items'),
+              dense: true,
+            ),
+          );
+        }
+
+        return Material(type: MaterialType.transparency, child: scrollableMenu(children));
+      },
+    );
+  }
+}
+
+extension _SafeGet on Map<String, dynamic> {
+  String s(String key, [String def = '']) {
+    final v = this[key];
+    if (v == null) return def;
+    return v is String ? v : v.toString();
+  }
+
+  int i(String key, [int def = 1 << 30]) {
+    final v = this[key];
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    if (v is String) return int.tryParse(v) ?? def;
+    return def; // big number -> sorts to end
+  }
+}
+
+List<String> generateOrderedKeys(Map<String, Map<String, dynamic>> items) {
+  final ordered = <String>[];
+  final all = items.entries.toList();
+
+  // Enquiries first (missing/ill-typed fields handled via helpers)
+  final enquiries = all
+      .where((e) => e.value.s('postType') == 'enquiry')
+      .toList()
+    ..sort((a, b) {
+      final c = a.value.i('enquiryNumber').compareTo(b.value.i('enquiryNumber'));
+      return c != 0 ? c : a.key.compareTo(b.key);
+    });
+
+  for (final enquiry in enquiries) {
+    ordered.add(enquiry.key);
+
+    if (enquiry.value['isUnread'] == false) {
+      // Children responses under each enquiry
+      final responses = all
+          .where((e) =>
+              e.value.s('postType') == 'response' &&
+              e.value.s('parentId') == enquiry.key)
+          .toList()
+        ..sort((a, b) {
+          final c = a.value.s('postAlias').compareTo(b.value.s('postAlias'));
+          return c != 0 ? c : a.key.compareTo(b.key);
+        });
+
+      for (final response in responses) {
+        ordered.add(response.key);
+      }
+    }
+  }
+
+  return ordered;
+}
+
