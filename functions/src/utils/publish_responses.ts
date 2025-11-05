@@ -83,9 +83,16 @@ export async function publishResponses(
     }
 
     // 2d) generate unreadPost record for all users
-    createUnreadForAllUsers(writer, "response", shuffled[i].ref.id, true, {
-      parentId: enquiryDoc.ref.id,
-    });
+    createUnreadForAllUsers(
+      writer,
+      "response",
+      `Response #${shuffled[i].data()?.roundNumber}.${shuffled[i].data()?.responseNumber}`,
+      shuffled[i].ref.id,
+      true,
+      {
+        parentId: enquiryDoc.ref.id,
+      },
+    );
 
     totalResponsesPublished += 1;
   }
@@ -103,7 +110,14 @@ export async function publishResponses(
   });
 
   // 4) mark parent enquiry as having unread child data
-  createUnreadForAllUsers(writer, "enquiry", enquiryDoc.ref.id, false, {});
+  createUnreadForAllUsers(
+    writer,
+    "enquiry",
+    `RE #${enquiryDoc.data()?.enquiryNumber} - ${enquiryDoc.data()?.title}`,
+    enquiryDoc.ref.id,
+    false,
+    {},
+  );
 
   return { success: true, publishedNumber: totalResponsesPublished };
 }

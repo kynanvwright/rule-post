@@ -90,10 +90,17 @@ export const commentPublisher = onSchedule(
           }
 
           // add unreadPost entries for users
-          createUnreadForAllUsers(writer, "comment", c.ref.id, true, {
-            parentId: respDoc.id,
-            grandparentId: enquiryDoc.id,
-          });
+          createUnreadForAllUsers(
+            writer,
+            "comment",
+            `Comment #${c.data().commentNumber}`,
+            c.ref.id,
+            true,
+            {
+              parentId: respDoc.id,
+              grandparentId: enquiryDoc.id,
+            },
+          );
         }
         // update commentCount deterministically after flush
         await writer.flush();
@@ -103,9 +110,16 @@ export const commentPublisher = onSchedule(
         writer.update(respDoc.ref, { commentCount: published.size });
 
         // add unreadPost entries for users
-        createUnreadForAllUsers(writer, "response", respDoc.id, false, {
-          parentId: enquiryDoc.id,
-        });
+        createUnreadForAllUsers(
+          writer,
+          "response",
+          `Response #${respDoc.data()?.roundNumber}.${respDoc.data()?.responseNumber}`,
+          respDoc.id,
+          false,
+          {
+            parentId: enquiryDoc.id,
+          },
+        );
       }
 
       const stageEnds = enquiryDoc.get("stageEnds") as
@@ -122,7 +136,14 @@ export const commentPublisher = onSchedule(
       }
 
       // add unreadPost entries for users
-      createUnreadForAllUsers(writer, "enquiry", enquiryDoc.id, false, {});
+      createUnreadForAllUsers(
+        writer,
+        "enquiry",
+        `RE #${enquiryDoc.data().enquiryNumber} - ${enquiryDoc.data().title}`,
+        enquiryDoc.id,
+        false,
+        {},
+      );
 
       processedEnquiries += 1;
     }

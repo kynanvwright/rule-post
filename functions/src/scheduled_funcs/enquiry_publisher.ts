@@ -67,7 +67,14 @@ export const enquiryPublisher = onSchedule(
       queueDraftDelete(writer, team, doc.id);
       draftsQueued += 1;
 
-      createUnreadForAllUsers(writer, "enquiry", doc.id, true, {});
+      createUnreadForAllUsers(
+        writer,
+        "enquiry",
+        `RE #${enquiryData.enquiryNumber} - ${enquiryData.title}`,
+        doc.id,
+        true,
+        {},
+      );
     }
 
     await writer.close();

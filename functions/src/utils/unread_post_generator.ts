@@ -12,6 +12,7 @@ const db = getFirestore();
 /** Common unread record fields */
 type BaseUnread = {
   postType: PostType;
+  postAlias: string;
   createdAt: FirebaseFirestore.FieldValue;
   isUnread?: boolean;
 };
@@ -47,11 +48,13 @@ type UnreadRecord = UnreadEnquiry | UnreadResponse | UnreadComment;
 /** Build the record payload, branching on postType. */
 function buildUnreadRecord<T extends PostType>(
   postType: T,
+  postAlias: string,
   isUnread: boolean,
   postFields: FieldBundle<T>,
 ): UnreadRecord {
   const base: BaseUnread = {
     postType,
+    postAlias,
     createdAt: FieldValue.serverTimestamp(),
   };
   const unreadPayload: Record<string, boolean> = isUnread
@@ -78,6 +81,7 @@ function buildUnreadRecord<T extends PostType>(
 export async function createUnreadForAllUsers<T extends PostType>(
   writer: BulkWriter,
   postType: T,
+  postAlias: string,
   docId: string,
   isUnread: boolean,
   postFields: FieldBundle<T>,
@@ -95,7 +99,7 @@ export async function createUnreadForAllUsers<T extends PostType>(
   // Get doc refs/ids
   const usersSnap = await q.select().get();
 
-  const payload = buildUnreadRecord(postType, isUnread, postFields);
+  const payload = buildUnreadRecord(postType, postAlias, isUnread, postFields);
 
   for (const userDoc of usersSnap.docs) {
     attempted++;
@@ -112,14 +116,3 @@ export async function createUnreadForAllUsers<T extends PostType>(
 
   return { attempted, updated };
 }
-
-/* -------------------- Examples -------------------- */
-
-// New enquiry posted
-// await createUnreadForAllUsers("enquiry", { enquiryId: "E123" }, [authorUid]);
-
-// New response under an enquiry
-// await createUnreadForAllUsers("response", { enquiryId: "E123", responseId: "R9" }, [authorUid, responderUid]);
-
-// New comment under a response
-// await createUnreadForAllUsers("comment", { enquiryId: "E123", responseId: "R9", commentId: "C42" }, [authorUid, commenterUid]);
