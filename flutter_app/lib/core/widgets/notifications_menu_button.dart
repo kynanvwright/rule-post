@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../riverpod/unread_post_provider.dart';
 import '../../navigation/nav.dart';
-// import 'ordered_by_hierarchy.dart';
 
 
 class NotificationsMenuButton extends ConsumerWidget {
@@ -26,9 +25,8 @@ class NotificationsMenuButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
-
-    final count = ref.watch(unreadSingleCountProvider);
-    // final itemsAsync = ref.watch(unreadPostsProvider);
+    final count = ref.watch(unreadSingleCountStreamProvider);
+    final hostContext = context;
 
     return ConstrainedBox(
       constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
@@ -52,7 +50,7 @@ class NotificationsMenuButton extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.all(8),
             child: Text(
-              'Unread Posts:',
+              'Unread posts:',
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.grey,
@@ -61,11 +59,8 @@ class NotificationsMenuButton extends ConsumerWidget {
           ),
           const Divider(height: 1),
           UnreadMenu(
-            onSelect: (postId, data) {
-              // Navigate / mark read etc.
-              // e.g. Nav.goToPost(context, postId);
-              // Important: close the menu after action
-              Navigator.of(context, rootNavigator: true).pop(); // or hold the controller and call controller.close()
+            onSelect: (enquiryId, [responseId]) {
+              Nav.goToPost(hostContext, enquiryId, responseId);
             },
           ),
         ],
@@ -85,7 +80,7 @@ class UnreadMenu extends ConsumerWidget {
     this.groupByType = true,
   });
 
-  final void Function(String postId, Map<String, dynamic> data) onSelect;
+  final void Function(String enquiryId, [String? responseId]) onSelect;
   final double maxHeight;
   final double maxWidth;
   final bool groupByType;
@@ -93,24 +88,6 @@ class UnreadMenu extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final itemsAsync = ref.watch(unreadPostsProvider);
-
-    // Widget scrollableMenu(List<Widget> children) {
-    //   return SizedBox(
-    //     width: minWidth,
-    //     child: ConstrainedBox(
-    //       constraints: BoxConstraints(maxHeight: maxHeight),
-    //       child: Scrollbar(
-    //         child: SingleChildScrollView(
-    //           padding: const EdgeInsets.symmetric(vertical: 4),
-    //           child: Column(
-    //             mainAxisSize: MainAxisSize.min,
-    //             children: children,
-    //           ),
-    //         ),
-    //       ),
-    //     ),
-    //   );
-    // }
 
     Widget scrollableMenu(List<Widget> children, {double? maxWidth, double? maxHeight}) {
       return ConstrainedBox(
@@ -164,7 +141,6 @@ class UnreadMenu extends ConsumerWidget {
         for (final orderedKey in orderedKeys) {
 
           final postData = items[orderedKey];
-
           final alias = postData?['postAlias'] ?? '';
           final isUnread = postData?['isUnread'] == true;
           final isClickable = (postData?['isUnread'] == true) || (postData?['postType'] == 'response');
@@ -173,20 +149,8 @@ class UnreadMenu extends ConsumerWidget {
 
           if (postData?['postType'] == 'enquiry') {
             if (isUnread) {
-              // look for unread child posts as well
-              // final childrenCount = items.values
-              //   .where((e) => e['postType'] == 'response' && e['parentId'] == orderedKey)
-              //   .length;
-              // final grandchildrenCount = items.values
-              //   .where((e) => e['postType'] == 'comment' && e['grandparentId'] == orderedKey)
-              //   .length;
-              // final familyCount = childrenCount + grandchildrenCount;
-              // if (familyCount > 0) {
-              //   menuText = '$alias (+ $familyCount)';
-              // } else {
                 menuText = alias;
-                onTapNavigation = () => Nav.goEnquiry(context, orderedKey);
-              // }
+                onTapNavigation = () => onSelect(orderedKey, );
             } else {
                 menuText = '$alias:';
               }
@@ -203,14 +167,14 @@ class UnreadMenu extends ConsumerWidget {
                 menuText = '  $alias';
               }
             }
-            onTapNavigation = () => Nav.goResponse(context, postData?['parentId'], orderedKey);
+            onTapNavigation = () => onSelect(postData?['parentId'], orderedKey);
           } else {
             continue;
           }
 
           children.add(
             MenuItemButton(
-              onPressed: isClickable ? onTapNavigation : null, // later navigate
+              onPressed: isClickable ? onTapNavigation : null,
               child: Row(
                 children: [
                   Expanded(
@@ -245,6 +209,7 @@ class UnreadMenu extends ConsumerWidget {
   }
 }
 
+
 extension _SafeGet on Map<String, dynamic> {
   String s(String key, [String def = '']) {
     final v = this[key];
@@ -260,6 +225,7 @@ extension _SafeGet on Map<String, dynamic> {
     return def; // big number -> sorts to end
   }
 }
+
 
 List<String> generateOrderedKeys(Map<String, Map<String, dynamic>> items) {
   final ordered = <String>[];
@@ -297,4 +263,3 @@ List<String> generateOrderedKeys(Map<String, Map<String, dynamic>> items) {
 
   return ordered;
 }
-

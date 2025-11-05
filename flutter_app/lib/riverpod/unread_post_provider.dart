@@ -130,6 +130,7 @@ final unreadPostsProvider = FutureProvider<Map<String, Map<String, dynamic>>>((r
   };
 });
 
+
 final unreadPostsStrictProvider = FutureProvider<Map<String, Map<String, dynamic>>>((ref) async {
   // Re-run when user logs in/out
   ref.watch(firebaseUserProvider);
@@ -150,6 +151,7 @@ final unreadPostsStrictProvider = FutureProvider<Map<String, Map<String, dynamic
   };
 });
 
+
 final unreadCountsProvider = Provider<Map<String, int>>((ref) {
   final unreadAsync = ref.watch(unreadPostsProvider);
 
@@ -166,6 +168,7 @@ final unreadCountsProvider = Provider<Map<String, int>>((ref) {
   }).value ?? counts;
 });
 
+
 final unreadSingleCountProvider = Provider<int>((ref) {
   final unreadAsync = ref.watch(unreadPostsStrictProvider);
 
@@ -176,8 +179,34 @@ final unreadSingleCountProvider = Provider<int>((ref) {
   );
 });
 
+
 final unreadByIdProvider =
     Provider.family<Map<String, dynamic>?, String>((ref, id) {
   final unread = ref.watch(unreadPostsProvider).valueOrNull;
   return unread?[id];
+});
+
+
+final unreadPostsStrictStreamProvider =
+    StreamProvider<Map<String, Map<String, dynamic>>>((ref) {
+  // Re-run when user logs in/out
+  ref.watch(firebaseUserProvider);
+
+  final uid = FirebaseAuth.instance.currentUser?.uid;
+  if (uid == null) return const Stream.empty();
+
+  final fs = FirebaseFirestore.instance;
+  return fs
+      .collection('user_data')
+      .doc(uid)
+      .collection('unreadPosts')
+      .where('isUnread', isEqualTo: true)
+      .snapshots()
+      .map((snap) => {for (final d in snap.docs) d.id: d.data()});
+});
+
+
+final unreadSingleCountStreamProvider = Provider<int>((ref) {
+  final unread = ref.watch(unreadPostsStrictStreamProvider);
+  return unread.maybeWhen(data: (docs) => docs.length, orElse: () => 0);
 });

@@ -40,6 +40,16 @@ class Nav {
 
   static void goResponse(BuildContext c, String enquiryId, String responseId) =>
       _goOnce(c, '/enquiries/${Uri.encodeComponent(enquiryId)}/responses/${Uri.encodeComponent(responseId)}');
+      
+  /// Navigates to the appropriate page depending on whether [responseId] is provided.
+  static void goToPost(BuildContext c, String enquiryId, [String? responseId]) {
+    if (responseId == null || responseId.isEmpty) {
+      goEnquiry(c, enquiryId);
+    } else {
+      goResponse(c, enquiryId, responseId);
+    }
+  }
+
 
   static void exitToList(BuildContext c) => goHome(c);
 

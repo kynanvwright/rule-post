@@ -178,77 +178,62 @@ final markEnquiryReadProvider =
 
 
 final markResponsesAndCommentsReadProvider =
-    Provider<Future<void> Function(
-      String enquiryId,
-      String responseId,
-    )?>((ref) {
-      
+    Provider<Future<void> Function(String enquiryId, String responseId)?>((ref) {
   ref.watch(firebaseUserProvider);
   final uid = FirebaseAuth.instance.currentUser?.uid;
-  if (uid == null) { return null; }
-  final firestore = FirebaseFirestore.instance;
+  if (uid == null) return null;
 
-  return (
-    String enquiryId,
-    String responseId,
-  ) async {
-    // mechanism 1, per-post
-    await firestore
-      .collection('enquiries')
-      .doc(enquiryId)
-      .collection('responses')
-      .doc(responseId)
-      .collection('read_receipts')
-      .doc(uid)
-      .set(
-        { 'read': true },
-        SetOptions(merge: true),
-      );
-    // mechanism 2, per-user
-    await firestore
-        .collection('user_data')
-        .doc(uid)
-        .collection('unreadPosts')
-        .doc(responseId)
-        .delete();
-        // needs a follow-up to check if the parent should have its state changed
-        // roughly: 
-        //    are there no docs where parentId/grandparentId matches this enquiry?
-        //    is the parent enquiry only "hasUnreadChild", not "isUnread"
-        //    if both, delete parent entry
+  final fs = FirebaseFirestore.instance;
+  final col = fs.collection('user_data').doc(uid).collection('unreadPosts');
 
-    // find all child comments and run this on them
-    final querySnapshot = await firestore
-      .collection('enquiries')
-      .doc(enquiryId)
-      .collection('responses')
-      .doc(responseId)
-      .collection('comments')
-      .where('isPublished', isEqualTo: true)
-      .get();
-    // loop through the comment documents
-    for (final commentDoc in querySnapshot.docs) {
-      await firestore
-        .collection('enquiries')
-        .doc(enquiryId)
-        .collection('responses')
-        .doc(responseId)
-        .collection('comments')
-        .doc(commentDoc.id)
-        .collection('read_receipts')
-        .doc(uid)
-        .set(
-        { 'read': true },
-        SetOptions(merge: true),
-      );
-      await firestore
-          .collection('user_data')
-          .doc(uid)
-          .collection('unreadPosts')
-          .doc(commentDoc.id)
-          .delete();
-        // needs a follow-up to check if the parent/grandparent should have its state changed
+  return (String enquiryId, String responseId) async {
+    // 1) Batch delete: response + all its comment children
+    final batch = fs.batch();
+
+    // Always delete the response entry itself (if present)
+    batch.delete(col.doc(responseId));
+
+    // Paginate comment children (orderBy required for startAfterDocument)
+    Query<Map<String, dynamic>> q = col
+        .where('postType', isEqualTo: 'comment')
+        .where('parentId', isEqualTo: responseId)
+        .limit(50);
+
+    while (true) {
+      final snap = await q.get();
+      for (final d in snap.docs) {
+        batch.delete(d.reference);
+      }
+      if (snap.docs.length < 500) break;
+      q = q.startAfterDocument(snap.docs.last);
     }
+
+    await batch.commit();
+
+    // 2) Parent clean-up via server aggregation counts
+    // If no unread descendants remain under this enquiry AND the enquiry doc
+    // only exists as "hasUnreadChild" (i.e. not "isUnread"), delete it.
+    final c1 = await col
+        .where('isUnread', isEqualTo: true)
+        .where('parentId', isEqualTo: enquiryId)
+        .count()
+        .get();
+    final c2 = await col
+        .where('isUnread', isEqualTo: true)
+        .where('grandparentId', isEqualTo: enquiryId)
+        .count()
+        .get();
+    final unreadDescendants = (c1.count ?? 0) + (c2.count ?? 0);
+
+    if (unreadDescendants == 0) {
+      final enquiryDoc = await col.doc(enquiryId).get();
+      final e = enquiryDoc.data();
+      // Only remove if it’s merely a “hasUnreadChild” marker
+      if (enquiryDoc.exists && (e?['isUnread'] != true)) {
+        await enquiryDoc.reference.delete();
+      }
+    }
+
     ref.invalidate(unreadPostsProvider);
   };
 });

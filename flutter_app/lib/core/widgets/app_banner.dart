@@ -230,10 +230,6 @@ class AppBanner extends ConsumerWidget {
                     NotificationsMenuButton(
                       iconSize: iconSize,
                       minTap: minTap,
-                      onItemSelected: (value) {
-                        // Handle nav or action for a selected item
-                        // e.g., Nav.goToSomething(context, value);
-                      },
                     ),
 
                     SizedBox(width: gap * 0.6),
