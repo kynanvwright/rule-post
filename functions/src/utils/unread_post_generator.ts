@@ -2,7 +2,7 @@
 // File: src/utils/unread_post_generator.ts
 // Purpose: Create unread post records in user data collection
 // ──────────────────────────────────────────────────────────────────────────────
-import { getFirestore, BulkWriter } from "firebase-admin/firestore";
+import { getFirestore, FieldValue, BulkWriter } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
 
 import { PostType } from "../common/types";
@@ -12,6 +12,7 @@ const db = getFirestore();
 /** Common unread record fields */
 type BaseUnread = {
   postType: PostType;
+  createdAt: FirebaseFirestore.FieldValue;
   isUnread?: boolean;
 };
 
@@ -51,6 +52,7 @@ function buildUnreadRecord<T extends PostType>(
 ): UnreadRecord {
   const base: BaseUnread = {
     postType,
+    createdAt: FieldValue.serverTimestamp(),
   };
   const unreadPayload: Record<string, boolean> = isUnread
     ? {
