@@ -90,7 +90,7 @@ export const commentPublisher = onSchedule(
           }
 
           // add unreadPost entries for users
-          createUnreadForAllUsers(
+          await createUnreadForAllUsers(
             writer,
             "comment",
             `Comment #${c.data().commentNumber}`,
@@ -110,7 +110,7 @@ export const commentPublisher = onSchedule(
         writer.update(respDoc.ref, { commentCount: published.size });
 
         // add unreadPost entries for users
-        createUnreadForAllUsers(
+        await createUnreadForAllUsers(
           writer,
           "response",
           `Response #${respDoc.data()?.roundNumber}.${respDoc.data()?.responseNumber}`,
@@ -136,7 +136,7 @@ export const commentPublisher = onSchedule(
       }
 
       // add unreadPost entries for users
-      createUnreadForAllUsers(
+      await createUnreadForAllUsers(
         writer,
         "enquiry",
         `RE #${enquiryDoc.data().enquiryNumber} - ${enquiryDoc.data().title}`,

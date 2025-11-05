@@ -83,7 +83,7 @@ export async function publishResponses(
     }
 
     // 2d) generate unreadPost record for all users
-    createUnreadForAllUsers(
+    await createUnreadForAllUsers(
       writer,
       "response",
       `Response #${shuffled[i].data()?.roundNumber}.${shuffled[i].data()?.responseNumber}`,
@@ -110,7 +110,7 @@ export async function publishResponses(
   });
 
   // 4) mark parent enquiry as having unread child data
-  createUnreadForAllUsers(
+  await createUnreadForAllUsers(
     writer,
     "enquiry",
     `RE #${enquiryDoc.data()?.enquiryNumber} - ${enquiryDoc.data()?.title}`,

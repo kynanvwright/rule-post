@@ -90,29 +90,27 @@ export async function createUnreadForAllUsers<T extends PostType>(
   let attempted = 0;
   let updated = 0;
 
-  // Build query
   let q: FirebaseFirestore.Query = db.collection("user_data");
-  if (userTeam && userTeam.trim()) {
-    // Only users on this team
-    q = q.where("team", "==", userTeam.trim());
-  }
-  // Get doc refs/ids
-  const usersSnap = await q.select().get();
+  if (userTeam && userTeam.trim()) q = q.where("team", "==", userTeam.trim());
 
+  const usersSnap = await q.select().get();
   const payload = buildUnreadRecord(postType, postAlias, isUnread, postFields);
 
-  for (const userDoc of usersSnap.docs) {
+  const ops = usersSnap.docs.map((userDoc) => {
     attempted++;
     const ref = userDoc.ref.collection("unreadPosts").doc(docId);
-    try {
-      await writer.set(ref, payload, { merge: true });
-      updated++;
-    } catch (e) {
-      logger.warn(
-        `[createUnreadForAllUsers] Unread post write failed for post: ${docId} and user: ${userDoc.id}. Error: ${e}.`,
-      );
-    }
-  }
+    return writer
+      .set(ref, payload, { merge: true })
+      .then(() => {
+        updated++;
+      })
+      .catch((e) => {
+        logger.warn(
+          `[createUnreadForAllUsers] Unread post write failed for post: ${docId} and user: ${userDoc.id}. Error: ${e}.`,
+        );
+      });
+  });
 
+  await Promise.all(ops);
   return { attempted, updated };
 }
