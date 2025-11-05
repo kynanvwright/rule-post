@@ -14,6 +14,7 @@ import {
   queueDraftDelete,
   stageUpdatePayload,
 } from "../utils/publish_helpers";
+import { createUnreadForAllUsers } from "../utils/unread_post_generator";
 
 const db = getFirestore();
 
@@ -65,6 +66,8 @@ export const enquiryPublisher = onSchedule(
       }
       queueDraftDelete(writer, team, doc.id);
       draftsQueued += 1;
+
+      createUnreadForAllUsers(writer, "enquiry", doc.id, true, {});
     }
 
     await writer.close();

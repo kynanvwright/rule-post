@@ -13,6 +13,7 @@ import {
   queueDraftDelete,
   stageUpdatePayload,
 } from "../utils/publish_helpers";
+import { createUnreadForAllUsers } from "../utils/unread_post_generator";
 
 export async function publishResponses(
   writer: FirebaseFirestore.BulkWriter,
@@ -58,17 +59,20 @@ export async function publishResponses(
   }
   // 2) Edit response documents to publish them
   for (let i = 0; i < shuffled.length; i++) {
+    // 2a) publish response document
     writer.update(shuffled[i].ref, {
       isPublished: true,
       responseNumber: isRcResponse ? 0 : i + 1,
       publishedAt,
     });
+    // 2b) make attachments readble to all
     await tokeniseAttachmentsIfAny(
       writer,
       shuffled[i].ref,
       shuffled[i].get("attachments"),
     );
 
+    // 2c) delete draft document
     const team = await readAuthorTeam(shuffled[i].ref);
     if (!team) {
       logger.warn(
@@ -77,6 +81,12 @@ export async function publishResponses(
     } else {
       queueDraftDelete(writer, team, shuffled[i].id);
     }
+
+    // 2d) generate unreadPost record for all users
+    createUnreadForAllUsers(writer, "response", shuffled[i].ref.id, true, {
+      parentId: enquiryDoc.ref.id,
+    });
+
     totalResponsesPublished += 1;
   }
 
@@ -91,6 +101,9 @@ export async function publishResponses(
     ...(isRcResponse && { roundNumber: FieldValue.increment(1) }),
     ...stageUpdatePayload(newStageEnds),
   });
+
+  // 4) mark parent enquiry as having unread child data
+  createUnreadForAllUsers(writer, "enquiry", enquiryDoc.ref.id, false, {});
 
   return { success: true, publishedNumber: totalResponsesPublished };
 }

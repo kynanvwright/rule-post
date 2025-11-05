@@ -13,6 +13,7 @@ import {
   queueDraftDelete,
   stageUpdatePayload,
 } from "../utils/publish_helpers";
+import { createUnreadForAllUsers } from "../utils/unread_post_generator";
 import { isWorkingDay } from "../working_day";
 
 const db3 = getFirestore();
@@ -87,6 +88,12 @@ export const commentPublisher = onSchedule(
           } else {
             queueDraftDelete(writer, team, c.id);
           }
+
+          // add unreadPost entries for users
+          createUnreadForAllUsers(writer, "comment", c.ref.id, true, {
+            parentId: respDoc.id,
+            grandparentId: enquiryDoc.id,
+          });
         }
         // update commentCount deterministically after flush
         await writer.flush();
@@ -94,6 +101,11 @@ export const commentPublisher = onSchedule(
           .where("isPublished", "==", true)
           .get();
         writer.update(respDoc.ref, { commentCount: published.size });
+
+        // add unreadPost entries for users
+        createUnreadForAllUsers(writer, "response", respDoc.id, false, {
+          parentId: enquiryDoc.id,
+        });
       }
 
       const stageEnds = enquiryDoc.get("stageEnds") as
@@ -108,6 +120,9 @@ export const commentPublisher = onSchedule(
           ...stageUpdatePayload(newStageEndsDate),
         });
       }
+
+      // add unreadPost entries for users
+      createUnreadForAllUsers(writer, "enquiry", enquiryDoc.id, false, {});
 
       processedEnquiries += 1;
     }

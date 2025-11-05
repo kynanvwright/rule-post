@@ -95,6 +95,7 @@ export interface CommentDoc extends BasePublishable {
 }
 
 export type PublishKind = "enquiry" | "response" | "comment";
+export type PostType = PublishKind;
 
 export interface PublishEventData {
   kind: PublishKind;
