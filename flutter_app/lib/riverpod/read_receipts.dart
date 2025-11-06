@@ -19,15 +19,6 @@ final markEnquiryReadProvider =
 
   return (String enquiryId) async {
     await firestore
-        .collection('enquiries')
-        .doc(enquiryId)
-        .collection('read_receipts')
-        .doc(uid)
-        .set(
-      { 'read': true },
-      SetOptions(merge: true),
-    );
-    await firestore
         .collection('user_data')
         .doc(uid)
         .collection('unreadPosts')
