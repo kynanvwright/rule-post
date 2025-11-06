@@ -9,24 +9,6 @@ import { REGION } from "../common/config";
 import { db } from "../common/db";
 import { deleteUnreadForAllUsers } from "../utils/unread_post_generator";
 
-async function getMaxValue(
-  collectionPath: string,
-  field: string,
-): Promise<number | null> {
-  console.log("🧭 getMaxValue called with", collectionPath, field);
-  if (!collectionPath) {
-    console.error("❌ Invalid collectionPath", collectionPath);
-    throw new Error("collectionPath must be non-empty");
-  }
-  const snap = await db
-    .collection(collectionPath) // can be nested
-    .orderBy(field, "desc")
-    .limit(1)
-    .get();
-
-  return snap.empty ? null : snap.docs[0].get(field);
-}
-
 /** Shared cleanup so logic stays DRY */
 async function handleDeletion(args: {
   kind: "enquiry" | "response" | "comment";
@@ -38,38 +20,41 @@ async function handleDeletion(args: {
   const { kind, enquiryId, responseId, commentId, data } = args;
 
   if (kind === "enquiry") {
-    // Delete drafts if any
-    deleteDraftDoc(enquiryId);
-    // Delete publishEvents if any
-    const q = db
+    // Delete draft record of the post
+    await deleteDraftDoc(enquiryId);
+
+    // Delete ALL publishEvents for this enquiry/kind
+    const eventsSnap = await db
       .collection("publishEvents")
       .where("enquiryId", "==", enquiryId)
       .where("kind", "==", "enquiry")
-      .limit(1); // since we expect only one
-    const snap = await q.get();
-    if (!snap.empty) await snap.docs[0].ref.delete();
-    // If enquiryNumber is app maximum, reduce app_data counter
-    const counterRef = db.collection("app_data").doc("counters");
-    const maxEnquiryNumberCounter = (await counterRef.get()).get(
-      "enquiryNumber",
-    );
-    (await db.collection("app_data").doc("counters").get()).get(
-      "enquiryNumber",
-    );
-    if (
-      args.data?.enquiryNumber != null &&
-      args.data?.enquiryNumber == maxEnquiryNumberCounter
-    ) {
-      const maxEnquiryNumber = await getMaxValue("enquiries", "enquiryNumber");
-      await counterRef.update({ enquiryNumber: maxEnquiryNumber });
-    }
+      .get();
+    await Promise.all(eventsSnap.docs.map((d) => d.ref.delete()));
+
+    // Recompute max enquiryNumber (robust against races & drift)
+    const maxSnap = await db
+      .collection("enquiries")
+      .orderBy("enquiryNumber", "desc")
+      .limit(1)
+      .get();
+    const maxEnquiryNumber = maxSnap.empty
+      ? 0 // or null if you prefer
+      : (maxSnap.docs[0].get("enquiryNumber") as number);
+
+    await db
+      .collection("app_data")
+      .doc("counters")
+      .set({ enquiryNumber: maxEnquiryNumber }, { merge: true });
+
     // delete files attached to post
-    const path = `enquiries/${enquiryId}/`;
-    deleteFolder(path);
+    await deleteFolder(`enquiries/${enquiryId}/`);
+
     // delete unreadPost records
-    deleteUnreadForAllUsers(enquiryId);
+    await deleteUnreadForAllUsers(enquiryId);
   } else if (kind === "response" && responseId) {
-    deleteDraftDoc(responseId);
+    // Delete draft record of the post
+    await deleteDraftDoc(responseId);
+
     // Delete publishEvents if any
     const q = db
       .collection("publishEvents")
@@ -78,6 +63,7 @@ async function handleDeletion(args: {
       .limit(1); // since we expect only one
     const snap = await q.get();
     if (!snap.empty) await snap.docs[0].ref.delete();
+
     // delete relevant guards on response authors
     const guardPath = `enquiries/${enquiryId}/meta/response_guards/guards/`;
     const guardQuery = db
@@ -86,15 +72,18 @@ async function handleDeletion(args: {
       .limit(1); // since we expect only one
     const guardSnap = await guardQuery.get();
     if (!guardSnap.empty) await guardSnap.docs[0].ref.delete();
+
     // delete files attached to post
     const path = `enquiries/${enquiryId}/responses/${responseId}/`;
-    deleteFolder(path);
+    await deleteFolder(path);
+
     // delete unreadPost records
-    deleteUnreadForAllUsers(responseId);
+    await deleteUnreadForAllUsers(responseId);
     // Add some logic to deal with response numbering
   } else if (kind === "comment" && commentId) {
-    // Delete drafts if any
-    deleteDraftDoc(commentId);
+    // Delete draft record of the post
+    await deleteDraftDoc(commentId);
+
     // Delete publishEvents if any
     const q = db
       .collection("publishEvents")
@@ -103,11 +92,13 @@ async function handleDeletion(args: {
       .limit(1); // since we expect only one
     const snap = await q.get();
     if (!snap.empty) await snap.docs[0].ref.delete();
+
     // delete files attached to post
     const path = `enquiries/${enquiryId}/responses/${responseId}/comments/${commentId}/`;
-    deleteFolder(path);
+    await deleteFolder(path);
+
     // delete unreadPost records
-    deleteUnreadForAllUsers(commentId);
+    await deleteUnreadForAllUsers(commentId);
     // Add some logic to deal with comment numbering
   }
 
