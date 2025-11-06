@@ -25,7 +25,7 @@ class NotificationsMenuButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
-    final count = ref.watch(unreadSingleCountStreamProvider);
+    final count = ref.watch(unreadStrictCountProvider);
     final hostContext = context;
 
     return ConstrainedBox(
@@ -87,7 +87,7 @@ class UnreadMenu extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final itemsAsync = ref.watch(unreadPostsProvider);
+    final itemsAsync = ref.watch(unreadPostsStreamProvider);
 
     Widget scrollableMenu(List<Widget> children, {double? maxWidth, double? maxHeight}) {
       return ConstrainedBox(

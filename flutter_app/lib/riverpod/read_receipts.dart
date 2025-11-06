@@ -5,26 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'user_detail.dart';
-import 'unread_post_provider.dart';
-
-
-final readReceiptProviderAlt = FutureProvider<List<int>>((ref) async {
-  // ref.keepAlive();
-  ref.watch(firebaseUserProvider);
-  final uid = FirebaseAuth.instance.currentUser?.uid;
-  if (uid == null) return const [0, 0, 0];
-
-  final fs = FirebaseFirestore.instance;
-  final base = fs.collection('user_data').doc(uid).collection('unreadPosts');
-
-  final results = await Future.wait([
-    base.where('postType', isEqualTo: "enquiry").count().get(),
-    base.where('postType', isEqualTo: "response").count().get(),
-    base.where('postType', isEqualTo: "comment").count().get(),
-  ]);
-
-  return results.map((r) => r.count ?? 0).toList();
-});
 
 
 final markEnquiryReadProvider =
@@ -53,7 +33,6 @@ final markEnquiryReadProvider =
         .collection('unreadPosts')
         .doc(enquiryId)
         .delete();
-    ref.invalidate(unreadPostsProvider);
   };
 });
 
@@ -114,7 +93,5 @@ final markResponsesAndCommentsReadProvider =
         await enquiryDoc.reference.delete();
       }
     }
-
-    ref.invalidate(unreadPostsProvider);
   };
 });

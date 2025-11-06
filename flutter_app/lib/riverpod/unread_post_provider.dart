@@ -7,83 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'user_detail.dart';
 
 
-/// Depends on firebaseUserProvider so it re-evaluates when auth changes.
-/// Returns a function you can call to fetch a {docId: true} map,
-/// or null if there is no logged-in user.
-final unReadEnquiryProvider =
-    Provider<Future<Map<String, bool>> Function(String collectionPath)?>((
-  ref,
-) {
-  // Rebuild on auth changes
-  ref.watch(firebaseUserProvider);
-
-  final uid = FirebaseAuth.instance.currentUser?.uid;
-  if (uid == null) return null;
-
-  final firestore = FirebaseFirestore.instance;
-
-  return (String collectionPath) async {
-    final snap = await firestore.collection(collectionPath).get();
-    return {for (final d in snap.docs) d.id: true};
-  };
-});
-
-
-final getDocIdMapProvider =
-    Provider<Future<Map<String, bool>> Function(String collectionPath)?>((
-  ref,
-) {
-  // Rebuild on auth changes
-  ref.watch(firebaseUserProvider);
-
-  final uid = FirebaseAuth.instance.currentUser?.uid;
-  if (uid == null) return null;
-
-  final firestore = FirebaseFirestore.instance;
-
-  return (String collectionPath) async {
-    final snap = await firestore.collection(collectionPath).get();
-    return {for (final d in snap.docs) d.id: true};
-  };
-});
-
-
-final getUserScopedIdMapProvider =
-    Provider<Future<Map<String, bool>> Function(String userSubcollectionPath)?>((
-  ref,
-) {
-  ref.watch(firebaseUserProvider);
-  final uid = FirebaseAuth.instance.currentUser?.uid;
-  if (uid == null) return null;
-
-  final firestore = FirebaseFirestore.instance;
-
-  // userSubcollectionPath like 'threadReads' or 'unreadPosts'
-  return (String userSubcollectionPath) async {
-    final p = 'users/$uid/$userSubcollectionPath';
-    final snap = await firestore.collection(p).get();
-    return {for (final d in snap.docs) d.id: true};
-  };
-});
-
-// force posttype as input and slice differently, or have separate function
-
-final isUnreadEnquiryStreamProvider =
-    StreamProvider.family<bool, String>((ref, enquiryId) {
-  final uid = FirebaseAuth.instance.currentUser?.uid;
-  if (uid == null) return const Stream<bool>.empty();
-
-  final docRef = FirebaseFirestore.instance
-      .collection('enquiries')
-      .doc(enquiryId)
-      .collection('read_receipts')
-      .doc(uid);
-
-  // unread = !exists
-  return docRef.snapshots().map((snap) => !snap.exists);
-});
-
-
 // 2) In your list tile, only the dot watches the boolean via `select`
 class UnreadDot extends ConsumerWidget {
   const UnreadDot(this.enquiryId, this.expanded, {super.key});
@@ -111,102 +34,55 @@ class UnreadDot extends ConsumerWidget {
 }
 
 
-final unreadPostsProvider = FutureProvider<Map<String, Map<String, dynamic>>>((ref) async {
-  // Re-run when user logs in/out
+// auth + firestore helpers (nice to centralise)
+final uidProvider = Provider<String?>((ref) {
   ref.watch(firebaseUserProvider);
-
-  final uid = FirebaseAuth.instance.currentUser?.uid;
-  if (uid == null) return const {};
-
-  final fs = FirebaseFirestore.instance;
-  final snap = await fs
-      .collection('user_data')
-      .doc(uid)
-      .collection('unreadPosts')
-      .get();
-
-  return {
-    for (final d in snap.docs) d.id: d.data(),
-  };
+  return FirebaseAuth.instance.currentUser?.uid;
 });
 
 
-final unreadPostsStrictProvider = FutureProvider<Map<String, Map<String, dynamic>>>((ref) async {
-  // Re-run when user logs in/out
-  ref.watch(firebaseUserProvider);
-
-  final uid = FirebaseAuth.instance.currentUser?.uid;
-  if (uid == null) return const {};
-
-  final fs = FirebaseFirestore.instance;
-  final snap = await fs
-      .collection('user_data')
-      .doc(uid)
-      .collection('unreadPosts')
-      .where('isUnread', isEqualTo: true)
-      .get();
-
-  return {
-    for (final d in snap.docs) d.id: d.data(),
-  };
+final firestoreProvider = Provider<FirebaseFirestore>((ref) {
+  return FirebaseFirestore.instance;
 });
 
 
-final unreadCountsProvider = Provider<Map<String, int>>((ref) {
-  final unreadAsync = ref.watch(unreadPostsProvider);
-
-  // Default counts
-  var counts = {'enquiry': 0, 'response': 0, 'comment': 0};
-
-  return unreadAsync.whenData((docs) {
-    for (final data in docs.values) {
-      debugPrint(data['postType']);
-      final type = data['postType'];
-      if (counts.containsKey(type)) counts[type] = counts[type]! + 1;
-    }
-    return counts;
-  }).value ?? counts;
-});
-
-
-final unreadSingleCountProvider = Provider<int>((ref) {
-  final unreadAsync = ref.watch(unreadPostsStrictProvider);
-
-  return unreadAsync.when(
-    data: (docs) => docs.length, // just count all unread docs
-    loading: () => 0,
-    error: (_, e_) => 0,
-  );
-});
-
-
-final unreadByIdProvider =
-    Provider.family<Map<String, dynamic>?, String>((ref, id) {
-  final unread = ref.watch(unreadPostsProvider).valueOrNull;
-  return unread?[id];
-});
-
-
-final unreadPostsStrictStreamProvider =
-    StreamProvider<Map<String, Map<String, dynamic>>>((ref) {
-  // Re-run when user logs in/out
-  ref.watch(firebaseUserProvider);
-
-  final uid = FirebaseAuth.instance.currentUser?.uid;
+/// Canonical live source: ALL unreadPost docs for this user (both `isUnread` and those with `hasUnreadChild`)
+/// If the collection is large, see Variant B below to stream only "needs attention".
+final unreadPostsStreamProvider =
+    StreamProvider.autoDispose<Map<String, Map<String, dynamic>>>((ref) {
+  final uid = ref.watch(uidProvider);
   if (uid == null) return const Stream.empty();
 
-  final fs = FirebaseFirestore.instance;
+  final fs = ref.watch(firestoreProvider);
   return fs
       .collection('user_data')
       .doc(uid)
       .collection('unreadPosts')
-      .where('isUnread', isEqualTo: true)
       .snapshots()
-      .map((snap) => {for (final d in snap.docs) d.id: d.data()});
+      .map((snap) => { for (final d in snap.docs) d.id: d.data() });
 });
 
 
-final unreadSingleCountStreamProvider = Provider<int>((ref) {
-  final unread = ref.watch(unreadPostsStrictStreamProvider);
-  return unread.maybeWhen(data: (docs) => docs.length, orElse: () => 0);
+/// Derived: count of strictly unread (server-backed but computed client-side to avoid a 2nd listener)
+final unreadStrictCountProvider = Provider.autoDispose<int>((ref) {
+  // Use `select` so we only rebuild when the map shape/values change, not on intermediate AsyncValue states.
+  final asyncMap = ref.watch(unreadPostsStreamProvider);
+  return asyncMap.maybeWhen(
+    data: (m) => m.values.where((e) => e['isUnread'] == true).length,
+    orElse: () => 0,
+  );
+});
+
+
+/// Derived: lookup a single doc by id (family). Uses select to avoid rebuilding unrelated items.
+final unreadByIdProvider = Provider.autoDispose
+    .family<Map<String, dynamic>?, String>((ref, id) {
+  return ref.watch(
+    unreadPostsStreamProvider.select((asyncMap) =>
+      asyncMap.maybeWhen(
+        data: (m) => m[id],
+        orElse: () => null,
+      ),
+    ),
+  );
 });
