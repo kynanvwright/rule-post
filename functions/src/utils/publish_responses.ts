@@ -86,7 +86,7 @@ export async function publishResponses(
     await createUnreadForAllUsers(
       writer,
       "response",
-      `Response #${shuffled[i].data()?.roundNumber}.${shuffled[i].data()?.responseNumber}`,
+      `Response ${shuffled[i].data()?.roundNumber}.${shuffled[i].data()?.responseNumber}`,
       shuffled[i].ref.id,
       true,
       {

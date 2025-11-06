@@ -118,7 +118,7 @@ export const commentPublisher = onSchedule(
         await createUnreadForAllUsers(
           writer,
           "response",
-          `Response #${respDoc.data()?.roundNumber}.${respDoc.data()?.responseNumber}`,
+          `Response ${respDoc.data()?.roundNumber}.${respDoc.data()?.responseNumber}`,
           respDoc.id,
           false,
           {

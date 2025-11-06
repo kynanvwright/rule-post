@@ -67,20 +67,22 @@ class NotificationsMenuButton extends ConsumerWidget {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(8,4,8,8),
-            child: DeleteButton(
-              labelText: 'Mark all as read',
-              icon: Icons.mark_email_read_outlined,
-              tooltipText: '',
-              onConfirmDelete: () async {
-                final collectionRef = FirebaseFirestore.instance
-                    .collection('user_data')
-                    .doc(uid)
-                    .collection('unreadPosts');
-                final snap = await collectionRef.get();
-                for (final doc in snap.docs) {
-                  await doc.reference.delete();
-                }
-              },
+            child: Center( 
+              child: DeleteButton(
+                labelText: 'Mark all as read',
+                icon: Icons.mark_email_read_outlined,
+                tooltipText: '',
+                onConfirmDelete: () async {
+                  final collectionRef = FirebaseFirestore.instance
+                      .collection('user_data')
+                      .doc(uid)
+                      .collection('unreadPosts');
+                  final snap = await collectionRef.get();
+                  for (final doc in snap.docs) {
+                    await doc.reference.delete();
+                  }
+                },
+              ),
             ),
           ),
           const Divider(height: 1),
@@ -187,11 +189,10 @@ class UnreadMenu extends ConsumerWidget {
               final childrenCount = items.values
                 .where((e) => e['postType'] == 'comment' && e['parentId'] == orderedKey)
                 .length;
-              if (childrenCount > 0) {
-                menuText = '  $alias ($childrenCount new comments)';
-              } else {
-                menuText = '  $alias';
-              }
+                menuText = childrenCount == 0 ?
+                  '  $alias' : childrenCount == 1 ?
+                  '  $alias ($childrenCount new comment)' :
+                  '  $alias ($childrenCount new comments)';              
             }
             onTapNavigation = () => onSelect(postData?['parentId'], orderedKey);
           } else {
@@ -269,7 +270,7 @@ List<String> generateOrderedKeys(Map<String, Map<String, dynamic>> items) {
   for (final enquiry in enquiries) {
     ordered.add(enquiry.key);
 
-    if (enquiry.value['isUnread'] == false) {
+    if (enquiry.value['isUnread'] == false || enquiry.value['isUnread'] == null) {
       // Children responses under each enquiry
       final responses = all
           .where((e) =>
