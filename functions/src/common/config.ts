@@ -6,7 +6,7 @@ export const REGION = "europe-west8";
 export const SCHED_REGION_ROME = "europe-west6" as const;
 export const ROME_TZ = "Europe/Rome";
 export const MEMORY = "256MiB" as const;
-export const TIMEOUT_SECONDS = 30 as const;
+export const TIMEOUT_SECONDS = 120 as const;
 
 export const ALLOWED_TYPES = [
   "application/pdf",

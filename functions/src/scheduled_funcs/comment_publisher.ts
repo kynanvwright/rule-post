@@ -6,7 +6,7 @@ import { logger } from "firebase-functions";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { DateTime } from "luxon";
 
-import { SCHED_REGION_ROME, ROME_TZ } from "../common/config";
+import { SCHED_REGION_ROME, ROME_TZ, TIMEOUT_SECONDS } from "../common/config";
 import { computeStageEnds } from "../utils/compute_stage_ends";
 import {
   readAuthorTeam,
@@ -19,7 +19,12 @@ import { isWorkingDay } from "../working_day";
 const db3 = getFirestore();
 
 export const commentPublisher = onSchedule(
-  { region: SCHED_REGION_ROME, schedule: "0 0,12 * * *", timeZone: ROME_TZ },
+  {
+    region: SCHED_REGION_ROME,
+    schedule: "0 0,12 * * *",
+    timeZone: ROME_TZ,
+    timeoutSeconds: TIMEOUT_SECONDS,
+  },
   async (): Promise<void> => {
     const nowRome = DateTime.now().setZone(ROME_TZ);
     const publishedAt = FieldValue.serverTimestamp();
