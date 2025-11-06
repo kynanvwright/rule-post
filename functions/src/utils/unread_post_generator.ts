@@ -115,3 +115,24 @@ export async function createUnreadForAllUsers<T extends PostType>(
   logger.info("[createUnreadForAllUsers] Users all finished.");
   return { attempted, updated };
 }
+
+/**
+ * Delete an unread record instance from under every user:
+ *   user_data/{uid}/unreadPosts/{docId}
+ *
+ * @param docId        the post Id
+ * @returns
+ */
+export async function deleteUnreadForAllUsers(docId: string): Promise<void> {
+  const q: FirebaseFirestore.Query = db.collection("user_data");
+
+  const usersSnap = await q.select().get();
+  logger.info(`[deleteUnreadForAllUsers] userCount=${usersSnap.size}`);
+
+  // Enqueue writes and flush every N to apply backpressure
+  for (const userDoc of usersSnap.docs) {
+    const ref = userDoc.ref.collection("unreadPosts").doc(docId);
+    await ref.delete();
+  }
+  return;
+}
