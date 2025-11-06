@@ -72,10 +72,13 @@ function buildUnreadRecord<T extends PostType>(
  * Create unread records under every user:
  *   user_data/{uid}/unreadPosts/{docId}
  *
+ * @param writer
  * @param postType     "enquiry" | "response" | "comment"
+ * @param postAlias
  * @param docId        the post Id
  * @param isUnread     boolean whether the post itself is unread, or it's being marked due to a child post
  * @param postFields   extra fields which vary by post type
+ * @param userTeam
  * @returns number of user docs written
  */
 export async function createUnreadForAllUsers<T extends PostType>(
@@ -90,29 +93,25 @@ export async function createUnreadForAllUsers<T extends PostType>(
   let attempted = 0;
   let updated = 0;
 
-  // Build query
+  writer.onWriteResult((_ref, _res) => {
+    updated++;
+  });
+
   let q: FirebaseFirestore.Query = db.collection("user_data");
-  if (userTeam && userTeam.trim()) {
-    // Only users on this team
-    q = q.where("team", "==", userTeam.trim());
-  }
-  // Get doc refs/ids
+  if (userTeam && userTeam.trim()) q = q.where("team", "==", userTeam.trim());
+
   const usersSnap = await q.select().get();
 
   const payload = buildUnreadRecord(postType, postAlias, isUnread, postFields);
+  logger.info(`[createUnreadForAllUsers] userCount=${usersSnap.size}`);
 
+  // Enqueue writes and flush every N to apply backpressure
   for (const userDoc of usersSnap.docs) {
-    attempted++;
     const ref = userDoc.ref.collection("unreadPosts").doc(docId);
-    try {
-      await writer.set(ref, payload, { merge: true });
-      updated++;
-    } catch (e) {
-      logger.warn(
-        `[createUnreadForAllUsers] Unread post write failed for post: ${docId} and user: ${userDoc.id}. Error: ${e}.`,
-      );
-    }
+    attempted++;
+    writer.set(ref, payload, { merge: true });
   }
 
+  logger.info("[createUnreadForAllUsers] Users all finished.");
   return { attempted, updated };
 }
