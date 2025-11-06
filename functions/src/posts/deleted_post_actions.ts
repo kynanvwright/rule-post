@@ -7,7 +7,7 @@ import { onDocumentDeleted } from "firebase-functions/v2/firestore";
 
 import { REGION } from "../common/config";
 import { db } from "../common/db";
-import { deleteUnreadForAllUsers } from "../utils/unread_post_generator";
+import { deleteUnreadForAllUsers } from '../utils/unread_post_generator';
 
 async function getMaxValue(
   collectionPath: string,
@@ -67,7 +67,7 @@ async function handleDeletion(args: {
     const path = `enquiries/${enquiryId}/`;
     deleteFolder(path);
     // delete unreadPost records
-    deleteUnreadForAllUsers(enquiryId);
+    deleteUnreadForAllUsers(enquiryId)
   } else if (kind === "response" && responseId) {
     deleteDraftDoc(responseId);
     // Delete publishEvents if any
@@ -90,7 +90,7 @@ async function handleDeletion(args: {
     const path = `enquiries/${enquiryId}/responses/${responseId}/`;
     deleteFolder(path);
     // delete unreadPost records
-    deleteUnreadForAllUsers(enquiryId);
+    deleteUnreadForAllUsers(responseId)
     // Add some logic to deal with response numbering
   } else if (kind === "comment" && commentId) {
     // Delete drafts if any
@@ -103,16 +103,13 @@ async function handleDeletion(args: {
       .limit(1); // since we expect only one
     const snap = await q.get();
     if (!snap.empty) await snap.docs[0].ref.delete();
-    // Add some logic to deal with comment numbering
     // delete files attached to post
     const path = `enquiries/${enquiryId}/responses/${responseId}/comments/${commentId}/`;
     deleteFolder(path);
+    // delete unreadPost records
+    deleteUnreadForAllUsers(commentId)
+    // Add some logic to deal with comment numbering
   }
-
-  // delete unreadpost records
-  deleteUnreadForAllUsers(
-    kind == "enquiry" ? enquiryId : kind == "response" ? responseId : commentId,
-  );
 
   console.log("Deleted", { kind, enquiryId, responseId, commentId, data });
 }
