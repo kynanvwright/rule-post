@@ -69,6 +69,8 @@ class NotificationsMenuButton extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(8,4,8,8),
             child: DeleteButton(
               labelText: 'Mark all as read',
+              icon: Icons.mark_email_read_outlined,
+              tooltipText: '',
               onConfirmDelete: () async {
                 final collectionRef = FirebaseFirestore.instance
                     .collection('user_data')

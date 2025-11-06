@@ -8,14 +8,14 @@ class DeleteButton extends StatefulWidget {
     super.key,
     required this.labelText,
     required this.onConfirmDelete, // your deletion logic
-    this.locked = false,
-    this.tooltipWhenLocked = 'You can’t delete this right now.',
+    this.icon = Icons.delete_outline,
+    this.tooltipText = 'Delete',
   });
 
   final String labelText;
   final Future<void> Function() onConfirmDelete;
-  final bool locked;
-  final String tooltipWhenLocked;
+  final IconData icon;
+  final String tooltipText;
 
   @override
   State<DeleteButton> createState() => _DeleteButtonState();
@@ -27,34 +27,23 @@ class _DeleteButtonState extends State<DeleteButton> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final bg = scheme.primary;
-    final fg = scheme.onPrimary;
-
-    // Destructive palette using Material 3 error colours
-    final bgColor = widget.locked ? bg.withValues(alpha: 0.55) : bg;
-    final fgColor = widget.locked ? fg.withValues(alpha: 0.55) : fg;
+    final bgColor = scheme.primary;
+    final fgColor = scheme.onPrimary;
 
     return Tooltip(
       key: _tooltipKey,
-      message: widget.locked ? widget.tooltipWhenLocked : 'Delete',
+      message: widget.tooltipText,
       child: FilledButton.icon(
         style: ButtonStyle(
           backgroundColor: WidgetStatePropertyAll(bgColor),
           foregroundColor: WidgetStatePropertyAll(fgColor),
           overlayColor: WidgetStatePropertyAll(
-            (widget.locked ? scheme.onSurface : scheme.onError)
-                .withValues(alpha: 0.08),
+            (scheme.onError).withValues(alpha: 0.08),
           ),
         ),
-        icon: Icon(widget.locked ? Icons.lock_outline : Icons.delete_outline, color: fgColor),
+        icon: Icon(widget.icon, color: fgColor),
         label: Text(widget.labelText),
         onPressed: () async {
-          if (widget.locked) {
-            final s = _tooltipKey.currentState;
-            if (s is TooltipState) s.ensureTooltipVisible();
-            return;
-          }
-
           final ok = await showDialog<bool>(
             context: context,
             builder: (_) => AlertDialog(
