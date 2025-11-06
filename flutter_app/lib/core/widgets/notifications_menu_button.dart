@@ -1,9 +1,12 @@
 // flutter_app/lib/core/widgets/notifications_menu_button.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../riverpod/unread_post_provider.dart';
 import '../../navigation/nav.dart';
+import 'delete_button.dart';
 
 
 class NotificationsMenuButton extends ConsumerWidget {
@@ -27,6 +30,9 @@ class NotificationsMenuButton extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
     final count = ref.watch(unreadStrictCountProvider);
     final hostContext = context;
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+
+    if (uid == null) return SizedBox();
 
     return ConstrainedBox(
       constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
@@ -48,13 +54,31 @@ class NotificationsMenuButton extends ConsumerWidget {
         },
         menuChildren: [
           Padding(
-            padding: const EdgeInsets.all(8),
-            child: Text(
-              'Unread posts:',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
+            padding: const EdgeInsets.fromLTRB(8,8,8,4),
+            child: Center(
+              child: Text(
+                'Unread Posts',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                ),
               ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8,4,8,8),
+            child: DeleteButton(
+              labelText: 'Mark all as read',
+              onConfirmDelete: () async {
+                final collectionRef = FirebaseFirestore.instance
+                    .collection('user_data')
+                    .doc(uid)
+                    .collection('unreadPosts');
+                final snap = await collectionRef.get();
+                for (final doc in snap.docs) {
+                  await doc.reference.delete();
+                }
+              },
             ),
           ),
           const Divider(height: 1),
@@ -126,7 +150,7 @@ class UnreadMenu extends ConsumerWidget {
       data: (items) {
         if (items.isEmpty) {
           return const Padding(
-            padding: EdgeInsets.all(12),
+            padding: EdgeInsets.all(8),
             child: ListTile(
               leading: Icon(Icons.inbox_outlined),
               title: Text('No items'),

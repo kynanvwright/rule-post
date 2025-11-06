@@ -18,12 +18,14 @@ export const syncCustomClaims = onDocumentWritten(
       const final = await applyClaimsForUid(uid, fromDoc, {
         replace: REPLACE_EXISTING,
       });
-      console.log(`[claims_sync] updated ${uid}: ${JSON.stringify(final)}`);
+      console.log(
+        `[syncCustomClaims] updated ${uid}: ${JSON.stringify(final)}`,
+      );
     } catch (e: unknown) {
       if (e instanceof Error) {
-        console.error(`[claims_sync] failed for ${uid}:`, e.message);
+        console.error(`[syncCustomClaims] failed for ${uid}:`, e.message);
       } else {
-        console.error(`[claims_sync] failed for ${uid}:`, String(e));
+        console.error(`[syncCustomClaims] failed for ${uid}:`, String(e));
       }
     }
   },
