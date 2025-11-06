@@ -112,6 +112,17 @@ A website for facilitating America's Cup Rule Enquiries.
 
 ### Commercial Product Requests
 
+### Read Receipts
+- Mark all as unread for new users
+- Allow all posts to be marked as read with button press
+- Have unread posts dropdown with links
+- Show dot for unread content in:
+  - Nav pane
+  - Child stream tiles
+- For stream tiles, show dot next to comments if they're unread, instead of response
+- Have button to mark post as unread for all users
+  - Shouldn't need to be used much, but good for testing
+
 ## Fixes
 - Check which widgets/screens are still in use, delete as required
 - Look for edge cases where RC speeds up stage end and team response gets stuck. 
@@ -122,6 +133,7 @@ A website for facilitating America's Cup Rule Enquiries.
 - Should the email digest delete entries rather than marking them as processed?
 - Switch childrenSection streams to providers to avoid reload on log-in?
 - Check cloud functions and delete ones that aren't in use
+- the enquiryNumber counter doesn't do well when enquiries are deleted
 
 ## Other Notes
 - Check how it looks on various devices
