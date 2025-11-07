@@ -12,16 +12,6 @@ import '../../riverpod/user_detail.dart';
 
 
 /// -------------------- RESPONSE DETAIL --------------------
-// class ResponseDetailPage extends ConsumerWidget {
-//   const ResponseDetailPage({
-//     super.key,
-//     required this.enquiryId,
-//     required this.responseId,
-//   });
-
-//   final String enquiryId;
-//   final String responseId;
-
 class ResponseDetailPage extends ConsumerStatefulWidget  {
   const ResponseDetailPage({
     super.key, 
@@ -48,7 +38,6 @@ class _ResponseDetailPageState extends ConsumerState<ResponseDetailPage> {
   Widget build(BuildContext context) {
     final eAsync = ref.watch(enquiryDocProvider(widget.enquiryId));
     final rAsync = ref.watch(responseDocProvider((enquiryId: widget.enquiryId, responseId: widget.responseId)));
-    // final userRole = ref.watch(roleProvider);
     final userTeam = ref.watch(teamProvider);
 
         // Unified gate:

@@ -7,31 +7,35 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'user_detail.dart';
 
 
-// 2) In your list tile, only the dot watches the boolean via `select`
 class UnreadDot extends ConsumerWidget {
-  const UnreadDot(this.enquiryId, this.expanded, {super.key});
+  const UnreadDot(this.enquiryId, {this.expanded = false, super.key});
   final String enquiryId;
   final bool expanded;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final unreadAsync = ref.watch(unreadByIdProvider(enquiryId));
+
     final showDot = 
-      (unreadAsync?['isUnread'] == true) 
-      || 
+      (unreadAsync?['isUnread'] == true) ||
       ((unreadAsync?['hasUnreadChild'] == true) && !expanded);
-    return showDot
-        ? Padding(
-            padding: const EdgeInsets.only(left: 6),
-            child: Icon(
-              Icons.circle,
-              size: 8,
-              color: Colors.blueAccent, // change to theme colour
-            ),
-          )
-        : const SizedBox.shrink();
+
+    return AnimatedOpacity(
+      opacity: showDot ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 2000),
+      curve: Curves.easeInOut,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 6),
+        child: Icon(
+          Icons.circle,
+          size: 8,
+          color: Colors.blueAccent,
+        ),
+      ),
+    );
   }
 }
+
 
 
 // auth + firestore helpers (nice to centralise)

@@ -184,7 +184,7 @@ class _EnquiriesTree extends ConsumerWidget {
               },
               title: _RowTile(
                 label: 'RE #$n - $title',
-                isUnread: UnreadDot(id, (isOpen && isPublished)),
+                isUnread: UnreadDot(id, expanded: (isOpen && isPublished)),
                 selected: isOpen && initiallyOpenResponseId == null,
                 showSubtitle: isPublished == false,
                 onTap: () {
@@ -281,7 +281,7 @@ class _ResponsesBranch extends StatelessWidget {
                   title: _RowTile(
                     label: label,
                     selected: isOpen,
-                    isUnread: UnreadDot(id, (isOpen && isPublished)),
+                    isUnread: UnreadDot(id, expanded: (isOpen && isPublished)),
                     onTap: () {
                       TwoPaneScope.of(context)?.closeDrawer();
                       Nav.goResponse(context, enquiryId, id);

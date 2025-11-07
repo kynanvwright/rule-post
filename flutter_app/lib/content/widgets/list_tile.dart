@@ -9,6 +9,7 @@ class ListTileCollapsibleText extends StatefulWidget {
     this.contentPadding = const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     this.showCollapsedHint = true,
     this.tileColor, // NEW: mimic ListTile.tileColor
+    this.sideWidget,
   });
 
   final String text;
@@ -16,6 +17,7 @@ class ListTileCollapsibleText extends StatefulWidget {
   final EdgeInsetsGeometry contentPadding;
   final bool showCollapsedHint;
   final Color? tileColor; // NEW
+  final Widget? sideWidget;
 
   @override
   State<ListTileCollapsibleText> createState() => _ListTileCollapsibleTextState();
@@ -91,6 +93,7 @@ class _ListTileCollapsibleTextState extends State<ListTileCollapsibleText>
                           ),
                         ),
                       ),
+                      if (widget.sideWidget != null) widget.sideWidget!,
                       if (_overflows) ...[
                         const SizedBox(width: 8),
                         AnimatedRotation(

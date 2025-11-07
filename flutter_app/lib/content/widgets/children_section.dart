@@ -178,7 +178,7 @@ class ChildrenSection extends ConsumerWidget {
                         ? 'Response $roundNumber.$responseNumber (Draft)'
                         : 'Response $roundNumber.$responseNumber',
                       ),
-                      UnreadDot(id, false),
+                      UnreadDot(id),
                     ],
                   ),
                   subtitle: titleSnippet == null ? null : Text(titleSnippet),
@@ -189,6 +189,7 @@ class ChildrenSection extends ConsumerWidget {
                 tile = ListTileCollapsibleText(
                   isPublished ? text : '(Draft) $text',
                   maxLines: 3,
+                  // sideWidget: UnreadDot(id), // not working because data is deleted before it loads
                 );
               }
 
