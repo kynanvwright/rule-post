@@ -5,27 +5,31 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'user_detail.dart';
+import 'unread_post_provider.dart';
 
 
 final markEnquiryReadProvider =
     Provider<Future<void> Function(String enquiryId)?>((ref) {
-      
   ref.watch(firebaseUserProvider);
   final uid = FirebaseAuth.instance.currentUser?.uid;
-  if (uid == null) {
-    return null;
-  }
+  if (uid == null) return null;
   final firestore = FirebaseFirestore.instance;
 
   return (String enquiryId) async {
-    await firestore
-        .collection('user_data')
-        .doc(uid)
-        .collection('unreadPosts')
-        .doc(enquiryId)
-        .delete();
+    final unreadData = ref.read(unreadByIdProvider(enquiryId));
+    final isUnread = unreadData?['isUnread'] == true;
+
+    if (isUnread) {
+      await firestore
+          .collection('user_data')
+          .doc(uid)
+          .collection('unreadPosts')
+          .doc(enquiryId)
+          .delete();
+    }
   };
 });
+
 
 
 final markResponsesAndCommentsReadProvider =

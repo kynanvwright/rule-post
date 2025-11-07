@@ -6,10 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../content/widgets/new_post_button.dart';
 import '../../navigation/nav.dart';
-import '../../riverpod/user_detail.dart';
 import '../../riverpod/enquiry_filter_provider.dart';
 import '../../riverpod/post_providers.dart';
 import '../../riverpod/unread_post_provider.dart';
+import '../../riverpod/user_detail.dart';
 import '../widgets/doc_view.dart';
 import 'filter_dropdown.dart';
 import 'two_panel_shell.dart';

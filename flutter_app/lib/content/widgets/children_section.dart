@@ -6,6 +6,7 @@ import '../../core/widgets/doc_view.dart';
 import '../../navigation/nav.dart';
 import '../../riverpod/post_streams.dart';
 import '../../riverpod/user_detail.dart';
+import '../../riverpod/unread_post_provider.dart';
 import 'list_tile.dart';
 import 'new_post_button.dart';
 import 'parse_hex_colour.dart';
@@ -143,15 +144,13 @@ class ChildrenSection extends ConsumerWidget {
             itemBuilder: (context, i) {
               final d = docs[i].data();
               final id = docs[i].id;
-              // final t = (d['publishedAt'] as Timestamp?)?.toDate();
+              final segments = docs[i].reference.path.split('/');
               final title = (d['title'] ?? '').toString().trim();
               final text = (d['postText'] ?? '').toString().trim();
               final roundNumber = (d['roundNumber'] ?? 'x').toString().trim();
               final responseNumber = (d['responseNumber'] ?? 'x').toString().trim();
               final fromRC = d['fromRC'] ?? false;
               final isPublished = d['isPublished'] ?? false;
-
-              final segments = docs[i].reference.path.split('/');
               final teamColourHex = d['colour'];
               final Color teamColourFaded = teamColourHex == null
                   ? Colors.transparent
@@ -173,9 +172,15 @@ class ChildrenSection extends ConsumerWidget {
                     : 'Rules Committee');
 
                 tile = ListTile(
-                  title: !isPublished
-                  ? Text('Response $roundNumber.$responseNumber (Draft)')
-                  : Text('Response $roundNumber.$responseNumber'),
+                  title: Row(
+                    children: [
+                      Text(!isPublished
+                        ? 'Response $roundNumber.$responseNumber (Draft)'
+                        : 'Response $roundNumber.$responseNumber',
+                      ),
+                      UnreadDot(id, false),
+                    ],
+                  ),
                   subtitle: titleSnippet == null ? null : Text(titleSnippet),
                   trailing: trailingText,
                   onTap: () => Nav.goResponse(context, enquiryId, responseId),
