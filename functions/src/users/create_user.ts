@@ -95,6 +95,7 @@ export const createUserWithProfile = onCall(
       handleCodeInApp: false, // set true if your app handles OOB codes
       // dynamicLinkDomain: "example.page.link", // if using Firebase Dynamic Links
     });
+    console.log("✅ Password reset link created");
 
     // 5) Send email via Resend
     const recipientName = getNameFromEmail(email);
@@ -109,6 +110,7 @@ export const createUserWithProfile = onCall(
         <p>If you didn’t expect this, you can ignore this email.</p>
       `,
     });
+    console.log("✅ Welcome email sent");
 
     return { uid: userRecord.uid, email: userRecord.email };
   },

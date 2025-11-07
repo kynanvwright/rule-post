@@ -115,10 +115,10 @@ A website for facilitating America's Cup Rule Enquiries.
 ### Read Receipts
 - Mark all as unread for new users
 - Allow all posts to be marked as read with button press
-- Have unread posts dropdown with links
+- Have unread posts dropdown with links [done]
 - Show dot for unread content in:
-  - Nav pane
-  - Child stream tiles
+  - Nav pane [done]
+  - Child stream tiles [done] [for responses only]
 - For stream tiles, show dot next to comments if they're unread, instead of response
 - Have button to mark post as unread for all users
   - Shouldn't need to be used much, but good for testing

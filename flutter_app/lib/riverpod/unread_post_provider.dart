@@ -33,6 +33,17 @@ class UnreadDot extends ConsumerWidget {
         ),
       ),
     );
+    // return showDot
+    // ? Padding(
+    //     padding: const EdgeInsets.only(left: 6),
+    //     child: Icon(
+    //       Icons.circle,
+    //       size: 8,
+    //       color: Colors.blueAccent, // change to theme colour
+    //     ),
+    //   )
+    // : const SizedBox.shrink();
+
   }
 }
 
