@@ -134,6 +134,7 @@ A website for facilitating America's Cup Rule Enquiries.
 - Switch childrenSection streams to providers to avoid reload on log-in?
 - Check cloud functions and delete ones that aren't in use
 - the enquiryNumber on unpublished enquiries can be wrong if a draft gets deleted
+- Currently, my data structure has a lot of copied and duplicated fields. It would be nicer to link to a single source of truth to make updates easier.
 
 ## Other Notes
 - Check how it looks on various devices

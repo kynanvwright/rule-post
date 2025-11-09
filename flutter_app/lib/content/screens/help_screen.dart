@@ -28,7 +28,7 @@ class HelpFaqScreen extends StatelessWidget {
           {
             "question": "How can I keep up to date with new posts?",
             "answer":
-                "Click the 'Account' button in the top right, and select 'Profile'. Enable email notifications to receive updates when new posts are made."
+                "Enable email notifications under your account settings to receive updates when new posts are made. Posts you haven't read yet will alos have a visual indicator, and be listed in the 'unread posts' dropdown."
           },
           {
             "question": "How do I get an account?",
@@ -79,7 +79,7 @@ class HelpFaqScreen extends StatelessWidget {
           {
             "question": "Can I edit or delete a post after submitting it?",
             "answer":
-                "Not yet, but this is a planned future feature. Contact the Rules Committee if you need to issue a correction or withdrawal."
+                "If you're logged in, you should be able to view and edit any posts submitted by your team. Deletion is not currently available."
           },
           {
             "question": "What types of files can I upload?",
