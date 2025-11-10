@@ -130,14 +130,12 @@ export async function createUnreadForAllUsers<T extends PostType>(
       );
     }
   } else {
-    // If neither filter is provided, this would target ALL users.
-    // Keep this as-is if that's intended; otherwise, early-out as a safeguard.
-    // Remove/modify this guard if you sometimes DO want all users.
+    // If neither filter is provided, this targets ALL users.
     if (!trimmedTeam) {
       logger.warn(
-        "[createUnreadForAllUsers] No userId or userTeam specified — aborting to avoid all-user write.",
+        "[createUnreadForAllUsers] No userId or userTeam specified — all-user write.",
       );
-      return { attempted, updated };
+      // return { attempted, updated };
     }
 
     let q: FirebaseFirestore.Query = db.collection("user_data");
