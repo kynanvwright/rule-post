@@ -227,7 +227,7 @@ class AdminAction {
           pendingDays = null; // clear captured state
         }
       },
-    );
+    );   
   }
 }
 

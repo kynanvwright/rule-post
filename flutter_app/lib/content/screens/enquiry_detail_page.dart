@@ -9,6 +9,7 @@ import '../widgets/fancy_attachment_tile.dart';
 import '../widgets/rules_committee_panel.dart';
 import '../widgets/status_chip.dart';
 import '../widgets/new_post_button.dart';
+import '../widgets/mark_unread_button.dart';
 import '../../api/change_stage_length.dart';
 import '../../api/close_enquiry_api.dart';
 import '../../api/publish_competitor_responses.dart';
@@ -73,7 +74,11 @@ class _EnquiryDetailPageState extends ConsumerState<EnquiryDetailPage> {
           headerLines: [title],
           subHeaderLines: ['Rule Enquiry #$enquiryNumber'],
           headerButton: isPublished ? 
-          null : 
+            isAdmin ?
+              MarkUnreadButton(
+                enquiryId: widget.enquiryId,
+              ) :
+            null : 
           EditPostButton(
             type: PostType.enquiry,
             initialTitle: title,

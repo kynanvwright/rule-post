@@ -1,7 +1,6 @@
 // riverpod/read_receipts.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'user_detail.dart';
@@ -31,7 +30,6 @@ final markEnquiryReadProvider =
 });
 
 
-
 final markResponsesAndCommentsReadProvider =
     Provider<Future<void> Function(String enquiryId, String responseId)?>((ref) {
   ref.watch(firebaseUserProvider);
@@ -52,14 +50,14 @@ final markResponsesAndCommentsReadProvider =
     Query<Map<String, dynamic>> q = col
         .where('postType', isEqualTo: 'comment')
         .where('parentId', isEqualTo: responseId)
-        .limit(50);
+        .limit(200);
 
     while (true) {
       final snap = await q.get();
       for (final d in snap.docs) {
         batch.delete(d.reference);
       }
-      if (snap.docs.length < 500) break;
+      if (snap.docs.length < 450) break;
       q = q.startAfterDocument(snap.docs.last);
     }
 

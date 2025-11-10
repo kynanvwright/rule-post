@@ -73,6 +73,12 @@ export type changeStageLengthPayload = {
   newStageLength: number;
 };
 
+export type UnreadPostPayload = {
+  enquiryId: string;
+  responseId?: string;
+  commentId?: string;
+};
+
 /* ─────────────────────────────── Notifications ─────────────────────────────── */
 
 export type ISODate = Timestamp;

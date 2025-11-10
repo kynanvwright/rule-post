@@ -6,6 +6,8 @@ import '../widgets/children_section.dart';
 import '../widgets/detail_scaffold.dart';
 import '../widgets/fancy_attachment_tile.dart';
 import '../widgets/status_chip.dart';
+import '../widgets/new_post_button.dart';
+import '../widgets/mark_unread_button.dart';
 import '../../riverpod/doc_providers.dart';
 import '../../riverpod/read_receipts.dart';
 import '../../riverpod/user_detail.dart';
@@ -39,6 +41,7 @@ class _ResponseDetailPageState extends ConsumerState<ResponseDetailPage> {
     final eAsync = ref.watch(enquiryDocProvider(widget.enquiryId));
     final rAsync = ref.watch(responseDocProvider((enquiryId: widget.enquiryId, responseId: widget.responseId)));
     final userTeam = ref.watch(teamProvider);
+    final userRole = ref.watch(roleProvider);
 
         // Unified gate:
     if (eAsync.isLoading || rAsync.isLoading) {
@@ -66,6 +69,7 @@ class _ResponseDetailPageState extends ConsumerState<ResponseDetailPage> {
     final currentRound = e['roundNumber'] == e['roundNumber'];
     final teamsCanComment = e['teamsCanComment'] ?? false;
     final isRC = userTeam == 'RC';
+    final isAdmin = userRole == 'admin';
     final lockedComments = !isPublished || isRC || fromRC || !isOpen || !currentRound || !teamsCanComment;
     final lockedCommentReason = !lockedComments ? '' 
       : !isPublished ? "Can't comment on unpublished response"
@@ -77,6 +81,21 @@ class _ResponseDetailPageState extends ConsumerState<ResponseDetailPage> {
     return DetailScaffold(
       headerLines: ['Response $roundNumber.$responseNumber'],
       subHeaderLines: ['Rule Enquiry #$enquiryNumber'],
+      headerButton: isPublished ? 
+        isAdmin ?
+          MarkUnreadButton(
+            enquiryId: widget.enquiryId,
+            responseId: widget.responseId,
+          ) :
+        null : 
+      EditPostButton(
+        type: PostType.response,
+        initialTitle: summary,
+        initialText: text,
+        initialAttachments: attachments,
+        postId: widget.responseId,
+        parentIds: [widget.enquiryId],
+      ),
       meta: Wrap(
         spacing: 8,
         runSpacing: 8,

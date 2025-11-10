@@ -36,7 +36,7 @@ export {
   onResponseIsPublishedUpdated,
   onCommentIsPublishedUpdated,
   sendPublishDigest,
-} from "./notifications/send_email_on_publish";
+} from "./notifications/send_publish_digest";
 export { setEmailNotificationsOn } from "./notifications/toggle_notifications";
 
 /** ───────────────────────────── Scheduled ───────────────────────────── */
@@ -48,6 +48,7 @@ export { commentPublisher } from "./scheduled_funcs/comment_publisher";
 /** ─────────────────────────────── Admin ─────────────────────────────── */
 export { changeStageLength } from "./admin_funcs/change_stage_length";
 export { closeEnquiry } from "./admin_funcs/close_enquiry";
+export { markPostUnread } from "./admin_funcs/mark_post_unread";
 export { responseInstantPublisher } from "./admin_funcs/response_instant_publisher";
 
 /** ─────────────────────────────── Utils ─────────────────────────────── */

@@ -2,7 +2,12 @@
 // File: src/utils/unread_post_generator.ts
 // Purpose: Create unread post records in user data collection
 // ──────────────────────────────────────────────────────────────────────────────
-import { getFirestore, FieldValue, BulkWriter } from "firebase-admin/firestore";
+import {
+  getFirestore,
+  FieldValue,
+  FieldPath,
+  BulkWriter,
+} from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
 
 import { PostType } from "../common/types";
@@ -88,29 +93,77 @@ export async function createUnreadForAllUsers<T extends PostType>(
   docId: string,
   isUnread: boolean,
   postFields: FieldBundle<T>,
-  userTeam?: string,
+  filters?: { userTeam?: string; userId?: string },
 ): Promise<{ attempted: number; updated: number }> {
   let attempted = 0;
   let updated = 0;
 
+  // Count successful writes (BulkWriter calls this per success)
   writer.onWriteResult((_ref, _res) => {
     updated++;
   });
 
-  let q: FirebaseFirestore.Query = db.collection("user_data");
-  if (userTeam && userTeam.trim()) q = q.where("team", "==", userTeam.trim());
-
-  const usersSnap = await q.select().get();
+  // Optional: log & suppress individual write errors but keep bulk going
+  writer.onWriteError((err) => {
+    // Firestore BulkWriter will auto-retry based on backoff; return true to retry if allowed
+    // You can add custom logic here. For now, don't retry beyond internal behavior.
+    logger.error(`[createUnreadForAllUsers] write error: ${err.message}`);
+    return false;
+  });
 
   const payload = buildUnreadRecord(postType, postAlias, isUnread, postFields);
-  logger.info(`[createUnreadForAllUsers] userCount=${usersSnap.size}`);
 
-  // Enqueue writes and flush every N to apply backpressure
-  for (const userDoc of usersSnap.docs) {
+  // Collect target user docs (normalize to an array so the loop works the same)
+  let userDocs: FirebaseFirestore.QueryDocumentSnapshot[] = [];
+
+  const trimmedUserId = filters?.userId?.trim();
+  const trimmedTeam = filters?.userTeam?.trim();
+
+  if (trimmedUserId) {
+    // Fast path: userId is the document ID
+    const docSnap = await db.collection("user_data").doc(trimmedUserId).get();
+    if (docSnap.exists) {
+      userDocs = [docSnap as FirebaseFirestore.QueryDocumentSnapshot];
+    } else {
+      logger.warn(
+        `[createUnreadForAllUsers] userId not found: ${trimmedUserId}`,
+      );
+    }
+  } else {
+    // If neither filter is provided, this would target ALL users.
+    // Keep this as-is if that's intended; otherwise, early-out as a safeguard.
+    // Remove/modify this guard if you sometimes DO want all users.
+    if (!trimmedTeam) {
+      logger.warn(
+        "[createUnreadForAllUsers] No userId or userTeam specified — aborting to avoid all-user write.",
+      );
+      return { attempted, updated };
+    }
+
+    let q: FirebaseFirestore.Query = db.collection("user_data");
+    if (trimmedTeam) q = q.where("team", "==", trimmedTeam);
+
+    // We only need the ref/id, so project only the doc ID to save RU/s
+    const snap = await q.select(FieldPath.documentId()).get();
+    userDocs = snap.docs;
+  }
+
+  logger.info(`[createUnreadForAllUsers] userCount=${userDocs.length}`);
+
+  // Enqueue writes; optional periodic flush to apply backpressure for very large sets
+  // const FLUSH_EVERY = 500; // tune as needed; set to 0 to disable mid-stream flushes
+  for (const userDoc of userDocs) {
     const ref = userDoc.ref.collection("unreadPosts").doc(docId);
     attempted++;
     writer.set(ref, payload, { merge: true });
+
+    // if (FLUSH_EVERY && attempted % FLUSH_EVERY === 0) {
+    //   await writer.flush();
+    // }
   }
+
+  // Final flush to ensure everything is sent
+  await writer.flush();
 
   logger.info("[createUnreadForAllUsers] Users all finished.");
   return { attempted, updated };
