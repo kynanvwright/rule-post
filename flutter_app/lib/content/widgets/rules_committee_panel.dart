@@ -3,7 +3,6 @@ import 'package:cloud_functions/cloud_functions.dart';
 
 import './prompt_stage_length.dart';
 
-typedef ConfirmGuard = Future<bool> Function(BuildContext context);
 typedef ActionArgs = Object?;
 
 
@@ -14,7 +13,6 @@ class AdminAction {
     this.icon,
     this.tooltip,
     this.enabled = true,
-    this.confirmGuard, // if provided, used instead of the default dialog
     this.buildAndGetArgs, // dialog/input step
   });
 
@@ -22,7 +20,6 @@ class AdminAction {
   final IconData? icon;
   final String? tooltip;
   final bool enabled;
-  final ConfirmGuard? confirmGuard;  
   /// Step 1 (optional): show a dialog / sheet / form, gather user input,
   /// and return it. If this returns `null`, we treat that as "cancel".
   final Future<ActionArgs?> Function(BuildContext context)? buildAndGetArgs;
@@ -187,13 +184,14 @@ class AdminAction {
       icon: Icons.timer, // a little more descriptive than lock
       tooltip: enabled ? 'Change number of working days for major enquiry stages (default: 4)' : 'Locked: Enquiry closed',
       enabled: enabled,
-      // Step 1: confirmGuard handles fetch + numeric input
-      confirmGuard: (ctx) async {
+      // Step 1: buildAndGetArgs handles fetch + numeric input
+      buildAndGetArgs: (ctx) async {
         final v = await promptStageLength(ctx, loadCurrent: loadCurrent, min: 1, max: 30);
+        debugPrint('v: $v');
         pendingDays = v;
         return v != null; // only proceed if user confirmed
       },
-      // Step 2: onPressed runs only when confirmGuard returned true
+      // Step 2: onPressed runs only when buildAndGetArgs returned true
       runWithArgs: (_) async {
         try {
           final days = pendingDays!;
