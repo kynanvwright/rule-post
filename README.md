@@ -72,6 +72,7 @@ A website for facilitating America's Cup Rule Enquiries.
 - Add amendment/interpretation/neither tag on enquiry closure, to allow filtering later
   - done, need to add matching filters and status chips
 - have a page summarising all open enquiry deadlines
+- would prefer to replace draft flow with simple stream instead of separate collection
 
 ### 📑 Enquiries & Responses
 - Add per-user limits on new enquiries and attachments per day
