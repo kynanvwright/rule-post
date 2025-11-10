@@ -60,16 +60,16 @@ export type TargetTime = {
 };
 
 export type idPayload = {
-  enquiryID: string;
+  enquiryId: string;
 };
 
 export type instantPublishPayload = {
-  enquiryID: string;
+  enquiryId: string;
   rcResponse: boolean;
 };
 
 export type changeStageLengthPayload = {
-  enquiryID: string;
+  enquiryId: string;
   newStageLength: number;
 };
 
@@ -141,7 +141,7 @@ export interface PublishResult {
 }
 
 export type CloseEnquiryPayload = {
-  enquiryID: string;
+  enquiryId: string;
   enquiryConclusion: EnquiryConclusion;
 };
 

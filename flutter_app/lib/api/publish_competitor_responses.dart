@@ -9,7 +9,7 @@ Future<int?> publishCompetitorResponses(String enquiryId) async {
     final callable = functions.httpsCallable('responseInstantPublisher');
 
     final result = await callable.call(<String, dynamic>{
-      'enquiryID': enquiryId.trim(),
+      'enquiryId': enquiryId.trim(),
       'rcResponse': false,
     });
 

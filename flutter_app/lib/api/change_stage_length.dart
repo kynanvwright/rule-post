@@ -11,7 +11,7 @@ Future<bool> changeStageLength(String enquiryId, int newStageLength) async {
 
     // Call the backend function using the input arguments
     final result = await callable.call<Map<String, dynamic>>({
-      'enquiryID': enquiryId.trim(),
+      'enquiryId': enquiryId.trim(),
       'newStageLength' : newStageLength,
     });
     // extract the function output and return function success boolean

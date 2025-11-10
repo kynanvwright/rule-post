@@ -32,12 +32,12 @@ export const changeStageLength = onCall(
     }
 
     // 2) Input validation
-    const { enquiryID, newStageLength } = req.data as changeStageLengthPayload;
-    const ref = db.collection("enquiries").doc(enquiryID);
+    const { enquiryId, newStageLength } = req.data as changeStageLengthPayload;
+    const ref = db.collection("enquiries").doc(enquiryId);
     // (Optional) ensure it exists first, for clearer errors:
     const snap = await ref.get();
     if (!snap.exists) {
-      throw new HttpsError("not-found", `Enquiry ${enquiryID} does not exist.`);
+      throw new HttpsError("not-found", `Enquiry ${enquiryId} does not exist.`);
     }
     const oldStageLength = snap.get("stageLength");
     if (oldStageLength == newStageLength) {

@@ -30,8 +30,8 @@ export const responseInstantPublisher = onCall(
       throw new HttpsError("permission-denied", "Admin/RC function only.");
     }
     // 2) Fetch enquiry
-    const { enquiryID, rcResponse } = req.data as instantPublishPayload;
-    const enquiryDoc = await db.collection("enquiries").doc(enquiryID).get();
+    const { enquiryId, rcResponse } = req.data as instantPublishPayload;
+    const enquiryDoc = await db.collection("enquiries").doc(enquiryId).get();
     if (!enquiryDoc.exists) {
       logger.warn("[responseInstantPublisher] No matching enquiry.");
       return { ok: false, num_published: 0, reason: "no-enquiry-match" };

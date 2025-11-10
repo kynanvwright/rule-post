@@ -10,16 +10,16 @@ Future<String?> closeEnquiry(String enquiryId, EnquiryConclusion enquiryConclusi
     final callable = functions.httpsCallable('closeEnquiry');
     debugPrint("enquiry conclusion: ${enquiryConclusion.name}");
 
-    // Match the backend key exactly: enquiryID (capital D)
+    // Match the backend key exactly: enquiryId (capital D)
     final result = await callable.call<Map<String, dynamic>>({
-      'enquiryID': enquiryId.trim(),
+      'enquiryId': enquiryId.trim(),
       'enquiryConclusion': enquiryConclusion.name,
     });
 
     final data = result.data;
     if (data['ok'] == true) {
       // Match backend return field name
-      return data['enquiryID'] as String;
+      return data['enquiryId'] as String;
     }
     return null;
   } on FirebaseFunctionsException catch (e) {

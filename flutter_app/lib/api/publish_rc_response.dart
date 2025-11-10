@@ -9,7 +9,7 @@ Future<bool> publishRcResponse(String enquiryId) async {
     final callable = functions.httpsCallable('responseInstantPublisher');
 
     final result = await callable.call(<String, dynamic>{
-      'enquiryID': enquiryId.trim(),
+      'enquiryId': enquiryId.trim(),
       'rcResponse': true,
     });
     final raw = result.data;

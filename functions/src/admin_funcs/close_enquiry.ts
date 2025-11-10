@@ -24,18 +24,18 @@ export const closeEnquiry = onCall(
     }
 
     // 2) Input validation
-    const raw = (req.data as Partial<CloseEnquiryPayload>)?.enquiryID;
+    const raw = (req.data as Partial<CloseEnquiryPayload>)?.enquiryId;
     if (typeof raw !== "string") {
-      throw new HttpsError("invalid-argument", "enquiryID must be a string.");
+      throw new HttpsError("invalid-argument", "enquiryId must be a string.");
     }
-    const enquiryID = raw.trim();
-    if (!enquiryID) {
-      throw new HttpsError("invalid-argument", "enquiryID is required.");
+    const enquiryId = raw.trim();
+    if (!enquiryId) {
+      throw new HttpsError("invalid-argument", "enquiryId is required.");
     }
-    if (enquiryID.includes("/")) {
+    if (enquiryId.includes("/")) {
       throw new HttpsError(
         "invalid-argument",
-        "enquiryID must be a single segment (no slashes).",
+        "enquiryId must be a single segment (no slashes).",
       );
     }
     const enquiryConclusion = (req.data as Partial<CloseEnquiryPayload>)
@@ -52,16 +52,16 @@ export const closeEnquiry = onCall(
       uid: callerUid,
       isAdmin,
       isRC,
-      enquiryID,
+      enquiryId,
       enquiryConclusion,
     });
 
     // 3) Update
-    const ref = db.collection("enquiries").doc(enquiryID);
+    const ref = db.collection("enquiries").doc(enquiryId);
     // (Optional) ensure it exists first, for clearer errors:
     const snap = await ref.get();
     if (!snap.exists) {
-      throw new HttpsError("not-found", `Enquiry ${enquiryID} does not exist.`);
+      throw new HttpsError("not-found", `Enquiry ${enquiryId} does not exist.`);
     }
 
     await ref.update({
@@ -71,6 +71,6 @@ export const closeEnquiry = onCall(
       enquiryConclusion: enquiryConclusion,
     });
 
-    return { ok: true, enquiryID };
+    return { ok: true, enquiryId };
   },
 );
