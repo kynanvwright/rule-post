@@ -1,6 +1,7 @@
 // app_scaffold.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../auth/widgets/auth_service.dart';
 import '../../auth/widgets/login_dialog.dart';
@@ -42,6 +43,7 @@ class AppBanner extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final isLoggedIn = ref.watch(isLoggedInProvider);
+    final uid = FirebaseAuth.instance.currentUser?.uid;
 
     return SizedBox(
       height: height,
@@ -232,7 +234,8 @@ class AppBanner extends ConsumerWidget {
                       minTap: minTap,
                     ),
 
-                    SizedBox(width: gap * 0.6),
+                    // only add extra space if button above renders
+                    if (uid != null) SizedBox(width: gap * 0.6),
 
                     // Account
                     ConstrainedBox(
