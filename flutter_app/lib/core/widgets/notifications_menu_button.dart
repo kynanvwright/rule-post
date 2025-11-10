@@ -237,7 +237,7 @@ class UnreadMenu extends ConsumerWidget {
 }
 
 
-extension _SafeGet on Map<String, dynamic> {
+extension SafeGet on Map<String, dynamic> {
   String s(String key, [String def = '']) {
     final v = this[key];
     if (v == null) return def;
@@ -246,11 +246,39 @@ extension _SafeGet on Map<String, dynamic> {
 
   int i(String key, [int def = 1 << 30]) {
     final v = this[key];
+
     if (v is int) return v;
     if (v is num) return v.toInt();
-    if (v is String) return int.tryParse(v) ?? def;
+
+    if (v is String) {
+      // Normalise: trim, convert Unicode minus to ASCII, strip thousands commas
+      final t = v
+          .trim()
+          .replaceAll('\u2212', '-')   // Unicode minus → '-'
+          .replaceAll('\u2013', '-')   // en dash just in case
+          .replaceAll(',', '');        // remove separators if any
+
+      // Only accept clean integers
+      final m = RegExp(r'^[+-]?\d+$').firstMatch(t);
+      if (m != null) return int.parse(t);
+    }
+
     return def; // big number -> sorts to end
   }
+}
+
+
+/// Extracts the enquiry number from "RE #{enquiryNumber} - {title}".
+/// Accepts optional whitespace and sign; normalises Unicode minus.
+int? extractEnquiryNumberFromAlias(String alias) {
+  final norm = alias
+      .trim()
+      .replaceAll('\u2212', '-')  // Unicode minus → ASCII
+      .replaceAll('\u2013', '-'); // en dash → ASCII
+
+  final re = RegExp(r'^RE\s*#\s*([+-]?\d+)\s*-', caseSensitive: false);
+  final m = re.firstMatch(norm);
+  return m == null ? null : int.tryParse(m.group(1)!);
 }
 
 
@@ -263,8 +291,14 @@ List<String> generateOrderedKeys(Map<String, Map<String, dynamic>> items) {
       .where((e) => e.value.s('postType') == 'enquiry')
       .toList()
     ..sort((a, b) {
-      final c = a.value.i('enquiryNumber').compareTo(b.value.i('enquiryNumber'));
-      return c != 0 ? c : a.key.compareTo(b.key);
+      final an = extractEnquiryNumberFromAlias(a.value.s('postAlias'))
+          ?? a.value.i('enquiryNumber', 1 << 30); // fallback if alias is malformed
+      final bn = extractEnquiryNumberFromAlias(b.value.s('postAlias'))
+          ?? b.value.i('enquiryNumber', 1 << 30);
+
+    final c = an.compareTo(bn);
+    // multiply by -1 for descending sort
+    return (-1) * (c != 0 ? c : a.key.compareTo(b.key));
     });
 
   for (final enquiry in enquiries) {
