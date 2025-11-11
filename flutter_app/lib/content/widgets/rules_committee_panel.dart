@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 
-import './prompt_stage_length.dart';
-
-typedef ActionArgs = Object?;
+import 'prompt_stage_length.dart';
+import '../../api/publish_competitor_responses.dart';
+import '../../api/publish_rc_response.dart';
+import '../../api/close_enquiry_api.dart';
+import '../../api/change_stage_length.dart';
+import '../../auth/widgets/auth_check.dart';
+import '../../core/widgets/types.dart';
+import 'progress_dialog.dart';
 
 
 class AdminAction {
@@ -20,211 +24,81 @@ class AdminAction {
   final IconData? icon;
   final String? tooltip;
   final bool enabled;
-  /// Step 1 (optional): show a dialog / sheet / form, gather user input,
-  /// and return it. If this returns `null`, we treat that as "cancel".
-  final Future<ActionArgs?> Function(BuildContext context)? buildAndGetArgs;
-  /// Step 2: actually perform the action using those args.
-  /// If `buildAndGetArgs` is null, we'll call this with `null`.
-  final Future<void> Function(ActionArgs args) runWithArgs;
+  final Future<dynamic> Function(BuildContext context)? buildAndGetArgs;
+  final Future<Json?> Function(dynamic args) runWithArgs;
 
   factory AdminAction.publishCompetitorResponses({
     required String enquiryId,
-    required Future<int?> Function() run,
     required bool enabled,
-    required context,
   }) => AdminAction(
           label: 'Publish Competitor Responses',
           icon: Icons.publish,
           tooltip: enabled ? 'Publish all submitted responses' : 'Locked: No pending responses',
           enabled: enabled,
-          runWithArgs: (_) async {
-            try {
-              final functionSuccess = await run();
-              if (functionSuccess != null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Published $functionSuccess Competitor responses')),
-                );
-              }
-            } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Failed to publish Competitor responses')),
-              );
-            }
-          },
+          runWithArgs: (_) async {return publishCompetitorResponses(enquiryId); },
         );
 
   factory AdminAction.publishRCResponse({
     required String enquiryId,
-    required Future<bool> Function() run,
     required bool enabled,
-    required context,
   }) => AdminAction(
-          label: 'Publish RC Response',
-          icon: Icons.publish,
-          tooltip: enabled ? 'Finish this enquiry stage and skip to the next' : 'Locked: Wait for Competitors to respond',
-          enabled: enabled,
-          runWithArgs: (_) async {
-            try {
-              final functionSuccess = await run();
-              if (functionSuccess) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Published RC response')),
-                );
-              }
-            } on FormatException catch (e, st) {
-              debugPrint('Param validation failed: $e\n$st');
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Invalid parameters: ${e.message}')),
-              );
-            } on FirebaseFunctionsException catch (e, st) {
-              debugPrint('Functions error: ${e.code} ${e.message}\nDetails: ${e.details}\n$st');
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Cloud Function error: ${e.code}: ${e.message ?? ''}')),
-              );
-            } catch (e, st) {
-              debugPrint('Unexpected error: $e\n$st');
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Unexpected error: $e')),
-              );
-            }
-          },
-        );
+    label: 'Publish RC Response',
+    icon: Icons.publish,
+    tooltip: enabled ? 'Finish this enquiry stage and skip to the next' : 'Locked: Wait for Competitors to respond',
+    enabled: enabled,
+    runWithArgs: (_) async { return publishRcResponse(enquiryId); },
+  );
 
   factory AdminAction.closeEnquiry({
     required String enquiryId,
-    required Future<String?> Function(EnquiryConclusion t) run,
     required bool enabled,
-    required BuildContext context,
-  }) => AdminAction(
-          label: 'Close Enquiry',
-          icon: Icons.lock,
-          tooltip: enabled ? 'End enquiry and lock all submissions' : 'Locked: Enquiry already closed',
-          enabled: enabled,
-          // Step 1: show dropdown dialog and return the chosen EnquiryConclusion (or null)
-          buildAndGetArgs: (ctx) async {
-            final chosen = await promptChooseOption<EnquiryConclusion>(
-              context: ctx,
-              title: 'Close enquiry?',
-              message:
-                  'Indicate how it ended:',
-              confirmLabel: 'Proceed',
-              items: const [
-                DropdownMenuItem(
-                  value: EnquiryConclusion.amendment,
-                  child: Text('Amendment'),
-                ),
-                DropdownMenuItem(
-                  value: EnquiryConclusion.interpretation,
-                  child: Text('Interpretation'),
-                ),
-                DropdownMenuItem(
-                  value: EnquiryConclusion.noResult,
-                  child: Text('Enquiry closed with no interpretation or amendment.'),
-                ),
-              ],
-            );
-            // If user hit Cancel, `chosen` will be null.
-            return chosen;
-          },
-          runWithArgs: (args) async {
-            final enquiryConclusion = args as EnquiryConclusion?;
-            if (enquiryConclusion == null) {
-              // user cancelled / never selected
-              return;
-            }
-            try {
-              final closedEnquiryId = await run(enquiryConclusion);
-              if (!context.mounted) return;
-              if (closedEnquiryId != null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Enquiry closed',
-                    ),
-                  ),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Failed to close enquiry'),
-                  ),
-                );
-              }
-            } on FirebaseFunctionsException catch (e, st) {
-              debugPrint(
-                  'Functions error: ${e.code} ${e.message}\nDetails: ${e.details}\n$st');
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Cloud Function error: ${e.code}: ${e.message ?? ''}',
-                  ),
-                ),
-              );
-            } catch (e, st) {
-              debugPrint('Unexpected error: $e\n$st');
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Unexpected error: $e')),
-              );
-            }
-          },
+  }) {
+    return AdminAction(
+      label: 'Close Enquiry',
+      icon: Icons.lock,
+      tooltip: enabled ? 'End enquiry and lock all submissions' : 'Locked: Enquiry already closed',
+      enabled: enabled,
+      // Step 1: show dropdown dialog and return the chosen EnquiryConclusion (or null)
+      buildAndGetArgs: (ctx) async {
+        return promptChooseOption<EnquiryConclusion>(
+          context: ctx,
+          title: 'Close enquiry?',
+          message:
+              'Indicate how it ended:',
+          confirmLabel: 'Proceed',
+          items: const [
+            DropdownMenuItem(
+              value: EnquiryConclusion.amendment,
+              child: Text('Amendment'),
+            ),
+            DropdownMenuItem(
+              value: EnquiryConclusion.interpretation,
+              child: Text('Interpretation'),
+            ),
+            DropdownMenuItem(
+              value: EnquiryConclusion.noResult,
+              child: Text('Enquiry closed with no interpretation or amendment.'),
+            ),
+          ],
         );
+      },
+      runWithArgs: (args) async { return closeEnquiry(enquiryId, args); }
+    );
+  }
+
   factory AdminAction.changeStageLength({
     required String enquiryId,
-    // Load the current value (e.g. read Firestore or call a CF)
     required Future<int> Function() loadCurrent,
-    // Apply/save the new value (e.g. call a CF that writes and recomputes)
-    required Future<bool> Function(int newDays) run,
     required bool enabled,
     required BuildContext context,
   }) {
-    int? pendingDays;
-
     return AdminAction(
       label: 'Change Stage Length',
-      icon: Icons.timer, // a little more descriptive than lock
+      icon: Icons.timer,
       tooltip: enabled ? 'Change number of working days for major enquiry stages (default: 4)' : 'Locked: Enquiry closed',
       enabled: enabled,
-      // Step 1: buildAndGetArgs handles fetch + numeric input
-      buildAndGetArgs: (ctx) async {
-        final v = await promptStageLength(ctx, loadCurrent: loadCurrent, min: 1, max: 30);
-        debugPrint('v: $v');
-        pendingDays = v;
-        return v != null; // only proceed if user confirmed
-      },
-      // Step 2: onPressed runs only when buildAndGetArgs returned true
-      runWithArgs: (_) async {
-        try {
-          final days = pendingDays!;
-          final ok = await run(days);
-          if (!context.mounted) return;
-          if (ok) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Stage length set to $days working day${days == 1 ? '' : 's'}')),
-            );
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('No change applied')),
-            );
-          }
-        } on FormatException catch (e, st) {
-          debugPrint('Param validation failed: $e\n$st');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Invalid parameters: ${e.message}')),
-          );
-        } on FirebaseFunctionsException catch (e, st) {
-          debugPrint('Functions error: ${e.code} ${e.message}\nDetails: ${e.details}\n$st');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Cloud Function error: ${e.code}: ${e.message ?? ''}')),
-          );
-        } catch (e, st) {
-          debugPrint('Unexpected error: $e\n$st');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Unexpected error: $e')),
-          );
-        } finally {
-          pendingDays = null; // clear captured state
-        }
-      },
+      buildAndGetArgs: (ctx) async { return promptStageLength(ctx, loadCurrent: loadCurrent, min: 1, max: 30); },
+      runWithArgs: (args) async { return changeStageLength(enquiryId, args); }
     );   
   }
 }
@@ -315,7 +189,7 @@ class _GuardedActionButton extends StatelessWidget {
     if (!action.enabled) return;
 
     // 1. If there's a dialog/input step, run it.
-    ActionArgs? args;
+    dynamic args;
     if (action.buildAndGetArgs != null) {
       args = await action.buildAndGetArgs!(context);
       // User hit cancel
@@ -350,7 +224,24 @@ class _GuardedActionButton extends StatelessWidget {
     }
 
     // 3. Actually run the action with the gathered args.
-    await action.runWithArgs(args);
+    if (!context.mounted) return;
+    await showProgressFlow(
+      context: context,
+      steps: const [
+        'Checking user authentication…',
+        'Running admin function…',
+        'Verifying results…',
+      ],
+      successTitle: '${action.label} Success',
+      successMessage: 'Your function succeeded!',
+      failureTitle: '${action.label} Failure',
+      failureMessage: 'Check the google cloud logs explorer for details.',
+      action: () async {
+        await ensureFreshAuth();
+        await action.runWithArgs(args);
+      },
+    );
+    return;
   }
 
   @override
@@ -437,6 +328,3 @@ Future<T?> promptChooseOption<T>({
     },
   );
 }
-
-
-enum EnquiryConclusion { amendment, interpretation, noResult }

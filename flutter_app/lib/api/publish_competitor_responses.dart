@@ -1,36 +1,16 @@
 // flutter_app/lib/api/publish_competitor_responses.dart
-import 'package:cloud_functions/cloud_functions.dart';
-import 'package:flutter/foundation.dart';
 
+import 'api_template.dart';
+import '../../core/widgets/types.dart';
 
-Future<int?> publishCompetitorResponses(String enquiryId) async {
-  try {
-    final functions = FirebaseFunctions.instanceFor(region: 'europe-west8');
-    final callable = functions.httpsCallable('responseInstantPublisher');
+final api = ApiTemplate();
 
-    final result = await callable.call(<String, dynamic>{
-      'enquiryId': enquiryId.trim(),
-      'rcResponse': false,
-    });
-
-    final raw = result.data;
-
-    if (raw is Map) {
-    final data = result.data;
-    if (data['ok'] != true) {
-    debugPrint('Function returns map, did not succeed');
-    }
-    return data['num_published'] ?? 0;
-    } else {
-      debugPrint('Function does not return map.');
-      return null;
-    }
-  } on FirebaseFunctionsException catch (e) {
-    // Backend threw HttpsError
-    debugPrint('❌ Cloud Function error: ${e.code} – ${e.message}');
-    rethrow;
-  } catch (e) {
-    debugPrint('❌ Unexpected error: $e');
-    rethrow;
-  }
+Future<Json?> publishCompetitorResponses(String enquiryId) async {
+  final result = api.call<Json>('responseInstantPublisher', {
+    'enquiryId': enquiryId.trim(),
+    'rcResponse': false,
+  });
+  // print something to show it's done
+  // result['message'] = result['ok'] ? 'Yay, this function worked' : "Oh no, this function didn't work";
+  return result;
 }

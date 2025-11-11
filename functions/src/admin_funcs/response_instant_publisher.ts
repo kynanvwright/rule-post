@@ -47,7 +47,7 @@ export const responseInstantPublisher = onCall(
     await writer.close();
     if (publishResult.success == false) {
       logger.info(
-        `[teamResponsePublisher] Enquiry ${enquiryDoc.id} failed with reason: ${publishResult.failReason}.`,
+        `[responseInstantPublisher] Enquiry ${enquiryDoc.id} failed with reason: ${publishResult.failReason}.`,
       );
     } else {
       logger.info(

@@ -6,7 +6,7 @@ const db = getFirestore(); // fine if admin.initializeApp() was called
 
 export const listTeamUsers = onCall(
   { cors: true, enforceAppCheck: true },
-  async (req): Promise<string[]> => {
+  async (req) => {
     // 1) Auth + role
     const uid = req.auth?.uid;
     if (!uid) throw new HttpsError("unauthenticated", "You must be signed in.");
@@ -34,7 +34,7 @@ export const listTeamUsers = onCall(
 
       if (snap.empty) {
         logger.info("[listTeamUsers] No qualifying users.", { userTeam, uid });
-        return [];
+        return {'ok': true, emails: []};
       }
 
       // Filter out any missing/empty emails, then sort
@@ -49,7 +49,7 @@ export const listTeamUsers = onCall(
         uid,
       });
 
-      return emails;
+      return {'ok': true, emails: emails};
     } catch (err: unknown) {
       const code =
         typeof err === "object" && err !== null && "code" in err

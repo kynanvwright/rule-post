@@ -1,32 +1,15 @@
 // flutter_app/lib/api/close_enquiry_api.dart
-import 'package:cloud_functions/cloud_functions.dart';
-import 'package:flutter/foundation.dart';
-import 'package:rule_post/content/widgets/rules_committee_panel.dart';
+import 'api_template.dart';
+import '../../core/widgets/types.dart';
+
+final api = ApiTemplate();
 
 
-Future<String?> closeEnquiry(String enquiryId, EnquiryConclusion enquiryConclusion) async {
-  try {
-    final functions = FirebaseFunctions.instanceFor(region: 'europe-west8');
-    final callable = functions.httpsCallable('closeEnquiry');
-    debugPrint("enquiry conclusion: ${enquiryConclusion.name}");
-
-    // Match the backend key exactly: enquiryId (capital D)
-    final result = await callable.call<Map<String, dynamic>>({
+Future<Json?> closeEnquiry(String enquiryId, EnquiryConclusion enquiryConclusion) async {
+  final result = api.call<Json>('closeEnquiry', {
       'enquiryId': enquiryId.trim(),
       'enquiryConclusion': enquiryConclusion.name,
-    });
-
-    final data = result.data;
-    if (data['ok'] == true) {
-      // Match backend return field name
-      return data['enquiryId'] as String;
-    }
-    return null;
-  } on FirebaseFunctionsException catch (e) {
-    debugPrint('❌ Cloud Function error: ${e.code} – ${e.message}');
-    rethrow;
-  } catch (e) {
-    debugPrint('❌ Unexpected error: $e');
-    rethrow;
-  }
+  });
+  // print something to show it's done
+  return result;
 }

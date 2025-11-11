@@ -1,35 +1,13 @@
 // flutter_app/lib/api/publish_rc_response.dart
-import 'package:cloud_functions/cloud_functions.dart';
-import 'package:flutter/foundation.dart';
+import 'api_template.dart';
+import '../../core/widgets/types.dart';
 
+final api = ApiTemplate();
 
-Future<bool> publishRcResponse(String enquiryId) async {
-  try {
-    final functions = FirebaseFunctions.instanceFor(region: 'europe-west8');
-    final callable = functions.httpsCallable('responseInstantPublisher');
-
-    final result = await callable.call(<String, dynamic>{
-      'enquiryId': enquiryId.trim(),
-      'rcResponse': true,
-    });
-    final raw = result.data;
-
-    if (raw is Map) {
-    final data = result.data;
-    if (data['ok'] != true) {
-    debugPrint("Function returns map, did not succeed. Possible cause: ${data['reason']}");
-    }
-    return data['ok'] ?? false;
-    } else {
-      debugPrint('Function does not return map.');
-      return false;
-    }
-  } on FirebaseFunctionsException catch (e) {
-    // Backend threw HttpsError
-    debugPrint('❌ Cloud Function error: ${e.code} – ${e.message}');
-    rethrow;
-  } catch (e) {
-    debugPrint('❌ Unexpected error: $e');
-    rethrow;
-  }
+Future<Json?> publishRcResponse(String enquiryId) async {
+  final result = api.call<Json>('responseInstantPublisher', {
+    'enquiryId': enquiryId.trim(),
+    'rcResponse': true,
+  });
+  return result;
 }

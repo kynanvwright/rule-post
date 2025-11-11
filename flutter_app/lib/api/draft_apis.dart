@@ -47,3 +47,22 @@ Future<bool> hasDrafts() async {
     return false;
   }
 }
+
+// import 'api_template.dart';
+// import '../../core/widgets/types.dart';
+
+// final api = ApiTemplate();
+
+
+// Future<Json?> findDrafts(String postType, List<String> parentIds) async {
+//   return api.call<Json>('findDrafts', {
+//       'postType': postType,
+//       'parentIds': parentIds,
+//   });
+// }
+
+
+// Future<Json?> hasDrafts() async {
+//   return api.call<Json>('hasDrafts', {
+//   });
+// }

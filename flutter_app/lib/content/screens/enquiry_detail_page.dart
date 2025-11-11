@@ -10,10 +10,6 @@ import '../widgets/rules_committee_panel.dart';
 import '../widgets/status_chip.dart';
 import '../widgets/new_post_button.dart';
 import '../widgets/mark_unread_button.dart';
-import '../../api/change_stage_length.dart';
-import '../../api/close_enquiry_api.dart';
-import '../../api/publish_competitor_responses.dart';
-import '../../api/publish_rc_response.dart';
 import '../../core/widgets/get_stage_length.dart';
 import '../../riverpod/doc_providers.dart';
 import '../../riverpod/read_receipts.dart';
@@ -119,25 +115,21 @@ class _EnquiryDetailPageState extends ConsumerState<EnquiryDetailPage> {
                     AdminAction.changeStageLength(
                       enquiryId: widget.enquiryId,
                       loadCurrent: () => getStageLength(widget.enquiryId),
-                      run: (days) => changeStageLength(widget.enquiryId, days),
                       enabled: isOpen,
                       context: context,
                     ),
                     AdminAction.publishCompetitorResponses(
                       enquiryId: widget.enquiryId,
-                      run: () => publishCompetitorResponses(widget.enquiryId),
                       enabled: teamsCanRespond && isOpen && isPublished,
-                      context: context),
+                    ),
                     AdminAction.publishRCResponse(
                       enquiryId: widget.enquiryId,
-                      run: () => publishRcResponse(widget.enquiryId),
                       enabled: !teamsCanRespond && isOpen && isPublished,
-                      context: context),
+                    ),
                     AdminAction.closeEnquiry(
                       enquiryId: widget.enquiryId,
-                      run: (enquiryConclusion) => closeEnquiry(widget.enquiryId, enquiryConclusion),
                       enabled: isOpen && isPublished,
-                      context: context),
+                    ),
                   ],
                 )
               : null,

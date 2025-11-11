@@ -1,9 +1,11 @@
+// flutter_app/lib/content/prompt_stage_length.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+
 Future<int?> promptStageLength(
   BuildContext context, {
-  required Future<int> Function() loadCurrent, // 👈 must be typed as a function
+  required Future<int> Function() loadCurrent,
   int min = 1,
   int max = 30,
 }) async {

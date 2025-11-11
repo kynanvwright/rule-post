@@ -2,9 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../api/create_user_api.dart';
-import '../../../api/delete_user_api.dart';
-import '../../../api/list_team_users_api.dart';
+import '../../api/list_team_users_api.dart';
+import '../../api/user_apis.dart';
 
 // ───────────────────────── Models ─────────────────────────
 class TeamUser {
