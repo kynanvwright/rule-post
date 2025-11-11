@@ -10,12 +10,18 @@ class DeleteButton extends StatefulWidget {
     required this.onConfirmDelete, // your deletion logic
     this.icon = Icons.delete_outline,
     this.tooltipText = 'Delete',
+    this.onPressedTitle = 'Delete?',
+    this.onPressedText = 'This action cannot be undone.',
+    this.onPressedButtonText = 'Delete',
   });
 
   final String labelText;
   final Future<void> Function() onConfirmDelete;
   final IconData icon;
   final String tooltipText;
+  final String onPressedTitle;
+  final String onPressedText;
+  final String onPressedButtonText;
 
   @override
   State<DeleteButton> createState() => _DeleteButtonState();
@@ -47,8 +53,8 @@ class _DeleteButtonState extends State<DeleteButton> {
           final ok = await showDialog<bool>(
             context: context,
             builder: (_) => AlertDialog(
-              title: const Text('Delete?'),
-              content: const Text('This action cannot be undone.'),
+              title: Text(widget.onPressedTitle),
+              content: Text(widget.onPressedText),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
@@ -60,7 +66,7 @@ class _DeleteButtonState extends State<DeleteButton> {
                     foregroundColor: WidgetStatePropertyAll(scheme.onError),
                   ),
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Delete'),
+                  child: Text(widget.onPressedButtonText),
                 ),
               ],
             ),

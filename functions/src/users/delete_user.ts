@@ -95,6 +95,6 @@ export const deleteUser = onCall(
       );
     }
 
-    return { ok: true, deletedUid };
+    return { ok: true, uid: deletedUid };
   },
 );

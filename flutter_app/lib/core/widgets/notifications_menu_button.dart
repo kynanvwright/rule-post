@@ -72,11 +72,13 @@ class NotificationsMenuButton extends ConsumerWidget {
                 labelText: 'Mark all as read',
                 icon: Icons.mark_email_read_outlined,
                 tooltipText: '',
+                onPressedTitle: 'Are you sure?',
+                onPressedButtonText: 'Continue',
                 onConfirmDelete: () async {
                   final collectionRef = FirebaseFirestore.instance
-                      .collection('user_data')
-                      .doc(uid)
-                      .collection('unreadPosts');
+                    .collection('user_data')
+                    .doc(uid)
+                    .collection('unreadPosts');
                   final snap = await collectionRef.get();
                   for (final doc in snap.docs) {
                     await doc.reference.delete();

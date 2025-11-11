@@ -5,9 +5,7 @@ import '../../api/publish_competitor_responses.dart';
 import '../../api/publish_rc_response.dart';
 import '../../api/close_enquiry_api.dart';
 import '../../api/change_stage_length.dart';
-import '../../auth/widgets/auth_check.dart';
 import '../../core/widgets/types.dart';
-import 'progress_dialog.dart';
 
 
 class AdminAction {
@@ -25,33 +23,37 @@ class AdminAction {
   final String? tooltip;
   final bool enabled;
   final Future<dynamic> Function(BuildContext context)? buildAndGetArgs;
-  final Future<Json?> Function(dynamic args) runWithArgs;
+  // final Future<Json?> Function(dynamic args) runWithArgs;
+  final Future<void> Function(dynamic args) runWithArgs;
 
   factory AdminAction.publishCompetitorResponses({
     required String enquiryId,
     required bool enabled,
+    required BuildContext context,
   }) => AdminAction(
           label: 'Publish Competitor Responses',
           icon: Icons.publish,
           tooltip: enabled ? 'Publish all submitted responses' : 'Locked: No pending responses',
           enabled: enabled,
-          runWithArgs: (_) async {return publishCompetitorResponses(enquiryId); },
+          runWithArgs: (_) async { publishCompetitorResponses(context, enquiryId); },
         );
 
   factory AdminAction.publishRCResponse({
     required String enquiryId,
     required bool enabled,
+    required BuildContext context,
   }) => AdminAction(
     label: 'Publish RC Response',
     icon: Icons.publish,
     tooltip: enabled ? 'Finish this enquiry stage and skip to the next' : 'Locked: Wait for Competitors to respond',
     enabled: enabled,
-    runWithArgs: (_) async { return publishRcResponse(enquiryId); },
+    runWithArgs: (_) async { publishRcResponse(context, enquiryId); },
   );
 
   factory AdminAction.closeEnquiry({
     required String enquiryId,
     required bool enabled,
+    required BuildContext context,
   }) {
     return AdminAction(
       label: 'Close Enquiry',
@@ -82,7 +84,7 @@ class AdminAction {
           ],
         );
       },
-      runWithArgs: (args) async { return closeEnquiry(enquiryId, args); }
+      runWithArgs: (args) async { closeEnquiry(context, enquiryId, args); }
     );
   }
 
@@ -98,7 +100,7 @@ class AdminAction {
       tooltip: enabled ? 'Change number of working days for major enquiry stages (default: 4)' : 'Locked: Enquiry closed',
       enabled: enabled,
       buildAndGetArgs: (ctx) async { return promptStageLength(ctx, loadCurrent: loadCurrent, min: 1, max: 30); },
-      runWithArgs: (args) async { return changeStageLength(enquiryId, args); }
+      runWithArgs: (args) async { changeStageLength(context, enquiryId, args); }
     );   
   }
 }
@@ -224,23 +226,24 @@ class _GuardedActionButton extends StatelessWidget {
     }
 
     // 3. Actually run the action with the gathered args.
-    if (!context.mounted) return;
-    await showProgressFlow(
-      context: context,
-      steps: const [
-        'Checking user authentication…',
-        'Running admin function…',
-        'Verifying results…',
-      ],
-      successTitle: '${action.label} Success',
-      successMessage: 'Your function succeeded!',
-      failureTitle: '${action.label} Failure',
-      failureMessage: 'Check the google cloud logs explorer for details.',
-      action: () async {
-        await ensureFreshAuth();
-        await action.runWithArgs(args);
-      },
-    );
+    // if (!context.mounted) return;
+    // await showProgressFlow(
+    //   context: context,
+    //   steps: const [
+    //     'Checking user authentication…',
+    //     'Running admin function…',
+    //     'Verifying results…',
+    //   ],
+    //   successTitle: '${action.label} Success',
+    //   successMessage: 'Your function succeeded!',
+    //   failureTitle: '${action.label} Failure',
+    //   failureMessage: 'Check the google cloud logs explorer for details.',
+    //   action: () async {
+    //     await ensureFreshAuth();
+    //     await action.runWithArgs(args);
+    //   },
+    // );
+    await action.runWithArgs(args);
     return;
   }
 

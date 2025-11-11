@@ -34,7 +34,7 @@ export const listTeamUsers = onCall(
 
       if (snap.empty) {
         logger.info("[listTeamUsers] No qualifying users.", { userTeam, uid });
-        return {'ok': true, emails: []};
+        return { ok: true, emails: [] };
       }
 
       // Filter out any missing/empty emails, then sort
@@ -49,7 +49,7 @@ export const listTeamUsers = onCall(
         uid,
       });
 
-      return {'ok': true, emails: emails};
+      return { ok: true, emails: emails };
     } catch (err: unknown) {
       const code =
         typeof err === "object" && err !== null && "code" in err

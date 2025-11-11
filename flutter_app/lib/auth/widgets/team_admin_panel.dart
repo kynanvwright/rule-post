@@ -1,9 +1,9 @@
-// flutter_app/lib/content/widgets/team_admin_panel.dart
+// flutter_app/lib/auth/widgets/team_admin_panel.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../api/list_team_users_api.dart';
-import '../../api/user_apis.dart';
+import 'package:rule_post/api/list_team_users_api.dart';
+import 'package:rule_post/api/user_apis.dart';
 
 // ───────────────────────── Models ─────────────────────────
 class TeamUser {
@@ -37,14 +37,16 @@ class TeamMembersController extends StateNotifier<AsyncValue<List<TeamUser>>> {
   }
 }
 
-final createMemberProvider = FutureProvider.family<void, CreateMemberInput>((ref, input) async {
-  await createUserFromFrontend(input.email);
-});
+// final createMemberProvider =
+//     FutureProvider.family<void, CreateMemberInput>((ref, input) async {
+//   await createUserFromFrontend(input.context, input.email);
+// });
 
 class CreateMemberInput {
+  final BuildContext context;
   final String email;
   final bool isAdmin;
-  CreateMemberInput({required this.email, this.isAdmin = false});
+  CreateMemberInput({required this.email, required this.context, this.isAdmin = false});
 }
 
 // ───────────────────────── Widget ────────────────────────
@@ -94,7 +96,9 @@ class TeamAdminPanel extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
-              onPressed: () => _openAddDialog(context, ref),
+              onPressed: () async {
+                await _openAddDialog(context, ref);
+              },
               icon: const Icon(Icons.person_add),
               label: const Text('Add team member'),
             ),
@@ -111,15 +115,10 @@ class TeamAdminPanel extends ConsumerWidget {
     );
     if (result == null) return;
     if (!context.mounted) return;
-    // Call backend
-    final scaffold = ScaffoldMessenger.of(context);
     try {
-      await ref.read(createMemberProvider(result).future);
-      scaffold.showSnackBar(const SnackBar(content: Text('Invite sent / user created')));
-      // Optional: refresh list
+    await createUserFromFrontend(context, result.email);
+    } finally {
       await ref.read(teamMembersProvider.notifier).fetch();
-    } catch (e) {
-      scaffold.showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 }
@@ -142,21 +141,8 @@ class _MembersList extends ConsumerWidget {
           trailing: IconButton(
             icon: const Icon(Icons.delete),
             onPressed: () async {
-              try {
-                final deletedUid = await deleteUserByEmail(m.email);
-                if (deletedUid != null) {
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Removed ${m.displayName} from team')),
-                  );
-                  await ref.read(teamMembersProvider.notifier).fetch();
-                }
-              } catch (e) {
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Failed to remove ${m.displayName}: $e')),
-                );
-              }
+              await deleteUserByEmail(context, m.email);
+              await ref.read(teamMembersProvider.notifier).fetch();
             },
           ),
         );
@@ -235,7 +221,7 @@ class _AddMemberDialogState extends State<_AddMemberDialog> {
             if (!_formKeyB.currentState!.validate()) return;
             Navigator.pop(
               context,
-              CreateMemberInput(email: _email.text.trim(), isAdmin: _isAdmin),
+              CreateMemberInput(email: _email.text.trim(), context: context, isAdmin: _isAdmin),
             );
           },
           child: const Text('Create'),

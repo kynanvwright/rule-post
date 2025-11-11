@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../api/user_apis.dart';
+// import '../../api/user_apis.dart';
 import '../../auth//widgets/team_admin_panel.dart';
 import '../../core/widgets/back_button.dart';
 import '../../riverpod/user_detail.dart';
@@ -118,19 +118,19 @@ class _ClaimSpec {
   const _ClaimSpec({required this.key, required this.label, required this.icon});
 }
 
-class CreateUserButton extends StatelessWidget {
-  const CreateUserButton({super.key});
+// class CreateUserButton extends StatelessWidget {
+//   const CreateUserButton({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: () async {
-        // Example hard-coded values — replace with text fields or variables
-        const testEmail = "dan.bernasconi@emiratesteamnz.com";
+//   @override
+//   Widget build(BuildContext context) {
+//     return ElevatedButton(
+//       onPressed: () async {
+//         // Example hard-coded values — replace with text fields or variables
+//         const testEmail = "dan.bernasconi@emiratesteamnz.com";
 
-        await createUserFromFrontend(testEmail);
-      },
-      child: const Text("Create User"),
-    );
-  }
-}
+//         await createUserFromFrontend(testEmail);
+//       },
+//       child: const Text("Create User"),
+//     );
+//   }
+// }

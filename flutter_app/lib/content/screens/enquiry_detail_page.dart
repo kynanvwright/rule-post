@@ -121,14 +121,17 @@ class _EnquiryDetailPageState extends ConsumerState<EnquiryDetailPage> {
                     AdminAction.publishCompetitorResponses(
                       enquiryId: widget.enquiryId,
                       enabled: teamsCanRespond && isOpen && isPublished,
+                      context: context,
                     ),
                     AdminAction.publishRCResponse(
                       enquiryId: widget.enquiryId,
                       enabled: !teamsCanRespond && isOpen && isPublished,
+                      context: context,
                     ),
                     AdminAction.closeEnquiry(
                       enquiryId: widget.enquiryId,
                       enabled: isOpen && isPublished,
+                      context: context,
                     ),
                   ],
                 )
