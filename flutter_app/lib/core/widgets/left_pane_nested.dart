@@ -13,6 +13,7 @@ import '../../riverpod/user_detail.dart';
 import '../widgets/doc_view.dart';
 import 'filter_dropdown.dart';
 import 'two_panel_shell.dart';
+import 'package:rule_post/core/models/post_types.dart';
 
 final filterDefault = 'open';
 

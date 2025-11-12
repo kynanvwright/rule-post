@@ -37,7 +37,7 @@ export {
   onCommentIsPublishedUpdated,
   sendPublishDigest,
 } from "./notifications/send_publish_digest";
-export { setEmailNotificationsOn } from "./notifications/toggle_notifications";
+export { toggleEmailNotifications } from "./notifications/toggle_notifications";
 
 /** ───────────────────────────── Scheduled ───────────────────────────── */
 export { enquiryPublisher } from "./scheduled_funcs/enquiry_publisher";
@@ -52,5 +52,4 @@ export { markPostUnread } from "./admin_funcs/mark_post_unread";
 export { responseInstantPublisher } from "./admin_funcs/response_instant_publisher";
 
 /** ─────────────────────────────── Utils ─────────────────────────────── */
-export { findDrafts, hasDrafts } from "./utils/find_drafts";
 export { listTeamUsers } from "./utils/list_team_users";

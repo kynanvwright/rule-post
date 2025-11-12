@@ -16,15 +16,26 @@ final markEnquiryReadProvider =
 
   return (String enquiryId) async {
     final unreadData = ref.read(unreadByIdProvider(enquiryId));
-    final isUnread = unreadData?['isUnread'] == true;
+    if (unreadData == null) return;
+    final bool isUnread = unreadData['isUnread'] == true;
+    final bool hasUnreadChild = unreadData['hasUnreadChild'] == true;
 
-    if (isUnread) {
-      await firestore
-          .collection('user_data')
-          .doc(uid)
-          .collection('unreadPosts')
-          .doc(enquiryId)
-          .delete();
+    final docRef = firestore
+      .collection('user_data')
+      .doc(uid)
+      .collection('unreadPosts')
+      .doc(enquiryId);
+
+    // 1) Only delete if isUnread == true AND (hasUnreadChild == null || false)
+    if (isUnread && !hasUnreadChild) {
+      await docRef.delete();
+      return;
+    }
+
+    // 2) If isUnread == true AND hasUnreadChild == true, set isUnread to false
+    if (isUnread && hasUnreadChild) {
+      // use merge so we don't fail if the doc somehow doesn't exist
+      await docRef.set({'isUnread': false}, SetOptions(merge: true));
     }
   };
 });

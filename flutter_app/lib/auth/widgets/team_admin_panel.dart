@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:rule_post/api/list_team_users_api.dart';
 import 'package:rule_post/api/user_apis.dart';
 
 // ───────────────────────── Models ─────────────────────────

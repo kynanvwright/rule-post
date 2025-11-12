@@ -54,7 +54,9 @@ class _DeleteButtonState extends State<DeleteButton> {
             context: context,
             builder: (_) => AlertDialog(
               title: Text(widget.onPressedTitle),
-              content: Text(widget.onPressedText),
+              content: widget.onPressedText.isNotEmpty
+                ? Text(widget.onPressedText)
+                : null,
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),

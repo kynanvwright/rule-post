@@ -1,28 +1,33 @@
 // flutter_app/lib/api/notification_api.dart
-import 'package:cloud_functions/cloud_functions.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+// import 'package:flutter/material.dart';
+
+import 'package:rule_post/api/api_template.dart';
+import 'package:rule_post/core/widgets/types.dart';
+
+final api = ApiTemplate();
 
 
-final updateEmailNotificationsProvider =
-    FutureProvider.family<void, bool>((ref, enabled) async {
-  // 🔎 Use the same region you deployed to (e.g., europe-west8)
-  final functions = FirebaseFunctions.instanceFor(region: 'europe-west8');
-  final callable = functions.httpsCallable('setEmailNotificationsOn');
+// Allows users to choose if they want to get regular email alerts for new posts
+Future<bool> toggleEmailNotifications(bool emailNotificationsOn) async {
+  final result = await api.call<Json>(
+    'toggleEmailNotifications', 
+    {'enabled': emailNotificationsOn}
+  );
+  return result['emailNotificationsOn'];
+}
 
-  try {
-    final res = await callable.call(<String, dynamic>{'enabled': enabled});
-    debugPrint('setEmailNotificationsOn OK → ${res.data}');
 
-    // Force a token refresh so claims update can be seen client-side
-    await FirebaseAuth.instance.currentUser?.getIdToken(true);
-  } on FirebaseFunctionsException catch (e) {
-    // 🔎 This captures backend HttpsError {code,message,details}
-    debugPrint('CFN ERROR: code=${e.code} message=${e.message} details=${e.details}');
-    rethrow; // let UI show a snackbar, etc.
-  } catch (e, st) {
-    debugPrint('CFN UNKNOWN ERROR: $e\n$st');
-    rethrow;
-  }
-});
+// version with progress dialog
+// Future<bool> toggleEmailNotifications(BuildContext context, bool emailNotificationsOn) async {
+  //   final result = await api.callWithProgress<Json>(
+  //   context: context,
+  //   name: 'toggleEmailNotifications', 
+  //   data: {
+  //     'enabled': emailNotificationsOn
+  //   },
+  //   successMessage: 'Enquiry closed.',
+  //   failureMessage: 'Enquiry failed to close.',
+  //   autoCloseAfter: const Duration(seconds: 1),
+  // );
+  // return result['emailNotificationsOn'];
+// }

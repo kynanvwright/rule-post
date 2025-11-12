@@ -13,7 +13,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
  *     2) user must be active (isActive === true)
  * - Updates both Firestore and the user's custom claims
  */
-export const setEmailNotificationsOn = onCall(
+export const toggleEmailNotifications = onCall(
   { cors: true, enforceAppCheck: true }, // adjust region if needed
   async (request) => {
     // 1) Auth check

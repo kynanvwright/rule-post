@@ -10,8 +10,8 @@ import 'package:rule_post/core/widgets/types.dart';
 
 // generic wrapper for apis:
 //    makes a call to a backend function, passing any relevant data from the frontend to it
-//    expects the backend function to return a Json, where 'ok' is a boolean for if it succeeded
 //    throws errors if backend function fails
+//    can create a progress dialog while the function runs, and give infoabout success/failure
 class ApiTemplate {
   final FirebaseFunctions _fx = FirebaseFunctions.instanceFor(region: 'europe-west8');
 

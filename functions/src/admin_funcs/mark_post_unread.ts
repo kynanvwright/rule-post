@@ -40,6 +40,8 @@ export const markPostUnread = onCall(
       commentId: commentId,
     });
     const writer = db.bulkWriter();
+    let attempted = 0;
+    let updated = 0;
 
     // 2a) enquiry-level write
     const enquirySnap = await db.collection("enquiries").doc(enquiryId).get();
@@ -55,7 +57,7 @@ export const markPostUnread = onCall(
         ? `RE #${enquiryData.enquiryNumber} - ${enquiryData.title}`
         : "RE #x - x";
     const enquiryIsTarget = responseId == null;
-    await createUnreadForAllUsers(
+    const enquiryCounts = await createUnreadForAllUsers(
       writer,
       "enquiry",
       enquiryAlias,
@@ -64,6 +66,8 @@ export const markPostUnread = onCall(
       {},
       { userId: callerUid },
     );
+    attempted += enquiryCounts["attempted"];
+    updated += enquiryCounts["updated"];
     // 2b) response-level write
     if (responseId != null) {
       const responseSnap = await db
@@ -86,7 +90,7 @@ export const markPostUnread = onCall(
           ? `Response ${responseData.roundNumber}.${responseData.responseNumber}`
           : "Response x.x";
       const responseIsTarget = commentId == null;
-      await createUnreadForAllUsers(
+      const responseCounts = await createUnreadForAllUsers(
         writer,
         "response",
         responseAlias,
@@ -97,6 +101,8 @@ export const markPostUnread = onCall(
         },
         { userId: callerUid },
       );
+      attempted += responseCounts["attempted"];
+      updated += responseCounts["updated"];
     }
     // 2c) comment-level write
     if (commentId != null && responseId != null) {
@@ -118,7 +124,7 @@ export const markPostUnread = onCall(
         commentData.commentNumber != null
           ? `Comment #${commentData.commentNumber}`
           : "Comment #x";
-      await createUnreadForAllUsers(
+      const commentCounts = await createUnreadForAllUsers(
         writer,
         "comment",
         alias,
@@ -130,8 +136,10 @@ export const markPostUnread = onCall(
         },
         { userId: callerUid },
       );
+      attempted += commentCounts["attempted"];
+      updated += commentCounts["updated"];
     }
 
-    return { ok: true };
+    return { ok: true, attempted: attempted, updated: updated };
   },
 );

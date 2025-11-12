@@ -21,7 +21,7 @@ export type FinalisedAttachment = {
 };
 
 export type CreatePostData = {
-  postType: "enquiry" | "response" | "comment";
+  postType: PostType;
   title?: string;
   postText?: string;
   attachments?: TempAttachmentIn[];

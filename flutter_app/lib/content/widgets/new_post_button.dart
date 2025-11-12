@@ -11,26 +11,8 @@ import 'package:web/web.dart' as web;
 import 'create_post_wrapper.dart';
 import 'edit_post_wrapper.dart';
 import '../../core/models/attachments.dart' show TempAttachment;
-
-enum PostType { enquiry, response, comment }
-
-extension on PostType {
-  String get apiName => switch (this) {
-        PostType.enquiry => 'enquiry',
-        PostType.response => 'response',
-        PostType.comment => 'comment',
-      };
-  String get labelSingular => switch (this) {
-        PostType.enquiry => 'enquiry',
-        PostType.response => 'response',
-        PostType.comment => 'comment',
-      };
-  String get tempFolder => switch (this) {
-        PostType.enquiry => 'enquiries_temp',
-        PostType.response => 'responses_temp',
-        PostType.comment => 'comments_temp',
-      };
-}
+import 'package:rule_post/core/models/post_types.dart';
+import 'package:rule_post/api/post_apis.dart';
 
 
 /// Use this one button for all three types.
@@ -82,7 +64,7 @@ class _NewPostButtonState extends State<NewPostButton> {
         triggerMode: TooltipTriggerMode.longPress, // hover still works on desktop
         message: locked
             ? (widget.lockedReason ?? 'This action is currently locked.')
-            : 'Create a new ${widget.type.labelSingular}',
+            : 'Create a new ${widget.type.singular}',
         child: FilledButton.icon(
           style: ButtonStyle(
             backgroundColor: WidgetStatePropertyAll(bgColor),
@@ -105,9 +87,9 @@ class _NewPostButtonState extends State<NewPostButton> {
             final payload = await showDialog<_NewPostPayload>(
               context: context,
               builder: (_) => _NewPostDialog(
-                dialogTitle: 'New ${widget.type.labelSingular}',
+                dialogTitle: 'New ${widget.type.singular}',
                 tempFolder: widget.type.tempFolder,
-                postType: widget.type.labelSingular,
+                postType: widget.type.singular,
               ),
             );
             if (payload == null) return;
@@ -115,7 +97,7 @@ class _NewPostButtonState extends State<NewPostButton> {
 
             await onCreatePostPressed(
               context,
-              postType: widget.type.apiName,
+              postType: widget.type.singular,
               title: payload.title,
               postText: payload.text,
               attachments: (payload.attachments.isEmpty)
@@ -615,7 +597,7 @@ class _EditPostButtonState extends State<EditPostButton> {
       child: Tooltip(
         key: _tooltipKey,
         triggerMode: TooltipTriggerMode.longPress, // hover still works on desktop
-        message: 'Edit your draft ${widget.type.labelSingular}',
+        message: 'Edit your draft ${widget.type.singular}',
         child: FilledButton.icon(
           style: ButtonStyle(
             backgroundColor: WidgetStatePropertyAll(bg),
@@ -630,9 +612,9 @@ class _EditPostButtonState extends State<EditPostButton> {
             final payload = await showDialog<_NewPostPayload>(
               context: context,
               builder: (_) => _NewPostDialog(
-                dialogTitle: 'Edit ${widget.type.labelSingular}',
+                dialogTitle: 'Edit ${widget.type.singular}',
                 tempFolder: widget.type.tempFolder,
-                postType: widget.type.labelSingular,
+                postType: widget.type.singular,
                 initialTitle: widget.initialTitle,
                 initialText: widget.initialText,
                 initialAttachments: widget.initialAttachments!.map((m) => TempAttachment.fromMap(m)).toList(),
@@ -685,7 +667,7 @@ class _EditPostButtonState extends State<EditPostButton> {
 
             await onEditPostPressed(
               context,
-              postType: widget.type.apiName,
+              postType: widget.type.singular,
               title: payload.title,
               postText: payload.text,
               attachments: (payload.attachments.isEmpty)
@@ -695,6 +677,13 @@ class _EditPostButtonState extends State<EditPostButton> {
               postId: widget.postId,
               editAttachments: editAttachments,
             );
+            // final editPostPayload =
+            
+            // if (!context.mounted) return;
+            // await editPost(
+            //   context,
+            //   payloadAttachList
+            // );
           },
         ),
       ),

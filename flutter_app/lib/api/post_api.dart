@@ -3,7 +3,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 
-import '../core/models/attachments.dart';
+import 'package:rule_post/core/models/attachments.dart';
 
 
 class PostApi {
@@ -74,12 +74,6 @@ class PostApi {
         'attachments': attachments.map((a) => a.toMap()).toList(),
       if (parentIds != null && parentIds.isNotEmpty) 'parentIds': parentIds,
     };
-    // debugPrint('payload runtime types:');
-    // debugPrint('postType: ${postType.runtimeType}');
-    // debugPrint('title: ${title.runtimeType}');
-    // debugPrint('postId: ${postId.runtimeType}');
-    debugPrint('editAttachments: $editAttachments');
-    // debugPrint('payload full: $payload');
     // call the function
     final result = await _functions.httpsCallable('editPost').call(payload);
     final data = (result.data as Map).cast<String, dynamic>();

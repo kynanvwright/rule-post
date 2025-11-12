@@ -1,5 +1,7 @@
-import 'uploaded_file.dart';
 import 'package:flutter/material.dart';
+
+import 'package:rule_post/core/models/uploaded_file.dart';
+
 
 class Post {
   final String id;

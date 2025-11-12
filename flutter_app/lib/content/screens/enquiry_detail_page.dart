@@ -3,17 +3,18 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../widgets/children_section.dart';
-import '../widgets/detail_scaffold.dart';
-import '../widgets/fancy_attachment_tile.dart';
-import '../widgets/rules_committee_panel.dart';
-import '../widgets/status_chip.dart';
-import '../widgets/new_post_button.dart';
-import '../widgets/mark_unread_button.dart';
-import '../../core/widgets/get_stage_length.dart';
-import '../../riverpod/doc_providers.dart';
-import '../../riverpod/read_receipts.dart';
-import '../../riverpod/user_detail.dart';
+import 'package:rule_post/content/widgets/children_section.dart';
+import 'package:rule_post/content/widgets/detail_scaffold.dart';
+import 'package:rule_post/content/widgets/fancy_attachment_tile.dart';
+import 'package:rule_post/content/widgets/rules_committee_panel.dart';
+import 'package:rule_post/content/widgets/status_chip.dart';
+import 'package:rule_post/content/widgets/new_post_button.dart';
+import 'package:rule_post/content/widgets/mark_unread_button.dart';
+import 'package:rule_post/core/models/post_types.dart';
+import 'package:rule_post/core/widgets/get_stage_length.dart';
+import 'package:rule_post/riverpod/doc_providers.dart';
+import 'package:rule_post/riverpod/read_receipts.dart';
+import 'package:rule_post/riverpod/user_detail.dart';
 
 
 /// -------------------- ENQUIRY DETAIL --------------------

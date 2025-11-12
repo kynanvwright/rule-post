@@ -11,6 +11,7 @@ import '../widgets/mark_unread_button.dart';
 import '../../riverpod/doc_providers.dart';
 import '../../riverpod/read_receipts.dart';
 import '../../riverpod/user_detail.dart';
+import 'package:rule_post/core/models/post_types.dart';
 
 
 /// -------------------- RESPONSE DETAIL --------------------

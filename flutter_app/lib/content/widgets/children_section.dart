@@ -11,6 +11,7 @@ import 'list_tile.dart';
 import 'new_post_button.dart';
 import 'parse_hex_colour.dart';
 import 'section_card.dart';
+import 'package:rule_post/core/models/post_types.dart';
 
 
 /// -------------------- CHILDREN SECTION (Responses / Comments) --------------------

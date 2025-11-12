@@ -73,6 +73,7 @@ class NotificationsMenuButton extends ConsumerWidget {
                 icon: Icons.mark_email_read_outlined,
                 tooltipText: '',
                 onPressedTitle: 'Are you sure?',
+                onPressedText: '',
                 onPressedButtonText: 'Continue',
                 onConfirmDelete: () async {
                   final collectionRef = FirebaseFirestore.instance

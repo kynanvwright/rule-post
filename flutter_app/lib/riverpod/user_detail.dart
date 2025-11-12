@@ -2,8 +2,6 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_functions/cloud_functions.dart';
-import 'package:flutter/foundation.dart';
 
 /// Emits on login, logout, and token refreshes
 final firebaseUserProvider = StreamProvider<User?>(
@@ -80,41 +78,4 @@ final emailNotificationsOnProvider = Provider<bool>((ref) {
   final claimsAsync = ref.watch(allClaimsProvider);
   final claims = claimsAsync.asData?.value ?? const <String, Object?>{};
   return (claims['emailNotificationsOn'] as bool?) ?? false;
-});
-
-// 3) Imperative action as a function-returning Provider
-final setEmailNotifications = Provider<Future<void> Function(bool)>((ref) {
-  return (bool enabled) async {
-    debugPrint('[setEmailNotifications] start enabled=$enabled');
-
-    // IMPORTANT: use your deployed region here
-    final functions = FirebaseFunctions.instanceFor(region: 'europe-west8');
-    final callable = functions.httpsCallable('setEmailNotificationsOn');
-
-    await callable.call(<String, dynamic>{'enabled': enabled});
-
-    // Refresh the ID token so new claims can be seen
-    final auth = FirebaseAuth.instance;
-    await auth.currentUser?.getIdToken(true);
-
-    // Option A: quick invalidate so UI re-reads claims
-    ref.invalidate(allClaimsProvider);
-
-    // Option B (optional): short poll to ensure claim flips before returning
-    final deadline = DateTime.now().add(const Duration(seconds: 3));
-    var delay = const Duration(milliseconds: 120);
-    while (DateTime.now().isBefore(deadline)) {
-      await auth.currentUser?.getIdToken(true);
-      final res = await auth.currentUser?.getIdTokenResult(true);
-      final got = (res?.claims?['emailNotificationsOn'] as bool?) ?? false;
-      if (got == enabled) {
-        debugPrint('[setEmailNotifications] claim observed enabled=$enabled');
-        return;
-      }
-      await Future.delayed(delay);
-      delay *= 2;
-    }
-    // No big deal: claims often catch up a moment later.
-    debugPrint('[setEmailNotifications] claim not observed yet; continuing');
-  };
 });

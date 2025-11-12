@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'prompt_stage_length.dart';
-import '../../api/publish_competitor_responses.dart';
-import '../../api/publish_rc_response.dart';
-import '../../api/close_enquiry_api.dart';
-import '../../api/change_stage_length.dart';
+import '../../api/admin_apis.dart';
 import '../../core/widgets/types.dart';
 
 

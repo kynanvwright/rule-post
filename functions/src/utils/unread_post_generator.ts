@@ -112,6 +112,7 @@ export async function createUnreadForAllUsers<T extends PostType>(
   });
 
   const payload = buildUnreadRecord(postType, postAlias, isUnread, postFields);
+  logger.info("[createUnreadForAllUsers] Unread payload:", { payload });
 
   // Collect target user docs (normalize to an array so the loop works the same)
   let userDocs: FirebaseFirestore.QueryDocumentSnapshot[] = [];
