@@ -4,8 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../widgets/auth_service.dart';
-import '../../riverpod/user_detail.dart';
+import 'package:rule_post/auth/widgets/auth_service.dart';
+import 'package:rule_post/riverpod/user_detail.dart';
 
 
 // Call this to open the dialog:
@@ -171,7 +171,6 @@ class _LoginDialogState extends ConsumerState<LoginDialog> {
       return;
     }
 
-    // Don't pop here. The listener above will pop once currentUser becomes non-null.
     return;
   }
 }

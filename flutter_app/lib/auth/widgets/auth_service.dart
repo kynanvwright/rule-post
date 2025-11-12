@@ -14,14 +14,14 @@ class AuthService {
     }
   }
 
-  Future<String?> register(String email, String password) async {
-  try {
-    await _auth.createUserWithEmailAndPassword(email: email, password: password);
-    return null; // success
-  } on FirebaseAuthException catch (e) {
-    return e.message;
-  }
-}
+  // Future<String?> register(String email, String password) async {
+  //   try {
+  //     await _auth.createUserWithEmailAndPassword(email: email, password: password);
+  //     return null; // success
+  //   } on FirebaseAuthException catch (e) {
+  //     return e.message;
+  //   }
+  // }
 
   Future<void> signOut() async {
     await _auth.signOut();
