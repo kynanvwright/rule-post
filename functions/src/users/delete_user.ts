@@ -3,6 +3,8 @@ import { getFirestore } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 
+import { deepDeleteDoc } from "../utils/deep_delete_doc";
+
 const auth = getAuth();
 const db = getFirestore();
 
@@ -78,7 +80,8 @@ export const deleteUser = onCall(
     }
 
     try {
-      await db.collection("user_data").doc(deletedUid).delete();
+      // deep delete to catch the unreadPost subcollection
+      await deepDeleteDoc(db.collection("user_data").doc(deletedUid));
       logger.info("✅ Firestore profile deleted", { deletedUid });
     } catch (e: unknown) {
       const msg =

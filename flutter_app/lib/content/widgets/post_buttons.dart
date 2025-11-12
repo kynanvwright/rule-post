@@ -1,3 +1,4 @@
+//flutter_app/lib/content/widgets/post_buttons.dart
 import 'dart:async';
 import 'dart:io' show File;
 import 'package:file_picker/file_picker.dart';
@@ -8,11 +9,10 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:web/web.dart' as web;
 
-import 'create_post_wrapper.dart';
-import 'edit_post_wrapper.dart';
-import '../../core/models/attachments.dart' show TempAttachment;
-import 'package:rule_post/core/models/post_types.dart';
 import 'package:rule_post/api/post_apis.dart';
+import 'package:rule_post/core/models/attachments.dart' show TempAttachment;
+import 'package:rule_post/core/models/post_payloads.dart';
+import 'package:rule_post/core/models/post_types.dart';
 
 
 /// Use this one button for all three types.
@@ -95,15 +95,18 @@ class _NewPostButtonState extends State<NewPostButton> {
             if (payload == null) return;
             if (!context.mounted) return;
 
-            await onCreatePostPressed(
-              context,
-              postType: widget.type.singular,
+            final createPostPayload = PostPayload(
+              postType: widget.type,
               title: payload.title,
               postText: payload.text,
-              attachments: (payload.attachments.isEmpty)
-                  ? null
-                  : payload.attachments,
+              attachments: payload.attachments,
               parentIds: widget.parentIds,
+              );
+            
+            if (!context.mounted) return;
+            await createPost(
+              context,
+              createPostPayload,
             );
           },
         ),
@@ -159,7 +162,6 @@ class _NewPostDialogState extends State<_NewPostDialog> {
     _text  = TextEditingController(text: widget.initialText ?? '');
 
     _pending = [...(widget.initialAttachments ?? const [])];
-    // _pending = const [];
   }
 
   @override
@@ -550,6 +552,7 @@ class _NewPostPayload {
   final List<TempAttachment> attachments;
 }
 
+
 /// Use this one button for all three types.
 class EditPostButton extends StatefulWidget {
   const EditPostButton({
@@ -560,6 +563,7 @@ class EditPostButton extends StatefulWidget {
     this.initialTitle,
     this.initialText,
     this.initialAttachments,
+    required this.isPublished,
   });
 
   final PostType type;
@@ -568,6 +572,7 @@ class EditPostButton extends StatefulWidget {
   final String? initialTitle;
   final String? initialText;
   final List<Map<String, dynamic>>? initialAttachments;
+  final bool isPublished;
 
   @override
   State<EditPostButton> createState() => _EditPostButtonState();
@@ -626,8 +631,6 @@ class _EditPostButtonState extends State<EditPostButton> {
             //compare inital and final attachments to update the editAttachmentsMap
             final payloadAttachMap = payload.attachments.map((a) => a.toMap());
             final payloadAttachList = payloadAttachMap.toList();
-            debugPrint("Initial attachments: ${widget.initialAttachments}");
-            debugPrint("Final attachments: $payloadAttachList");
             if ((widget.initialAttachments?.isNotEmpty ?? false) ||
                 (payloadAttachList.isNotEmpty)) {
               final initialAttachmentNumber = widget.initialAttachments?.length ?? 0;
@@ -639,51 +642,40 @@ class _EditPostButtonState extends State<EditPostButton> {
                 return firstPart.contains('temp');
               })
               .length;
-              debugPrint("New attachments: $newAttachmentNumber");
               final removedAttachmentNumber = newAttachmentNumber + initialAttachmentNumber - finalAttachmentNumber;
               if (newAttachmentNumber > 0) {
                 editAttachments['add'] = true;
-                debugPrint("Adding $newAttachmentNumber attachments");
               }
               if (removedAttachmentNumber > 0) {
                 editAttachments['remove'] = true;
-                debugPrint("Removing $removedAttachmentNumber attachments");
                 final initialPaths = widget.initialAttachments?.map((m) => m['path']).toList() ?? [];
                 final finalPaths = payload.attachments.map((m) => m.storagePath).toList();
-                debugPrint("initialPaths: $initialPaths");
-                debugPrint("finalPaths: $finalPaths");
 
                 editAttachments['removeList'] = initialPaths.toSet().difference(finalPaths.toSet()).toList();
-                debugPrint("List of attachments to remove: ${editAttachments['removeList']}");
               }
               payload.attachments.removeWhere((a) {
                 final pathString = a.storagePath;
                 final firstPart = pathString.split('/').first;
                 return !firstPart.contains('temp');
               });
-            } else {
-              debugPrint("editAttachment logic skipped.");
             }
 
-            await onEditPostPressed(
-              context,
-              postType: widget.type.singular,
+            final editPostPayload = PostPayload(
+              postType: widget.type,
               title: payload.title,
               postText: payload.text,
-              attachments: (payload.attachments.isEmpty)
-                  ? null
-                  : payload.attachments,
+              attachments: payload.attachments,
               parentIds: widget.parentIds,
               postId: widget.postId,
-              editAttachments: editAttachments,
-            );
-            // final editPostPayload =
+              isPublished: widget.isPublished,
+              editAttachments: EditAttachmentMap.fromJson(editAttachments),
+              );
             
-            // if (!context.mounted) return;
-            // await editPost(
-            //   context,
-            //   payloadAttachList
-            // );
+            if (!context.mounted) return;
+            await editPost(
+              context,
+              editPostPayload,
+            );
           },
         ),
       ),

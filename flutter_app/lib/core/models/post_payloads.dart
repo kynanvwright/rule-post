@@ -5,159 +5,165 @@ import 'package:rule_post/core/models/post_types.dart';
 
 
 @immutable
-sealed class PostPayload {
-  final PostType type;
+final class PostPayload {
+  final PostType postType;
   final String? title;
-  final String? postText; // called postText on the wire
+  final String? postText;
   final List<TempAttachment> attachments;
+  final List<String> parentIds;
   final String? postId;
-  final bool? isPublished;               // optional toggle
-  final EditAttachmentMap? editAttachments;
+  final bool? isPublished;
+  final EditAttachmentMap editAttachments;
 
-
-  const PostPayload({
-    required this.type,
-    this.title,
-    this.postText,
-    this.attachments = const [],
-    this.postId,
-    this.isPublished,
-    this.editAttachments = const EditAttachmentMap(),
+  const PostPayload._({
+    required this.postType,
+    required this.title,
+    required this.postText,
+    required this.attachments,
+    required this.parentIds,
+    required this.postId,
+    required this.isPublished,
+    required this.editAttachments,
   });
 
-  /// Common JSON shared by all payloads
-  @protected
-  Map<String, Object?> baseJson() => {
-        'postType': type.singular,
-        if (title != null && title!.trim().isNotEmpty) 'title': title!.trim(),
-        if (postText != null && postText!.trim().isNotEmpty) 'postText': postText!.trim(),
-        if (attachments.isNotEmpty) 'attachments': attachments.map((a) => a.toMap()).toList(),
-        if (postId != null && postId!.trim().isNotEmpty) 'postId': postId!.trim(),
-        if (postId != null && postId!.trim().isNotEmpty) 'isPublished': isPublished ?? false,
-        if (postId != null && postId!.trim().isNotEmpty) 'editAttachments': (editAttachments ?? const EditAttachmentMap()).toJson(),
-      };
-
-  Map<String, Object?> toJson();
-}
-
-/// ENQUIRY: needs title and (text OR attachments)
-final class EnquiryPayload extends PostPayload {
-  factory EnquiryPayload({
+  /// Single entry-point: pick behaviour based on `postType`.
+  factory PostPayload({
+    required PostType postType,
     String? title,
     String? postText,
-    List<TempAttachment> attachments = const [],
+    List<TempAttachment>? attachments,
+    List<String>? parentIds,
+    String? postId,
+    bool? isPublished,
+    EditAttachmentMap editAttachments = const EditAttachmentMap(),
   }) {
-    final hasText = postText != null && postText.trim().isNotEmpty;
-    if (!hasText && attachments.isEmpty) {
-      throw ArgumentError('Enquiry requires text or attachments.');
+    // String normaliser: trim -> null if empty
+    String? norm(String? s) {
+      if (s == null) return null;
+      final t = s.trim();
+      return t.isEmpty ? null : t;
     }
-    if (title == null || title.trim().isEmpty) {
-      throw ArgumentError('Title cannot be empty.');
+
+    // List<String> normaliser: null -> [], trim & drop empties, freeze
+    List<String> cleanStrings(List<String>? xs) => List<String>.unmodifiable(
+          (xs ?? const <String>[])
+              .map((s) => s.trim())
+              .where((s) => s.isNotEmpty),
+        );
+
+    // List<TempAttachment> normaliser: null -> [], freeze
+    List<TempAttachment> cleanAttachments(List<TempAttachment>? xs) =>
+        List<TempAttachment>.unmodifiable(xs ?? const <TempAttachment>[]);
+
+    final normTitle   = norm(title);
+    final normText    = norm(postText);
+    final normPostId  = norm(postId);
+    final safeParents = cleanStrings(parentIds);
+    final safeAtts    = cleanAttachments(attachments);
+
+    final isEdit = normPostId != null;
+    final hasText = normText != null && normText.isNotEmpty;
+
+    // ── 1️⃣ Type-specific validation ─────────────────────────────────────────────
+    switch (postType) {
+      case PostType.enquiry:
+        if (!isEdit) {
+          if (normTitle == null) throw ArgumentError('Enquiry requires a title.');
+          if (!hasText && safeAtts.isEmpty) {
+            throw ArgumentError('Enquiry requires text or attachments.');
+          }
+        } else {
+          // edit mode
+          if (!editAttachments.add &&
+              !editAttachments.remove &&
+              (normTitle == null && normText == null)) {
+            throw ArgumentError(
+              'Edit payload must change something (title/text or attachments).',
+            );
+          }
+        }
+        if (safeParents.isNotEmpty) {
+          throw ArgumentError('Enquiry must not include parentIds.');
+        }
+        break;
+
+      case PostType.response:
+        if (safeParents.length != 1) {
+          throw ArgumentError('Response requires exactly one parentId (enquiryId).');
+        }
+        if (!isEdit && !hasText && safeParents.isEmpty) {
+          throw ArgumentError('Response requires text or attachments.');
+        }
+        break;
+
+      case PostType.comment:
+        if (safeParents.length != 2) {
+          throw ArgumentError('Comment requires [enquiryId, responseId].');
+        }
+        if (!isEdit && !hasText) {
+          throw ArgumentError('Comment requires text.');
+        }
+        break;
     }
-    return EnquiryPayload._(
-      title: title,
-      postText: postText?.trim(),
-      attachments: List.unmodifiable(attachments),
+
+    // ── 2️⃣ Return instance ─────────────────────────────────────────────────────
+    return PostPayload._(
+      postType: postType,
+      title: normTitle,
+      postText: normText,
+      attachments: safeAtts,
+      parentIds: safeParents,
+      postId: normPostId,
+      isPublished: isPublished,
+      editAttachments: editAttachments,
     );
   }
 
-  const EnquiryPayload._({
-    required super.title,
-    super.postText,
-    super.attachments = const [],
-  }) : super(type: PostType.enquiry);
 
-  @override
-  Map<String, Object?> toJson() => baseJson();
-}
+  Map<String, Object?> toJson() {
+    final isEdit = postId != null;
 
-/// RESPONSE: must target an enquiryId, and have (text OR attachments)
-final class ResponsePayload extends PostPayload {
-  final String enquiryId;
+    final json = <String, Object?>{
+      'postType': postType.singular,
 
-  factory ResponsePayload({
-    required String enquiryId,
-    String? title,
-    String? postText,
-    List<TempAttachment> attachments = const [],
-  }) {
-    if (enquiryId.trim().isEmpty) {
-      throw ArgumentError('enquiryId is required for a response.');
+      if (title != null) 'title': title,
+      if (postText != null) 'postText': postText,
+
+      // Only include parentIds when relevant (validated in factory)
+      if ((postType == PostType.response || postType == PostType.comment) &&
+          parentIds.isNotEmpty)
+        'parentIds': parentIds,
+
+      if (isEdit) 'postId': postId,
+      if (isPublished != null) 'isPublished': isPublished,
+    };
+
+    // Attachments:
+    // - Create: include if non-empty
+    // - Edit: include only if we're explicitly adding attachments
+    if (!isEdit) {
+      if (attachments.isNotEmpty) {
+        json['attachments'] =
+            attachments.map((a) => a.toMap()).toList(growable: false);
+      }
+    } else {
+      json['editAttachments'] = editAttachments.toJson();
+
+      if (editAttachments.add && attachments.isNotEmpty) {
+        json['attachments'] =
+            attachments.map((a) => a.toMap()).toList(growable: false);
+      }
     }
-    final hasText = postText != null && postText.trim().isNotEmpty;
-    if (!hasText && attachments.isEmpty) {
-      throw ArgumentError('Response requires text or attachments.');
-    }
-    return ResponsePayload._(
-      enquiryId: enquiryId.trim(),
-      title: title?.trim(),
-      postText: postText?.trim(),
-      attachments: List.unmodifiable(attachments),
-    );
+    return json;
   }
-
-  const ResponsePayload._({
-    required this.enquiryId,
-    required super.title,
-    super.postText,
-    super.attachments = const [],
-  }) : super(type: PostType.response);
-
-  @override
-  Map<String, Object?> toJson() => {
-        ...baseJson(),
-        'parentIds': [enquiryId], // your backend can also accept a single id if you prefer
-      };
-}
-
-/// COMMENT: must target an enquiryId + responseId; usually requires text
-final class CommentPayload extends PostPayload {
-  final String enquiryId;
-  final String responseId;
-
-  factory CommentPayload({
-    required String enquiryId,
-    required String responseId,
-    required String postText, // comments typically require text
-    String? title,
-    List<TempAttachment> attachments = const [],
-  }) {
-    if (enquiryId.trim().isEmpty || responseId.trim().isEmpty) {
-      throw ArgumentError('enquiryId and responseId are required for a comment.');
-    }
-    if (postText.trim().isEmpty) {
-      throw ArgumentError('Comment text cannot be empty.');
-    }
-    return CommentPayload._(
-      enquiryId: enquiryId.trim(),
-      responseId: responseId.trim(),
-      title: title?.trim(),
-      postText: postText.trim(),
-      attachments: List.unmodifiable(attachments),
-    );
-  }
-
-  const CommentPayload._({
-    required this.enquiryId,
-    required this.responseId,
-    required super.title,
-    required super.postText,
-    super.attachments = const [],
-  }) : super(type: PostType.comment);
-
-  @override
-  Map<String, Object?> toJson() => {
-        ...baseJson(),
-        'parentIds': [enquiryId, responseId],
-      };
 }
 
 
 // Mirrors: type EditAttachmentMap = { add: boolean; remove: boolean; removeList: string[]; }
 class EditAttachmentMap {
-  final bool add;                 // if true, include attachments to add
-  final bool remove;              // if true, process removeList
-  final List<String> removeList;  // server ids to remove
+  final bool add;
+  final bool remove;
+  final List<String> removeList;
 
   const EditAttachmentMap({
     this.add = false,
@@ -170,11 +176,17 @@ class EditAttachmentMap {
     'remove': remove,
     if (remove) 'removeList': removeList,
   };
+
+  factory EditAttachmentMap.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return const EditAttachmentMap();
+
+    return EditAttachmentMap(
+      add: json['add'] == true,
+      remove: json['remove'] == true,
+      removeList: (json['removeList'] as List?)
+              ?.whereType<String>()
+              .toList() ??
+          const [],
+    );
+  }
 }
-
-
-Type choosePayloadType(PostType type) => switch (type) {
-  PostType.enquiry => EnquiryPayload,
-  PostType.response => ResponsePayload,
-  PostType.comment => CommentPayload,
-};

@@ -8,7 +8,7 @@ import '../../riverpod/post_streams.dart';
 import '../../riverpod/user_detail.dart';
 import '../../riverpod/unread_post_provider.dart';
 import 'list_tile.dart';
-import 'new_post_button.dart';
+import 'post_buttons.dart' show NewPostButton;
 import 'parse_hex_colour.dart';
 import 'section_card.dart';
 import 'package:rule_post/core/models/post_types.dart';

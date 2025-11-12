@@ -2,18 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
 
-import '../../content/widgets/new_post_button.dart';
-import '../../navigation/nav.dart';
-import '../../riverpod/enquiry_filter_provider.dart';
-import '../../riverpod/post_providers.dart';
-import '../../riverpod/unread_post_provider.dart';
-import '../../riverpod/user_detail.dart';
-import '../widgets/doc_view.dart';
-import 'filter_dropdown.dart';
-import 'two_panel_shell.dart';
+import 'package:rule_post/content/widgets/post_buttons.dart' show NewPostButton;
 import 'package:rule_post/core/models/post_types.dart';
+import 'package:rule_post/core/widgets/doc_view.dart';
+import 'package:rule_post/core/widgets/filter_dropdown.dart';
+import 'package:rule_post/core/widgets/two_panel_shell.dart';
+import 'package:rule_post/navigation/nav.dart';
+import 'package:rule_post/riverpod/enquiry_filter_provider.dart';
+import 'package:rule_post/riverpod/post_providers.dart';
+import 'package:rule_post/riverpod/unread_post_provider.dart';
+import 'package:rule_post/riverpod/user_detail.dart';
 
 final filterDefault = 'open';
 

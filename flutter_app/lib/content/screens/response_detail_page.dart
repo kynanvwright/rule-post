@@ -6,7 +6,7 @@ import '../widgets/children_section.dart';
 import '../widgets/detail_scaffold.dart';
 import '../widgets/fancy_attachment_tile.dart';
 import '../widgets/status_chip.dart';
-import '../widgets/new_post_button.dart';
+import '../widgets/post_buttons.dart' show EditPostButton;
 import '../widgets/mark_unread_button.dart';
 import '../../riverpod/doc_providers.dart';
 import '../../riverpod/read_receipts.dart';
@@ -96,6 +96,7 @@ class _ResponseDetailPageState extends ConsumerState<ResponseDetailPage> {
         initialAttachments: attachments,
         postId: widget.responseId,
         parentIds: [widget.enquiryId],
+        isPublished: isPublished,
       ),
       meta: Wrap(
         spacing: 8,
