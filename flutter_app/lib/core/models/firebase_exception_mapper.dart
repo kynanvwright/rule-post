@@ -1,8 +1,8 @@
 
-// lib/core/widgets/firebase_exception_mapper.dart
+// lib/core/models/firebase_exception_mapper.dart
 import 'package:cloud_functions/cloud_functions.dart';
 
-import 'app_exception.dart';
+import 'package:rule_post/core/widgets/app_exception.dart';
 
 AppException mapFunctionsError(FirebaseFunctionsException e) {
   switch (e.code) {

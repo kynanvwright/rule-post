@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:rule_post/api/api_template.dart';
-import 'package:rule_post/core/widgets/types.dart';
+import 'package:rule_post/core/models/types.dart';
 
 final api = ApiTemplate();
 

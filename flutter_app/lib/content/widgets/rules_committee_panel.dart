@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'prompt_stage_length.dart';
 import '../../api/admin_apis.dart';
-import '../../core/widgets/types.dart';
+import '../../core/models/types.dart';
 
 
 class AdminAction {

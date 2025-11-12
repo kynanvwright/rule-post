@@ -2,8 +2,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:rule_post/api/api_template.dart';
-import 'package:rule_post/core/models/post_payloads.dart';
-import 'package:rule_post/core/widgets/types.dart';
+import 'package:rule_post/core/models/post_payloads.dart' show PostPayload;
+import 'package:rule_post/core/models/types.dart' show Json;
 
 final api = ApiTemplate();
 

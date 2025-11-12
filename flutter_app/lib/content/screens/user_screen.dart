@@ -3,11 +3,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// import '../../api/user_apis.dart';
-import '../../auth//widgets/team_admin_panel.dart';
-import '../../core/widgets/back_button.dart';
-import '../../riverpod/user_detail.dart';
-import '../widgets/notification_tile.dart';
+import 'package:rule_post/auth/widgets/team_admin_panel.dart';
+import 'package:rule_post/content/widgets/notification_tile.dart';
+import 'package:rule_post/core/models/types.dart' show ClaimSpec;
+import 'package:rule_post/core/widgets/back_button.dart';
+import 'package:rule_post/riverpod/user_detail.dart';
 
 
 class ClaimsScreen extends ConsumerStatefulWidget {
@@ -19,17 +19,16 @@ class ClaimsScreen extends ConsumerStatefulWidget {
 class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
 
   // ✅ Only show these claim keys if present (edit to taste)
-  static const List<_ClaimSpec> _shownClaimSpecs = [
-    _ClaimSpec(key: 'email', label: 'Email', icon: Icons.email),
-    _ClaimSpec(key: 'role', label: 'Role', icon: Icons.verified_user),
-    _ClaimSpec(key: 'team', label: 'Team', icon: Icons.flag),
+  static const List<ClaimSpec> _shownClaimSpecs = [
+    ClaimSpec(key: 'email', label: 'Email', icon: Icons.email),
+    ClaimSpec(key: 'role', label: 'Role', icon: Icons.verified_user),
+    ClaimSpec(key: 'team', label: 'Team', icon: Icons.flag),
   ];
 
   @override
   Widget build(BuildContext context) {
     final claimsAsync = ref.watch(allClaimsProvider);
     final isTeamAdmin = ref.watch(isTeamAdminProvider);
-    // final userRole = ref.watch(roleProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -110,27 +109,3 @@ class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
     return const JsonEncoder.withIndent('  ').convert(v);
   }
 }
-
-class _ClaimSpec {
-  final String key;
-  final String label;
-  final IconData icon;
-  const _ClaimSpec({required this.key, required this.label, required this.icon});
-}
-
-// class CreateUserButton extends StatelessWidget {
-//   const CreateUserButton({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return ElevatedButton(
-//       onPressed: () async {
-//         // Example hard-coded values — replace with text fields or variables
-//         const testEmail = "dan.bernasconi@emiratesteamnz.com";
-
-//         await createUserFromFrontend(testEmail);
-//       },
-//       child: const Text("Create User"),
-//     );
-//   }
-// }

@@ -28,3 +28,35 @@ class TempAttachment {
     );
   }
 }
+
+
+class EditAttachmentMap {
+  final bool add;
+  final bool remove;
+  final List<String> removeList;
+
+  const EditAttachmentMap({
+    this.add = false,
+    this.remove = false,
+    this.removeList = const [],
+  });
+
+  Map<String, Object?> toJson() => {
+    'add': add,
+    'remove': remove,
+    if (remove) 'removeList': removeList,
+  };
+
+  factory EditAttachmentMap.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return const EditAttachmentMap();
+
+    return EditAttachmentMap(
+      add: json['add'] == true,
+      remove: json['remove'] == true,
+      removeList: (json['removeList'] as List?)
+              ?.whereType<String>()
+              .toList() ??
+          const [],
+    );
+  }
+}

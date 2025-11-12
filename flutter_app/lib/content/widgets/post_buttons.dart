@@ -10,9 +10,10 @@ import 'package:flutter/material.dart';
 import 'package:web/web.dart' as web;
 
 import 'package:rule_post/api/post_apis.dart';
-import 'package:rule_post/core/models/attachments.dart' show TempAttachment;
+import 'package:rule_post/core/models/attachments.dart';
 import 'package:rule_post/core/models/post_payloads.dart';
 import 'package:rule_post/core/models/post_types.dart';
+import 'package:rule_post/core/models/types.dart' show NewPostPayload;
 
 
 /// Use this one button for all three types.
@@ -84,9 +85,9 @@ class _NewPostButtonState extends State<NewPostButton> {
               return;
             }
 
-            final payload = await showDialog<_NewPostPayload>(
+            final payload = await showDialog<NewPostPayload>(
               context: context,
-              builder: (_) => _NewPostDialog(
+              builder: (_) => NewPostDialog(
                 dialogTitle: 'New ${widget.type.singular}',
                 tempFolder: widget.type.tempFolder,
                 postType: widget.type.singular,
@@ -116,8 +117,9 @@ class _NewPostButtonState extends State<NewPostButton> {
 }
 
 
-class _NewPostDialog extends StatefulWidget {
-  const _NewPostDialog({
+class NewPostDialog extends StatefulWidget {
+  const NewPostDialog({
+    super.key,
     required this.dialogTitle,
     required this.tempFolder,
     required this.postType,
@@ -137,11 +139,11 @@ class _NewPostDialog extends StatefulWidget {
 
 
   @override
-  State<_NewPostDialog> createState() => _NewPostDialogState();
+  State<NewPostDialog> createState() => _NewPostDialogState();
 }
 
 
-class _NewPostDialogState extends State<_NewPostDialog> {
+class _NewPostDialogState extends State<NewPostDialog> {
   final _form = GlobalKey<FormState>();
   late final TextEditingController _title;
   late final TextEditingController _text;
@@ -284,7 +286,7 @@ class _NewPostDialogState extends State<_NewPostDialog> {
                   if (context.mounted) {
                     Navigator.pop(
                       context,
-                      _NewPostPayload(
+                      NewPostPayload(
                         title: _title.text.trim(),
                         text: _text.text.trim(),
                         attachments: _pending.toList(),
@@ -536,149 +538,5 @@ class _NewPostDialogState extends State<_NewPostDialog> {
       size: size,
       contentType: contentType,
     ));
-  }
-}
-
-
-class _NewPostPayload {
-  _NewPostPayload({
-    required this.title,
-    required this.text,
-    required this.attachments,
-  });
-
-  final String title;
-  final String text;
-  final List<TempAttachment> attachments;
-}
-
-
-/// Use this one button for all three types.
-class EditPostButton extends StatefulWidget {
-  const EditPostButton({
-    super.key,
-    required this.type,
-    required this.postId,
-    this.parentIds,
-    this.initialTitle,
-    this.initialText,
-    this.initialAttachments,
-    required this.isPublished,
-  });
-
-  final PostType type;
-  final String postId;
-  final List<String>? parentIds;
-  final String? initialTitle;
-  final String? initialText;
-  final List<Map<String, dynamic>>? initialAttachments;
-  final bool isPublished;
-
-  @override
-  State<EditPostButton> createState() => _EditPostButtonState();
-}
-
-
-class _EditPostButtonState extends State<EditPostButton> {
-  final _tooltipKey = GlobalKey<TooltipState>();
-  final Map<String, dynamic> editAttachments = {
-    'add': false,
-    'remove': false,
-    'removeList': [],
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    const labelText = 'Edit';
-
-    final scheme = Theme.of(context).colorScheme;
-    final bg = scheme.primary;
-    final fg = scheme.onPrimary;
-
-    return Semantics(
-      button: true,
-      enabled: true, // SRs know it's unavailable, but we keep it focusable.
-      label: labelText,
-      child: Tooltip(
-        key: _tooltipKey,
-        triggerMode: TooltipTriggerMode.longPress, // hover still works on desktop
-        message: 'Edit your draft ${widget.type.singular}',
-        child: FilledButton.icon(
-          style: ButtonStyle(
-            backgroundColor: WidgetStatePropertyAll(bg),
-            foregroundColor: WidgetStatePropertyAll(fg),
-            overlayColor: WidgetStatePropertyAll(
-              scheme.primary.withValues(alpha: 0.08),
-            ),
-          ),
-          icon: Icon(Icons.edit, color: fg),
-          label: const Text(labelText),
-          onPressed: () async {
-            final payload = await showDialog<_NewPostPayload>(
-              context: context,
-              builder: (_) => _NewPostDialog(
-                dialogTitle: 'Edit ${widget.type.singular}',
-                tempFolder: widget.type.tempFolder,
-                postType: widget.type.singular,
-                initialTitle: widget.initialTitle,
-                initialText: widget.initialText,
-                initialAttachments: widget.initialAttachments!.map((m) => TempAttachment.fromMap(m)).toList(),
-              ),
-            );
-            if (payload == null) return;
-            if (!context.mounted) return;
-
-            //compare inital and final attachments to update the editAttachmentsMap
-            final payloadAttachMap = payload.attachments.map((a) => a.toMap());
-            final payloadAttachList = payloadAttachMap.toList();
-            if ((widget.initialAttachments?.isNotEmpty ?? false) ||
-                (payloadAttachList.isNotEmpty)) {
-              final initialAttachmentNumber = widget.initialAttachments?.length ?? 0;
-              final finalAttachmentNumber = payloadAttachList.length;
-              final newAttachmentNumber = payloadAttachList
-              .where((m) {
-                final pathString = m['storagePath'] as String;
-                final firstPart = pathString.split('/').first;
-                return firstPart.contains('temp');
-              })
-              .length;
-              final removedAttachmentNumber = newAttachmentNumber + initialAttachmentNumber - finalAttachmentNumber;
-              if (newAttachmentNumber > 0) {
-                editAttachments['add'] = true;
-              }
-              if (removedAttachmentNumber > 0) {
-                editAttachments['remove'] = true;
-                final initialPaths = widget.initialAttachments?.map((m) => m['path']).toList() ?? [];
-                final finalPaths = payload.attachments.map((m) => m.storagePath).toList();
-
-                editAttachments['removeList'] = initialPaths.toSet().difference(finalPaths.toSet()).toList();
-              }
-              payload.attachments.removeWhere((a) {
-                final pathString = a.storagePath;
-                final firstPart = pathString.split('/').first;
-                return !firstPart.contains('temp');
-              });
-            }
-
-            final editPostPayload = PostPayload(
-              postType: widget.type,
-              title: payload.title,
-              postText: payload.text,
-              attachments: payload.attachments,
-              parentIds: widget.parentIds,
-              postId: widget.postId,
-              isPublished: widget.isPublished,
-              editAttachments: EditAttachmentMap.fromJson(editAttachments),
-              );
-            
-            if (!context.mounted) return;
-            await editPost(
-              context,
-              editPostPayload,
-            );
-          },
-        ),
-      ),
-    );
   }
 }

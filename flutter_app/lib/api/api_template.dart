@@ -2,11 +2,12 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 
-import 'package:rule_post/auth/widgets/auth_check.dart';
+import 'package:rule_post/auth/widgets/auth_check.dart' show ensureFreshAuth;
 import 'package:rule_post/content/widgets/progress_dialog.dart';
+import 'package:rule_post/core/models/firebase_exception_mapper.dart';
+import 'package:rule_post/core/models/types.dart' show Json;
 import 'package:rule_post/core/widgets/app_exception.dart';
-import 'package:rule_post/core/widgets/firebase_exception_mapper.dart';
-import 'package:rule_post/core/widgets/types.dart';
+
 
 // generic wrapper for apis:
 //    makes a call to a backend function, passing any relevant data from the frontend to it

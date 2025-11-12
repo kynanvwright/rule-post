@@ -1,7 +1,7 @@
 // flutter_app/lib/content/screens/help_screen.dart
 import "package:flutter/material.dart";
 
-import '../../core/widgets/back_button.dart';
+import 'package:rule_post/core/widgets/back_button.dart';
 
 
 class HelpFaqScreen extends StatelessWidget {

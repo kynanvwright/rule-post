@@ -1,6 +1,7 @@
 // flutter_app/lib/content/screens/no_selection_page.dart
 import 'package:flutter/material.dart';
 
+
 /// -------------------- NO SELECTION --------------------
 class NoSelectionPage extends StatelessWidget {
   const NoSelectionPage({super.key, this.message = 'Select an item to view details.'});
