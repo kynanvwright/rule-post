@@ -73,10 +73,6 @@ service cloud.firestore {
       match /meta/{doc} {
         allow read, write: if false;
       }
-          
-      match /read_receipts/{doc} {
-        allow read, write: if docIsUsers(doc);
-      }
       
       match /responses/{responseId} {
       	allow read: if resource.data.isPublished == true
@@ -86,10 +82,6 @@ service cloud.firestore {
         match /meta/{doc} {
         	allow read, write: if false;
       	}
-                   
-        match /read_receipts/{doc} {
-          allow read, write: if docIsUsers(doc);
-        }
         
         match /comments/{commentId} {
       		allow read: if resource.data.isPublished == true
@@ -98,10 +90,6 @@ service cloud.firestore {
         
           match /meta/{doc} {
             allow read, write: if false;
-          }
-              
-          match /read_receipts/{doc} {
-            allow read, write: if docIsUsers(doc);
           }
           
         }

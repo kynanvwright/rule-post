@@ -36,7 +36,7 @@ final class PostPayload {
     List<String>? parentIds,
     String? postId,
     bool? isPublished,
-    EditAttachmentMap editAttachments = const EditAttachmentMap(),
+    EditAttachmentMap? editAttachments,
   }) {
     // String normaliser: trim -> null if empty
     String? norm(String? s) {
@@ -61,6 +61,7 @@ final class PostPayload {
     final normPostId  = norm(postId);
     final safeParents = cleanStrings(parentIds);
     final safeAtts    = cleanAttachments(attachments);
+    final safeEditAtts = editAttachments ?? EditAttachmentMap();
 
     final isEdit = normPostId != null;
     final hasText = normText != null && normText.isNotEmpty;
@@ -75,8 +76,8 @@ final class PostPayload {
           }
         } else {
           // edit mode
-          if (!editAttachments.add &&
-              !editAttachments.remove &&
+          if (safeEditAtts.add &&
+              safeEditAtts.remove &&
               (normTitle == null && normText == null)) {
             throw ArgumentError(
               'Edit payload must change something (title/text or attachments).',
@@ -116,7 +117,7 @@ final class PostPayload {
       parentIds: safeParents,
       postId: normPostId,
       isPublished: isPublished,
-      editAttachments: editAttachments,
+      editAttachments: safeEditAtts,
     );
   }
 

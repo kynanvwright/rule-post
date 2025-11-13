@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:rule_post/content/widgets/post_buttons.dart' show NewPostButton;
+import 'package:rule_post/core/buttons/new_post_button.dart' show NewPostButton;
 import 'package:rule_post/core/models/post_types.dart';
 import 'package:rule_post/core/widgets/doc_view.dart';
 import 'package:rule_post/core/widgets/filter_dropdown.dart';

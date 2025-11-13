@@ -1,8 +1,11 @@
+// flutter_app/lib/core/buttons/back_button.dart
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:web/web.dart' as web;
 
+
+// navigates back to the last page
 class BackButtonCompact extends StatelessWidget {
   const BackButtonCompact({
     super.key,
@@ -45,7 +48,6 @@ class BackButtonCompact extends StatelessWidget {
         foregroundColor: WidgetStatePropertyAll(fg),
         minimumSize: WidgetStatePropertyAll(Size.square(size)),
         padding: const WidgetStatePropertyAll(EdgeInsets.all(2)),
-        // visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
       ),
     );
   }

@@ -6,10 +6,10 @@ import 'package:rule_post/core/models/attachments.dart';
 import 'package:rule_post/core/models/post_payloads.dart';
 import 'package:rule_post/core/models/post_types.dart';
 import 'package:rule_post/core/models/types.dart' show NewPostPayload;
-import 'package:rule_post/content/widgets/post_buttons.dart' show NewPostDialog;
+import 'package:rule_post/core/buttons/new_post_button.dart' show NewPostDialog;
 
 
-/// Use this one button for all three types.
+/// Used to edit unpublished posts
 class EditPostButton extends StatefulWidget {
   const EditPostButton({
     super.key,
@@ -37,11 +37,7 @@ class EditPostButton extends StatefulWidget {
 
 class _EditPostButtonState extends State<EditPostButton> {
   final _tooltipKey = GlobalKey<TooltipState>();
-  final Map<String, dynamic> editAttachments = {
-    'add': false,
-    'remove': false,
-    'removeList': [],
-  };
+  EditAttachmentMap editAttachments = EditAttachmentMap();
 
   @override
   Widget build(BuildContext context) {
@@ -100,14 +96,14 @@ class _EditPostButtonState extends State<EditPostButton> {
               .length;
               final removedAttachmentNumber = newAttachmentNumber + initialAttachmentNumber - finalAttachmentNumber;
               if (newAttachmentNumber > 0) {
-                editAttachments['add'] = true;
+                editAttachments.add = true;
               }
               if (removedAttachmentNumber > 0) {
-                editAttachments['remove'] = true;
-                final initialPaths = widget.initialAttachments?.map((m) => m['path']).toList() ?? [];
+                editAttachments.remove = true;
+                final initialPaths = widget.initialAttachments?.map((m) => m['path'] as String).toList() ?? [];
                 final finalPaths = payload.attachments.map((m) => m.storagePath).toList();
 
-                editAttachments['removeList'] = initialPaths.toSet().difference(finalPaths.toSet()).toList();
+                editAttachments.removeList = initialPaths.toSet().difference(finalPaths.toSet()).toList();
               }
               payload.attachments.removeWhere((a) {
                 final pathString = a.storagePath;
@@ -124,7 +120,7 @@ class _EditPostButtonState extends State<EditPostButton> {
               parentIds: widget.parentIds,
               postId: widget.postId,
               isPublished: widget.isPublished,
-              editAttachments: EditAttachmentMap.fromJson(editAttachments),
+              editAttachments: editAttachments,
               );
             
             if (!context.mounted) return;

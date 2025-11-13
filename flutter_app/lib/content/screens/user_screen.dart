@@ -3,10 +3,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:rule_post/auth/widgets/team_admin_panel.dart';
+import 'package:rule_post/core/widgets/team_admin_panel.dart';
 import 'package:rule_post/content/widgets/notification_tile.dart';
 import 'package:rule_post/core/models/types.dart' show ClaimSpec;
-import 'package:rule_post/core/widgets/back_button.dart';
+import 'package:rule_post/core/buttons/back_button.dart';
 import 'package:rule_post/riverpod/user_detail.dart';
 
 

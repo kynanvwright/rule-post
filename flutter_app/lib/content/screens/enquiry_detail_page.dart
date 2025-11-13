@@ -5,11 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:rule_post/content/widgets/children_section.dart';
 import 'package:rule_post/content/widgets/detail_scaffold.dart';
-import 'package:rule_post/content/widgets/edit_post_button.dart';
-import 'package:rule_post/content/widgets/fancy_attachment_tile.dart';
-import 'package:rule_post/content/widgets/mark_unread_button.dart';
-import 'package:rule_post/content/widgets/rules_committee_panel.dart';
 import 'package:rule_post/content/widgets/status_chip.dart';
+import 'package:rule_post/core/buttons/edit_post_button.dart';
+import 'package:rule_post/content/widgets/fancy_attachment_tile.dart';
+import 'package:rule_post/core/buttons/mark_unread_button.dart';
+import 'package:rule_post/core/widgets/rules_committee_panel.dart';
 import 'package:rule_post/core/models/post_types.dart';
 import 'package:rule_post/core/widgets/get_stage_length.dart';
 import 'package:rule_post/riverpod/doc_providers.dart';

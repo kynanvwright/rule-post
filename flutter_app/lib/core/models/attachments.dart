@@ -31,11 +31,11 @@ class TempAttachment {
 
 
 class EditAttachmentMap {
-  final bool add;
-  final bool remove;
-  final List<String> removeList;
+  bool add;
+  bool remove;
+  List<String> removeList;
 
-  const EditAttachmentMap({
+  EditAttachmentMap({
     this.add = false,
     this.remove = false,
     this.removeList = const [],
@@ -44,11 +44,11 @@ class EditAttachmentMap {
   Map<String, Object?> toJson() => {
     'add': add,
     'remove': remove,
-    if (remove) 'removeList': removeList,
+    'removeList': removeList,
   };
 
   factory EditAttachmentMap.fromJson(Map<String, dynamic>? json) {
-    if (json == null) return const EditAttachmentMap();
+    if (json == null) return EditAttachmentMap();
 
     return EditAttachmentMap(
       add: json['add'] == true,

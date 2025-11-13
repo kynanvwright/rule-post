@@ -16,7 +16,7 @@ import 'package:rule_post/core/models/post_types.dart';
 import 'package:rule_post/core/models/types.dart' show NewPostPayload;
 
 
-/// Use this one button for all three types.
+/// Used to create a new post, will be unpublished until scheduled funciton runs
 class NewPostButton extends StatefulWidget {
   const NewPostButton({
     super.key,

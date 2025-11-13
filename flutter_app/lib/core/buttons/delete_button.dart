@@ -1,8 +1,9 @@
-// flutter_app/lib/core/widgets/delete_button.dart
+// flutter_app/lib/core/buttons/delete_button.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
+
+// button to delete data using the frontend
 class DeleteButton extends StatefulWidget {
   const DeleteButton({
     super.key,
@@ -26,6 +27,7 @@ class DeleteButton extends StatefulWidget {
   @override
   State<DeleteButton> createState() => _DeleteButtonState();
 }
+
 
 class _DeleteButtonState extends State<DeleteButton> {
   final GlobalKey<TooltipState> _tooltipKey = GlobalKey<TooltipState>();
@@ -81,29 +83,4 @@ class _DeleteButtonState extends State<DeleteButton> {
       ),
     );
   }
-}
-
-Future<int> deleteByQuery({
-  required Query query,
-  int pageSize = 200, // Firestore SDK limit ~ 1000; keep it modest
-}) async {
-  var deleted = 0;
-  Query next = query.limit(pageSize);
-
-  while (true) {
-    final snap = await next.get();
-    if (snap.docs.isEmpty) break;
-
-    final batch = FirebaseFirestore.instance.batch();
-    for (final d in snap.docs) {
-      batch.delete(d.reference);
-    }
-    await batch.commit();
-    deleted += snap.docs.length;
-
-    // If you need pagination based on a field, add startAfter docs here.
-    // For simple deletes, we can just loop — the next.get() will see fewer docs.
-    if (snap.docs.length < pageSize) break;
-  }
-  return deleted;
 }

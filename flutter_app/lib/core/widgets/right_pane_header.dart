@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'breadcrumb_bar.dart';
-import 'back_button.dart';// 👈 import it
+import '../buttons/back_button.dart';// 👈 import it
 
 class RightPaneHeader extends ConsumerWidget {
   const RightPaneHeader({

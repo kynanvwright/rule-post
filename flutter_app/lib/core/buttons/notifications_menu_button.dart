@@ -4,11 +4,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../navigation/nav.dart';
-import '../../riverpod/unread_post_provider.dart';
-import 'delete_button.dart';
+import 'package:rule_post/core/buttons/delete_button.dart';
+import 'package:rule_post/navigation/nav.dart';
+import 'package:rule_post/riverpod/unread_post_provider.dart';
 
 
+// Used to show posts that the user hasn't read
+//  Allows navigation to those posts
+//  Allows all to be marked as read
 class NotificationsMenuButton extends ConsumerWidget {
   const NotificationsMenuButton({
     super.key,
@@ -102,6 +105,7 @@ class NotificationsMenuButton extends ConsumerWidget {
 }
 
 
+// List of unread posts, lives in the NotificationsMenuButton dropdown
 class UnreadMenu extends ConsumerWidget {
   const UnreadMenu({
     super.key,
@@ -285,6 +289,7 @@ int? extractEnquiryNumberFromAlias(String alias) {
 }
 
 
+// Used to sort the unread posts in the UnreadMenu
 List<String> generateOrderedKeys(Map<String, Map<String, dynamic>> items) {
   final ordered = <String>[];
   final all = items.entries.toList();
