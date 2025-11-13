@@ -1,14 +1,17 @@
-// riverpod/user_detail.dart
+// flutter_app/lib/riverpod/user_detail.dart
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 
 /// Emits on login, logout, and token refreshes
 final firebaseUserProvider = StreamProvider<User?>(
   (ref) => FirebaseAuth.instance.idTokenChanges(),
 );
 
-/// All claims as a Map ({} when signed out or no claims)
+
+// Reads the current user's custom claims from their ID token
+// - claims are a Map ({} when signed out or no claims)
 final allClaimsProvider = StreamProvider<Map<String, Object?>>((ref) async* {
   final userStream = FirebaseAuth.instance.idTokenChanges();
   await for (final user in userStream) {
@@ -39,12 +42,22 @@ extension ClaimReader on Map<String, Object?> {
   }
 }
 
+
+/// If you *just* updated claims server-side and need an immediate refresh:
+Future<void> forceRefreshClaims() async {
+  await FirebaseAuth.instance.currentUser?.getIdToken(true);
+}
+
+
+// Various derived user detail providers:
+
 final isLoggedInProvider = Provider<bool>((ref) {
   final user = ref.watch(firebaseUserProvider).value;
   return user != null;
 });
 
-/// Handy typed helpers built on top of the map (optional)
+
+
 final roleProvider = Provider<String?>(
   (ref) => ref.watch(allClaimsProvider).maybeWhen(
         data: (c) => c['role'] as String?,
@@ -52,12 +65,14 @@ final roleProvider = Provider<String?>(
       ),
 );
 
+
 final teamProvider = Provider<String?>(
   (ref) => ref.watch(allClaimsProvider).maybeWhen(
         data: (c) => c['team'] as String?,
         orElse: () => null,
       ),
 );
+
 
 final isTeamAdminProvider = Provider<bool>((ref) {
   final claims = ref.watch(allClaimsProvider).maybeWhen(
@@ -68,12 +83,7 @@ final isTeamAdminProvider = Provider<bool>((ref) {
          claims.getString('role') == 'teamAdmin';
 });
 
-/// If you *just* updated claims server-side and need an immediate refresh:
-Future<void> forceRefreshClaims() async {
-  await FirebaseAuth.instance.currentUser?.getIdToken(true);
-}
 
-// 2) Derived flag with sensible default
 final emailNotificationsOnProvider = Provider<bool>((ref) {
   final claimsAsync = ref.watch(allClaimsProvider);
   final claims = claimsAsync.asData?.value ?? const <String, Object?>{};

@@ -5,7 +5,7 @@ import 'package:rule_post/api/user_apis.dart';
 import 'package:rule_post/core/models/types.dart' show TeamUser;
 
 
-// ─────────────────────── Providers ───────────────────────
+// Used in the team admin panel to list current members
 final teamMembersProvider = StateNotifierProvider<TeamMembersController, AsyncValue<List<TeamUser>>>(
   (ref) => TeamMembersController(),
 );

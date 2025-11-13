@@ -1,10 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 
-// final enquiriesRefreshSignal  = StateProvider<int>((_) => 0);
-
+// Watches draft enquiries for your team, refreshes left pane when drafts change
 final draftIdsProvider =
     StreamProvider.family<List<String>, String?>((ref, teamId) {
   if (teamId == null) return const Stream<List<String>>.empty();

@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:rule_post/navigation/nav.dart';
-import 'package:rule_post/riverpod/post_alias.dart';
+import 'package:rule_post/riverpod/post_alias_providers.dart';
 
 
 // Used to indicate the currently viewed post, and navigate to other posts

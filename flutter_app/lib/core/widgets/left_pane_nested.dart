@@ -12,7 +12,7 @@ import 'package:rule_post/core/widgets/two_panel_shell.dart';
 import 'package:rule_post/navigation/nav.dart';
 import 'package:rule_post/riverpod/enquiry_filter_provider.dart';
 import 'package:rule_post/riverpod/post_providers.dart';
-import 'package:rule_post/riverpod/unread_post_provider.dart';
+import 'package:rule_post/core/widgets/unread_dot.dart';
 import 'package:rule_post/riverpod/user_detail.dart';
 
 final filterDefault = 'open';

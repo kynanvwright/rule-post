@@ -1,61 +1,22 @@
-//riverpod/unread_post_provider.dart
+// flutter_app/lib/riverpod/unread_post_provider.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'user_detail.dart';
+import 'package:rule_post/riverpod/user_detail.dart';
 
 
-class UnreadDot extends ConsumerWidget {
-  const UnreadDot(this.enquiryId, {this.expanded = false, super.key});
-  final String enquiryId;
-  final bool expanded;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final unreadAsync = ref.watch(unreadByIdProvider(enquiryId));
-
-    final showDot = 
-      (unreadAsync?['isUnread'] == true) ||
-      ((unreadAsync?['hasUnreadChild'] == true) && !expanded);
-
-    return AnimatedOpacity(
-      opacity: showDot ? 1.0 : 0.0,
-      duration: const Duration(milliseconds: 2000),
-      curve: Curves.easeInOut,
-      child: Padding(
-        padding: const EdgeInsets.only(left: 6),
-        child: Icon(
-          Icons.circle,
-          size: 8,
-          color: Colors.blueAccent,
-        ),
-      ),
-    );
-    // return showDot
-    // ? Padding(
-    //     padding: const EdgeInsets.only(left: 6),
-    //     child: Icon(
-    //       Icons.circle,
-    //       size: 8,
-    //       color: Colors.blueAccent, // change to theme colour
-    //     ),
-    //   )
-    // : const SizedBox.shrink();
-
-  }
-}
+// Providers which support unread post tracking
 
 
-
-// auth + firestore helpers (nice to centralise)
+// current user UID provider
 final uidProvider = Provider<String?>((ref) {
   ref.watch(firebaseUserProvider);
   return FirebaseAuth.instance.currentUser?.uid;
 });
 
 
+// central Firestore instance
 final firestoreProvider = Provider<FirebaseFirestore>((ref) {
   return FirebaseFirestore.instance;
 });

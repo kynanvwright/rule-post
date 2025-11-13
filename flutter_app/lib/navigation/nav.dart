@@ -1,8 +1,9 @@
-// nav.dart
+// flutter_app/lib/core/navigation/nav.dart
 import 'dart:async';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
+
 
 Uri _currentUri(BuildContext c) =>
     GoRouter.of(c).routeInformationProvider.value.uri;
@@ -13,6 +14,7 @@ String _normPath(String path) {
   final p = path.startsWith('/') ? path : '/$path';
   return (p.length > 1 && p.endsWith('/')) ? p.substring(0, p.length - 1) : p;
 }
+
 
 void _callNowOrMicrotask(void Function() f) {
   // If we’re currently building/layout/painting, defer to a microtask
@@ -27,6 +29,8 @@ void _callNowOrMicrotask(void Function() f) {
   }
 }
 
+
+// All app navigation goes through this class for consistent behaviour
 class Nav {
   static bool _navInFlight = false;
 

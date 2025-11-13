@@ -1,12 +1,13 @@
-// riverpod/read_receipts.dart
+// flutter_app/lib/riverpod/read_receipts.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'user_detail.dart';
-import 'unread_post_provider.dart';
+import 'package:rule_post/riverpod/user_detail.dart';
+import 'package:rule_post/riverpod/unread_post_provider.dart';
 
 
+// Mark an enquiry as read when you go to its page
 final markEnquiryReadProvider =
     Provider<Future<void> Function(String enquiryId)?>((ref) {
   ref.watch(firebaseUserProvider);
@@ -41,6 +42,7 @@ final markEnquiryReadProvider =
 });
 
 
+// Mark an response as read when you go to its page, along with all current child comments
 final markResponsesAndCommentsReadProvider =
     Provider<Future<void> Function(String enquiryId, String responseId)?>((ref) {
   ref.watch(firebaseUserProvider);
@@ -74,7 +76,7 @@ final markResponsesAndCommentsReadProvider =
 
     await batch.commit();
 
-    // 2) Parent clean-up via server aggregation counts
+    // 2) Parent clean-up
     // If no unread descendants remain under this enquiry AND the enquiry doc
     // only exists as "hasUnreadChild" (i.e. not "isUnread"), delete it.
     final c1 = await col

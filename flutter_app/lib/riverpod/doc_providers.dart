@@ -1,6 +1,9 @@
+// flutter_app/lib/riverpod/doc_providers.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+
+/// Watch a single enquiry document
 final enquiryDocProvider =
     StreamProvider.family<Map<String, dynamic>?, String>((ref, id) {
   final refDoc = FirebaseFirestore.instance
@@ -30,7 +33,3 @@ final responseDocProvider = StreamProvider.family<
 
   return doc.snapshots().map((s) => s.data());
 });
-
-// final respAsync = ref.watch(
-//   responseDocProvider((enquiryId: enquiryId, responseId: responseId)),
-// );

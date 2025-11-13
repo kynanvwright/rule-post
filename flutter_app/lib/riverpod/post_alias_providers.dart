@@ -1,6 +1,8 @@
-// aliases.dart
+// flutter_app/lib/riverpod/post_alias_providers.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'doc_providers.dart';
+import 'package:rule_post/riverpod/doc_providers.dart';
+
+// These are used for the breadcrumb bar
 
 /// Pretty label for an enquiry id (e.g. "RE#120")
 final enquiryAliasProvider = Provider.family<String?, String>((ref, id) {

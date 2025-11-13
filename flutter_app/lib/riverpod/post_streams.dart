@@ -1,10 +1,14 @@
-import 'package:rxdart/rxdart.dart';
+// flutter_app/lib/riverpod/post_streams.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
-import '../core/models/enquiry_status_filter.dart';
+import 'package:rxdart/rxdart.dart';
+
+import 'package:rule_post/core/models/enquiry_status_filter.dart';
 import 'package:rule_post/core/models/types.dart' show DocView;
 
 final db = FirebaseFirestore.instance;
+
+// streams used to feed the post providers and the children sections in detail pages
 
 
 // Helper: apply status filter + stable sort
