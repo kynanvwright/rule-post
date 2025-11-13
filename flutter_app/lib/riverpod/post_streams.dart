@@ -5,6 +5,7 @@ import 'package:rxdart/rxdart.dart';
 
 import 'package:rule_post/core/models/enquiry_status_filter.dart';
 import 'package:rule_post/core/models/types.dart' show DocView;
+import 'package:rule_post/debug/debug.dart';
 
 final db = FirebaseFirestore.instance;
 
@@ -84,7 +85,7 @@ Stream<List<DocView>> publicEnquiriesStream({
       .map((snap) => snap.docs.map((d) => DocView(d.id, d.reference, d.data())).toList())
       .map(makeFilterSorter(statusFilter: statusFilter));
 
-    debugPrint('[publicEnquiriesStream] Public stream built fine.');
+    d('[publicEnquiriesStream] Public stream built fine.');
     return public$;
 }
 
@@ -94,18 +95,18 @@ Stream<List<DocView>> combinedEnquiriesStream({
   String? teamId,
 }) {
   
-  debugPrint('[combinedEnquiriesStream] Starting function with teamId=$teamId');
+  d('[combinedEnquiriesStream] Starting function with teamId=$teamId');
   // 1) Public, published enquiries
   final public$ = publicEnquiriesStream(statusFilter: statusFilter);
 
-  debugPrint('[combinedEnquiriesStream] Public stream built fine.');
+  d('[combinedEnquiriesStream] Public stream built fine.');
 
   if (teamId == null) {
-      debugPrint('[combinedEnquiriesStream] ⏭ Not logged in — skipping draftDocStreams.');
+      d('[combinedEnquiriesStream] ⏭ Not logged in — skipping draftDocStreams.');
     return public$;
   } 
 
-  debugPrint('[combinedEnquiriesStream] Attempt to retrieve drafts.');
+  d('[combinedEnquiriesStream] Attempt to retrieve drafts.');
   // 2) Team draft IDs
   final draftIds$ = db
       .collection('drafts')
@@ -118,16 +119,16 @@ Stream<List<DocView>> combinedEnquiriesStream({
   // 3) If there are no draft IDs, just return public$.
   //    Otherwise, fetch those draft docs and merge.
   return draftIds$.switchMap((ids) {
-    debugPrint('[combinedEnquiriesStream] draftIds = $ids');
+    d('[combinedEnquiriesStream] draftIds = $ids');
     
     if (ids.isEmpty) {
       // Short-circuit: no per-doc listeners, no combineLatest—cheap!
-      debugPrint('[combinedEnquiriesStream] ⏭ No drafts found — skipping draftDocStreams.');
+      d('[combinedEnquiriesStream] ⏭ No drafts found — skipping draftDocStreams.');
       return public$;
     }
 
     // Stream the user’s draft enquiry docs
-    debugPrint('[combinedEnquiriesStream] 🟢 Found ${ids.length} draft(s) — building streams.');
+    d('[combinedEnquiriesStream] 🟢 Found ${ids.length} draft(s) — building streams.');
     final draftDocStreams = ids.map((id) {
       final docRef = db
           .collection('enquiries')
@@ -198,7 +199,7 @@ Stream<List<DocView>> combinedResponsesStream({
   final public$ = publicResponsesStream(enquiryId: enquiryId);
   
   if (teamId == null) {
-      debugPrint('[combinedResponsesStream] ⏭ Not logged in — skipping draftDocStreams.');
+      d('[combinedResponsesStream] ⏭ Not logged in — skipping draftDocStreams.');
     return public$;
   } 
 
@@ -219,12 +220,12 @@ Stream<List<DocView>> combinedResponsesStream({
   //    Otherwise, fetch those draft docs and merge.
   return draftIds$.switchMap((ids) {
     if (ids.isEmpty) {
-      debugPrint('[combinedResponsesStream] $enquiryId: no draft -> public only');
+      d('[combinedResponsesStream] $enquiryId: no draft -> public only');
       return public$;
     }
 
     if (ids.length > 1) {
-      debugPrint('[combinedResponsesStream] $enquiryId: ❗multiple drafts detected: $ids');
+      d('[combinedResponsesStream] $enquiryId: ❗multiple drafts detected: $ids');
       // choose a policy: first, or prefer latest by updatedAt, etc.
       // For now, take the first (stable due to sort).
     }
@@ -250,7 +251,7 @@ Stream<List<DocView>> combinedResponsesStream({
         if (draft == null) return pub;
         final map = { for (final d in pub) d.id : d };
         map[draft.id] = draft; // upsert/override
-        debugPrint('[combinedResponsesStream] $enquiryId: draft found -> combined with published list');
+        d('[combinedResponsesStream] $enquiryId: draft found -> combined with published list');
         return filterAndSort(
           map.values.toList()
           , sortDirections: {'roundNumber': 'asc', 'responseNumber': 'asc'});
@@ -300,7 +301,7 @@ Stream<List<DocView>> combinedCommentsStream({
     responseId: responseId);
   
   if (teamId == null) {
-      debugPrint('[combinedCommentsStream] ⏭ Not logged in — skipping draftDocStreams.');
+      d('[combinedCommentsStream] ⏭ Not logged in — skipping draftDocStreams.');
     return public$;
   } 
 
@@ -320,7 +321,7 @@ Stream<List<DocView>> combinedCommentsStream({
   // 3) If there are no draft IDs, just return public$.
   return draftIds$.switchMap((ids) {
     if (ids.isEmpty) {
-      debugPrint('[combinedCommentsStream] $responseId: no drafts -> public only');
+      d('[combinedCommentsStream] $responseId: no drafts -> public only');
       return public$;
     }
 

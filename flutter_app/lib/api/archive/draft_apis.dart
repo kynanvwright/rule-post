@@ -1,7 +1,7 @@
 // flutter_app/lib/api/draft_apis.dart
-import 'package:flutter/foundation.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 
+import 'package:rule_post/debug/debug.dart';
 
 Future<List<String>> findDrafts(String postType, List<String> parentIds) async {
   try {
@@ -17,13 +17,13 @@ Future<List<String>> findDrafts(String postType, List<String> parentIds) async {
     final List<dynamic> data = result.data;
     final drafts = data.map((e) => e.toString()).toList();
 
-    debugPrint('✅ Found drafts: $drafts');
+    d('✅ Found drafts: $drafts');
     return drafts;
   } on FirebaseFunctionsException catch (e) {
-    debugPrint('❌ Cloud Function error: ${e.code} – ${e.message}');
+    d('❌ Cloud Function error: ${e.code} – ${e.message}');
     return [];
   } catch (e) {
-    debugPrint('❌ Unexpected error: $e');
+    d('❌ Unexpected error: $e');
     return [];
   }
 }
@@ -37,13 +37,13 @@ Future<bool> hasDrafts() async {
     final result = await callable.call();
     final bool foundDrafts = result.data as bool;
 
-    debugPrint('✅ Drafts searched and match result is: $foundDrafts');
+    d('✅ Drafts searched and match result is: $foundDrafts');
     return foundDrafts;
   } on FirebaseFunctionsException catch (e) {
-    debugPrint('❌ Cloud Function error: ${e.code} – ${e.message}');
+    d('❌ Cloud Function error: ${e.code} – ${e.message}');
     return false;
   } catch (e) {
-    debugPrint('❌ Unexpected error: $e');
+    d('❌ Unexpected error: $e');
     return false;
   }
 }

@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:web/web.dart' as web;      // DOM bindings (no dart:html)
 
+import 'package:rule_post/debug/debug.dart';
+
+
 /// Drop-in attachment tile that supports inline preview for PDFs and Word docs.
 /// - PDFs render directly in an <iframe>.
 /// - Word docs render via Google Docs Viewer (gview?embedded=true).
@@ -181,7 +184,7 @@ class _FancyAttachmentTileState extends State<FancyAttachmentTile> {
       final ref = firebase_storage.FirebaseStorage.instance.ref(p);
       return await ref.getDownloadURL(); // obeys your Storage rules
     } catch (e) {
-      debugPrint('FancyAttachmentTile: failed to resolve URL for $p — $e');
+      d('FancyAttachmentTile: failed to resolve URL for $p — $e');
       return null;
     }
   }

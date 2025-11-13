@@ -12,6 +12,7 @@ import 'package:rule_post/navigation/nav.dart';
 import 'package:rule_post/riverpod/post_streams.dart';
 import 'package:rule_post/core/widgets/unread_dot.dart';
 import 'package:rule_post/riverpod/user_detail.dart';
+import 'package:rule_post/debug/debug.dart';
 
 
 // Used in the detail pages to show tiles of the child posts (responses or comments).
@@ -120,7 +121,7 @@ class ChildrenSection extends ConsumerWidget {
             );
           }
           if (snap.hasError) {
-            debugPrint('Firestore stream error: ${snap.error}');
+            d('Firestore stream error: ${snap.error}');
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: 8),
               child: Text('Failed to load items'),

@@ -9,10 +9,11 @@ import 'package:rule_post/core/models/post_types.dart';
 import 'package:rule_post/core/models/types.dart' show DocView;
 import 'package:rule_post/core/widgets/filter_dropdown.dart';
 import 'package:rule_post/core/widgets/two_panel_shell.dart';
+import 'package:rule_post/core/widgets/unread_dot.dart';
+import 'package:rule_post/debug/debug.dart';
 import 'package:rule_post/navigation/nav.dart';
 import 'package:rule_post/riverpod/enquiry_filter_provider.dart';
 import 'package:rule_post/riverpod/post_providers.dart';
-import 'package:rule_post/core/widgets/unread_dot.dart';
 import 'package:rule_post/riverpod/user_detail.dart';
 
 final filterDefault = 'open';
@@ -93,7 +94,7 @@ class _LeftPaneNestedState extends ConsumerState<LeftPaneNested> {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('🔍 Building left pane');
+    d('🔍 Building left pane');
     return _EnquiriesTree(
       initiallyOpenEnquiryId: _enquiryId,
       initiallyOpenResponseId: _responseId,
@@ -116,7 +117,7 @@ class _EnquiriesTree extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    debugPrint('🔍 Building enquiries list');
+    d('🔍 Building enquiries list');
     final filter = ref.watch(enquiryFilterProvider);
     final itemsAsync = ref.watch(
       combinedEnquiriesProvider((statusFilter: filter.status))
@@ -228,7 +229,7 @@ class _ResponsesBranch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('🔍 Building responses list');
+    d('🔍 Building responses list');
     final q = FirebaseFirestore.instance
         .collection('enquiries')
         .doc(enquiryId)
@@ -242,7 +243,7 @@ class _ResponsesBranch extends StatelessWidget {
       builder: (context, snap) {
         if (snap.hasError) {
           final error = snap.error.toString();
-          debugPrint('❌ Firestore query error: $error');
+          d('❌ Firestore query error: $error');
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 8),
             child: Text('Failed to load responses'),

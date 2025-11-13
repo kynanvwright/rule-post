@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'package:rule_post/core/widgets/app_banner.dart';
 import 'package:rule_post/core/widgets/screen_width.dart';
+import 'package:rule_post/debug/debug.dart';
 
 
 // used to wrap the whole app, providing borders, background, and and an 'appy' visual style
@@ -42,7 +43,7 @@ class AppScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('🔍 AppScaffold rebuild');
+    d('🔍 AppScaffold rebuild');
     final width = MediaQuery.of(context).size.width;
     final bp = getBreakpoint(width);
 

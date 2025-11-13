@@ -1,6 +1,8 @@
 // flutter_app/lib/core/widgets/two_panel_shell.dart
 import 'package:flutter/material.dart';
 
+import 'package:rule_post/debug/debug.dart';
+
 
 /// Two-pane layout with four explicit slots (left/right headers + contents).
 /// Headers are forced to the same height so dividers and content align nicely.
@@ -96,7 +98,7 @@ class _TwoPaneFourSlotState extends State<TwoPaneFourSlot> {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('🔍 TwoPaneShell rebuild');
+    d('🔍 TwoPaneShell rebuild');
     return LayoutBuilder(
       builder: (context, constraints) {
         final totalW = constraints.maxWidth;

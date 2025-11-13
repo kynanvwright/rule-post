@@ -12,6 +12,7 @@ import 'package:rule_post/core/buttons/mark_unread_button.dart';
 import 'package:rule_post/core/widgets/rules_committee_panel.dart';
 import 'package:rule_post/core/models/post_types.dart';
 import 'package:rule_post/core/widgets/get_stage_length.dart';
+import 'package:rule_post/debug/debug.dart' as debug;
 import 'package:rule_post/riverpod/doc_providers.dart';
 import 'package:rule_post/riverpod/read_receipts.dart';
 import 'package:rule_post/riverpod/user_detail.dart';
@@ -66,7 +67,7 @@ class _EnquiryDetailPageState extends ConsumerState<EnquiryDetailPage> {
           isRC ? 'Competitor response window currently open' :
           !d['isOpen'] ? 'Enquiry closed' : 'Responses currently closed';
 
-        debugPrint("attachments: $attachments");
+        debug.d("attachments: $attachments");
 
         return DetailScaffold(
           headerLines: [title],

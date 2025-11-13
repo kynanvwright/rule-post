@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:rule_post/api/notification_api.dart';
+import 'package:rule_post/debug/debug.dart';
 import 'package:rule_post/riverpod/user_detail.dart';
 
 
@@ -44,7 +45,7 @@ class _EmailNotificationsTileState
       onChanged: _busy
           ? null
           : (next) async {
-              debugPrint('[EmailNotificationsTile] toggle -> $next');
+              d('[EmailNotificationsTile] toggle -> $next');
               setState(() {
                 _busy = true;
                 _optimistic = next; // optimistic UI
