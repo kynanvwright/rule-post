@@ -1,6 +1,9 @@
 // flutter_app/lib/core/models/enquiry_status_filter.dart
 import 'package:flutter/material.dart';
 
+
+// The classes in this file help with filtering of the left pane
+
 // 1. Define the allowed filters
 sealed class EnquiryStatusFilter {
   const EnquiryStatusFilter();

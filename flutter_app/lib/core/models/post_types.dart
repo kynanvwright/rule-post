@@ -1,6 +1,8 @@
-// lib/core/models/post_types.dart
+// flutter_app/lib/core/models/post_types.dart
 
 
+// allows for easy switching for string inputs between post types
+// TODO: should check through app and use this more consistently
 enum PostType {
   enquiry('enquiry', 'enquiries', 'enquiries_temp'),
   response('response', 'responses', 'responses_temp'),

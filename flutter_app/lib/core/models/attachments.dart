@@ -1,3 +1,8 @@
+// flutter_app/lib/core/models/attachments.dart
+
+
+// temporary attachment structure used to upload to temporary storage location
+//   this allows for errors to be caught by the frontend before the backend createPost function runs
 class TempAttachment {
   final String name;
   final String storagePath;
@@ -30,6 +35,7 @@ class TempAttachment {
 }
 
 
+// structure used to pass relevant information to backend function for attachment edits
 class EditAttachmentMap {
   bool add;
   bool remove;

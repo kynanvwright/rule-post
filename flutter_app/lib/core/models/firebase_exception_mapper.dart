@@ -4,6 +4,9 @@ import 'package:cloud_functions/cloud_functions.dart';
 
 import 'package:rule_post/core/widgets/app_exception.dart';
 
+
+// claissifies errors from Firebase Functions into app-specific exceptions
+//   can give varied options for handling different errors if required
 AppException mapFunctionsError(FirebaseFunctionsException e) {
   switch (e.code) {
     case 'not-found':        return NotFound(e.message);

@@ -1,10 +1,11 @@
-// lib/core/models/post_payloads.dart
+// flutter_app/lib/core/models/post_payloads.dart
 import 'package:flutter/foundation.dart';
 
 import 'package:rule_post/core/models/attachments.dart';
 import 'package:rule_post/core/models/post_types.dart';
 
 
+// Immutable structure used to pass data to backend functions for creating/editing posts.
 @immutable
 final class PostPayload {
   final PostType postType;

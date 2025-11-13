@@ -1,4 +1,4 @@
-//flutter_app/lib/models/widgets/types.dart
+//flutter_app/lib/core/models/widgets/types.dart
 import 'package:flutter/material.dart';
 
 import 'package:rule_post/core/models/attachments.dart' show TempAttachment;
