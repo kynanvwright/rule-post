@@ -7,7 +7,7 @@ import 'package:rule_post/core/models/types.dart' show CreateMemberInput, TeamUs
 import 'package:rule_post/riverpod/team_members_provider.dart' show teamMembersProvider;
 
 
-// ───────────────────────── Widget ────────────────────────
+// Panel for the designated team admin to manage team members
 class TeamAdminPanel extends ConsumerWidget {
   const TeamAdminPanel({super.key});
 
@@ -81,7 +81,7 @@ class TeamAdminPanel extends ConsumerWidget {
   }
 }
 
-// ────────────────────── Parts: Members List ──────────────────────
+// Shows which users belong to the tead admin's team
 class _MembersList extends ConsumerWidget {
   const _MembersList(this.members);
   final List<TeamUser> members;

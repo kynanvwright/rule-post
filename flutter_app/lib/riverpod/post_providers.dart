@@ -1,11 +1,11 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/widgets/doc_view.dart';
 import 'post_streams.dart';
 import 'enquiry_refresh_signal.dart';
 import '../../riverpod/user_detail.dart';
 import '../core/models/enquiry_status_filter.dart';
+import 'package:rule_post/core/models/types.dart' show DocView;
 
 
 // 1) Public (no auth)

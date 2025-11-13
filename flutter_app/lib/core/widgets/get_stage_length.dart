@@ -2,7 +2,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 
-// helper to return current stageLength
+// helper to return current stageLength for admin changeStageLength function
 Future<int> getStageLength(String enquiryId) async {
   final doc = await FirebaseFirestore.instance.collection('enquiries').doc(enquiryId).get();
   if (doc.exists) {

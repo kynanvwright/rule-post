@@ -1,10 +1,11 @@
-// app_scaffold.dart
+// flutter_app/lib/core/widgets/app_scaffold.dart
 import 'package:flutter/material.dart';
 
-import 'app_banner.dart';
-import 'screen_width.dart';
+import 'package:rule_post/core/widgets/app_banner.dart';
+import 'package:rule_post/core/widgets/screen_width.dart';
 
 
+// used to wrap the whole app, providing borders, background, and and an 'appy' visual style
 class AppScaffold extends StatelessWidget {
   const AppScaffold({
     super.key,

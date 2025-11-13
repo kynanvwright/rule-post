@@ -1,10 +1,13 @@
+// flutter_app/lib/core/widgets/right_pane_header.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'breadcrumb_bar.dart';
-import '../buttons/back_button.dart';// 👈 import it
+import 'package:rule_post/core/buttons/back_button.dart';
+import 'package:rule_post/core/widgets/breadcrumb_bar.dart';
 
+
+// Sits on top of the detail pages in the right pane, shows back button + breadcrumb
 class RightPaneHeader extends ConsumerWidget {
   const RightPaneHeader({
     super.key,

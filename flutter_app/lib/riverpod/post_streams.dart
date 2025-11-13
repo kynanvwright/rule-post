@@ -1,8 +1,8 @@
 import 'package:rxdart/rxdart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
-import '../../core/widgets/doc_view.dart';
 import '../core/models/enquiry_status_filter.dart';
+import 'package:rule_post/core/models/types.dart' show DocView;
 
 final db = FirebaseFirestore.instance;
 

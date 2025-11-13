@@ -6,7 +6,6 @@ import 'package:rule_post/auth/widgets/auth_check.dart' show ensureFreshAuth;
 import 'package:rule_post/content/widgets/progress_dialog.dart';
 import 'package:rule_post/core/models/firebase_exception_mapper.dart';
 import 'package:rule_post/core/models/types.dart' show Json;
-import 'package:rule_post/core/widgets/app_exception.dart';
 
 
 // generic wrapper for apis:

@@ -1,10 +1,12 @@
+// flutter_app/lib/core/widgets/rules_committee_panel.dart
 import 'package:flutter/material.dart';
 
-import '../../content/widgets/prompt_stage_length.dart';
-import '../../api/admin_apis.dart';
-import '../models/types.dart';
+import 'package:rule_post/api/admin_apis.dart';
+import 'package:rule_post/content/widgets/prompt_stage_length.dart';
+import 'package:rule_post/core/models/types.dart';
 
 
+// Class to create consistency in the admin buttons that live in the Rules Committee Panel
 class AdminAction {
   const AdminAction({
     required this.label,
@@ -222,24 +224,7 @@ class _GuardedActionButton extends StatelessWidget {
       args = null; // no custom data
     }
 
-    // 3. Actually run the action with the gathered args.
-    // if (!context.mounted) return;
-    // await showProgressFlow(
-    //   context: context,
-    //   steps: const [
-    //     'Checking user authentication…',
-    //     'Running admin function…',
-    //     'Verifying results…',
-    //   ],
-    //   successTitle: '${action.label} Success',
-    //   successMessage: 'Your function succeeded!',
-    //   failureTitle: '${action.label} Failure',
-    //   failureMessage: 'Check the google cloud logs explorer for details.',
-    //   action: () async {
-    //     await ensureFreshAuth();
-    //     await action.runWithArgs(args);
-    //   },
-    // );
+    // 3. Run the action with the gathered args (if any).
     await action.runWithArgs(args);
     return;
   }

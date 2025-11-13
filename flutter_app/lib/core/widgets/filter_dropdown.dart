@@ -2,10 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../riverpod/enquiry_filter_provider.dart';
-import '../models/enquiry_status_filter.dart';
+import 'package:rule_post/core/models/enquiry_status_filter.dart';
+import 'package:rule_post/riverpod/enquiry_filter_provider.dart';
 
 
+// A dropdown menu widget for filtering enquiries in the left pane by status and searched text.
 class FilterDropdown extends ConsumerStatefulWidget {
   const FilterDropdown({
     super.key,

@@ -1,4 +1,5 @@
 //flutter_app/lib/core/models/widgets/types.dart
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import 'package:rule_post/core/models/attachments.dart' show TempAttachment;
@@ -44,4 +45,13 @@ class ClaimSpec {
   final String label;
   final IconData icon;
   const ClaimSpec({required this.key, required this.label, required this.icon});
+}
+
+
+class DocView {
+  final String id;
+  final DocumentReference<Map<String, dynamic>> reference;
+  final Map<String, dynamic> _data;
+  DocView(this.id, this.reference, this._data);
+  Map<String, dynamic> data() => _data;
 }

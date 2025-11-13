@@ -1,3 +1,6 @@
+// flutter_app/lib/core/widgets/screen_width.dart
+
+// Determine screen width breakpoint for responsive design
 enum Breakpoint { phone, tablet, desktop }
 
 Breakpoint getBreakpoint(double width) {

@@ -1,4 +1,6 @@
+// flutter_app/lib/core/widgets/two_panel_shell.dart
 import 'package:flutter/material.dart';
+
 
 /// Two-pane layout with four explicit slots (left/right headers + contents).
 /// Headers are forced to the same height so dividers and content align nicely.

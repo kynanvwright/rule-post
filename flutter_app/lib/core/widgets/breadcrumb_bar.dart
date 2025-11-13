@@ -1,10 +1,13 @@
-// breadcrumb_bar.dart
+// flutter_app/lib/core/widgets/breadcrumb_bar.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../navigation/nav.dart';
-import '../../riverpod/post_alias.dart';
 
+import 'package:rule_post/navigation/nav.dart';
+import 'package:rule_post/riverpod/post_alias.dart';
+
+
+// Used to indicate the currently viewed post, and navigate to other posts
 class BreadcrumbBar extends ConsumerWidget {
   const BreadcrumbBar({super.key, required this.state});
   final GoRouterState state;

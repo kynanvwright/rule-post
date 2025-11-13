@@ -1,3 +1,4 @@
+// flutter_app/lib/core/widgets/left_pane_nested.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -5,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:rule_post/core/buttons/new_post_button.dart' show NewPostButton;
 import 'package:rule_post/core/models/post_types.dart';
-import 'package:rule_post/core/widgets/doc_view.dart';
+import 'package:rule_post/core/models/types.dart' show DocView;
 import 'package:rule_post/core/widgets/filter_dropdown.dart';
 import 'package:rule_post/core/widgets/two_panel_shell.dart';
 import 'package:rule_post/navigation/nav.dart';
@@ -17,7 +18,7 @@ import 'package:rule_post/riverpod/user_detail.dart';
 final filterDefault = 'open';
 
 /// ─────────────────────────────────────────────────────────────────────────
-/// Left header: title + status chips + debounced search + "New" button
+/// Left header: title + "New" and "Filter" buttons
 /// ─────────────────────────────────────────────────────────────────────────
 class LeftPaneHeader extends ConsumerWidget {
   const LeftPaneHeader({super.key, this.title = 'Rule Enquiries'});
@@ -76,7 +77,7 @@ class LeftPaneHeader extends ConsumerWidget {
 
 
 /// ─────────────────────────────────────────────────────────────────────────
-/// LeftPaneNested entry point (unchanged API)
+/// LeftPaneNested: Shows enquiries and responses, used for navigation
 /// ─────────────────────────────────────────────────────────────────────────
 class LeftPaneNested extends ConsumerStatefulWidget {
   const LeftPaneNested({super.key, required this.state});
@@ -93,7 +94,6 @@ class _LeftPaneNestedState extends ConsumerState<LeftPaneNested> {
   @override
   Widget build(BuildContext context) {
     debugPrint('🔍 Building left pane');
-    // 👇 No more URL-derived filters here
     return _EnquiriesTree(
       initiallyOpenEnquiryId: _enquiryId,
       initiallyOpenResponseId: _responseId,
@@ -102,7 +102,7 @@ class _LeftPaneNestedState extends ConsumerState<LeftPaneNested> {
 }
 
 /// ─────────────────────────────────────────────────────────────────────────
-/// Enquiries list (applies filters + search)
+/// Enquiries list (within the LeftPaneNested) with expandable responses
 /// ─────────────────────────────────────────────────────────────────────────
 
 class _EnquiriesTree extends ConsumerWidget {
@@ -167,7 +167,6 @@ class _EnquiriesTree extends ConsumerWidget {
             final n = (data['enquiryNumber'] ?? 'Unnumbered').toString();
             final isOpen = id == initiallyOpenEnquiryId;
             final isPublished = data['isPublished'] ?? false;
-            // final isUnread = ref.watch(isUnreadEnquiryProvider(d.id)).maybeWhen(data: (v) => v, orElse: () => false);
 
             return ExpansionTile(
               key: ValueKey('enq_${id}_$isOpen'),
@@ -216,7 +215,7 @@ class _EnquiriesTree extends ConsumerWidget {
 
 
 /// ─────────────────────────────────────────────────────────────────────────
-/// Responses for a given enquiry
+/// Responses which expand under an enquiry (within LeftPaneNested)
 /// ─────────────────────────────────────────────────────────────────────────
 class _ResponsesBranch extends StatelessWidget {
   const _ResponsesBranch({
@@ -346,6 +345,7 @@ class _RowTile extends StatelessWidget {
 }
 
 
+// used when there are no responses under an enquiry, and that enquiry is expanded
 Widget leafInfo(String text, BuildContext context) => Padding(
   padding: const EdgeInsets.only(
     // left: 24, 

@@ -155,13 +155,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 Future<void> main() async {
   // temp debug
   // ---
-    installFilteredBuildLogger(allow: {
-    'AppScaffold',
-    'TwoPaneShell',
-    'LeftPaneNested',
-    '_EnquiriesTree',
-    '_EnquiriesList',
-  });
+  //   installFilteredBuildLogger(allow: {
+  //   'AppScaffold',
+  //   'TwoPaneShell',
+  //   'LeftPaneNested',
+  //   '_EnquiriesTree',
+  //   '_EnquiriesList',
+  // });
   // ---
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
@@ -228,27 +228,27 @@ class MyApp extends ConsumerWidget {
   }
 }
 
-void installFilteredBuildLogger({Set<String>? allow}) {
-  debugPrintRebuildDirtyWidgets = true;
+// void installFilteredBuildLogger({Set<String>? allow}) {
+//   debugPrintRebuildDirtyWidgets = true;
 
-  final orig = debugPrint;
-  debugPrint = (String? msg, {int? wrapWidth}) {
-    if (msg == null) return;
-    var emitted = false;
+//   final orig = debugPrint;
+//   debugPrint = (String? msg, {int? wrapWidth}) {
+//     if (msg == null) return;
+//     var emitted = false;
 
-    for (final raw in msg.split('\n')) {
-      final line = raw.trimLeft();
-      final m = RegExp(r'^(Building|Rebuilding)\s+([^\s\(\[]+)').firstMatch(line);
-      if (m != null) {
-        final verb = m.group(1)!;
-        final name = m.group(2)!;
-        if (allow == null || allow.contains(name)) {
-          debugPrint('🔁 $verb $name'); // plain print => browser console
-        }
-        emitted = true; // swallow this noisy line
-      }
-    }
+//     for (final raw in msg.split('\n')) {
+//       final line = raw.trimLeft();
+//       final m = RegExp(r'^(Building|Rebuilding)\s+([^\s\(\[]+)').firstMatch(line);
+//       if (m != null) {
+//         final verb = m.group(1)!;
+//         final name = m.group(2)!;
+//         if (allow == null || allow.contains(name)) {
+//           debugPrint('🔁 $verb $name'); // plain print => browser console
+//         }
+//         emitted = true; // swallow this noisy line
+//       }
+//     }
 
-    if (!emitted) orig(msg, wrapWidth: wrapWidth); // keep other logs
-  };
-}
+//     if (!emitted) orig(msg, wrapWidth: wrapWidth); // keep other logs
+//   };
+// }

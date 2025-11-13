@@ -7,7 +7,7 @@ import 'package:rule_post/content/widgets/parse_hex_colour.dart';
 import 'package:rule_post/content/widgets/section_card.dart';
 import 'package:rule_post/core/buttons/new_post_button.dart' show NewPostButton;
 import 'package:rule_post/core/models/post_types.dart';
-import 'package:rule_post/core/widgets/doc_view.dart';
+import 'package:rule_post/core/models/types.dart' show DocView;
 import 'package:rule_post/navigation/nav.dart';
 import 'package:rule_post/riverpod/post_streams.dart';
 import 'package:rule_post/riverpod/unread_post_provider.dart';

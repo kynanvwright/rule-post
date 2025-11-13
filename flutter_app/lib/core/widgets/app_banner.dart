@@ -1,20 +1,23 @@
-// app_scaffold.dart
+// flutter_app/lib/core/widgets/app_banner.dart
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
-import '../../auth/widgets/auth_service.dart';
-import '../../auth/widgets/login_dialog.dart';
-import '../../navigation/nav.dart';
-// import '../../riverpod/read_receipts.dart';
-// import '../../riverpod/unread_post_provider.dart';
-import '../../riverpod/user_detail.dart';
-import 'colour_helper.dart';
-import 'screen_width.dart';
-import '../buttons/notifications_menu_button.dart';
-// import 'unread_button.dart';
+import 'package:rule_post/auth/widgets/auth_service.dart';
+import 'package:rule_post/auth/widgets/login_dialog.dart';
+import 'package:rule_post/core/widgets/colour_helper.dart';
+import 'package:rule_post/core/buttons/notifications_menu_button.dart';
+import 'package:rule_post/core/widgets/screen_width.dart';
+import 'package:rule_post/navigation/nav.dart';
+import 'package:rule_post/riverpod/user_detail.dart';
 
 
+// Banner used at the top of most screens in the app
+// Includes the following buttons:
+// - Home (cup logo & title)
+// - Help/FAQ
+// - Unread posts
+// - Account (sign in/out, profile)
 class AppBanner extends ConsumerWidget {
   const AppBanner({
     super.key,
