@@ -11,6 +11,7 @@ import 'package:rule_post/core/widgets/filter_dropdown.dart';
 import 'package:rule_post/core/widgets/two_panel_shell.dart';
 import 'package:rule_post/core/widgets/unread_dot.dart';
 import 'package:rule_post/debug/debug.dart';
+import 'package:rule_post/debug/build_logger.dart';
 import 'package:rule_post/navigation/nav.dart';
 import 'package:rule_post/riverpod/enquiry_filter_provider.dart';
 import 'package:rule_post/riverpod/post_providers.dart';
@@ -80,7 +81,7 @@ class LeftPaneHeader extends ConsumerWidget {
 /// ─────────────────────────────────────────────────────────────────────────
 /// LeftPaneNested: Shows enquiries and responses, used for navigation
 /// ─────────────────────────────────────────────────────────────────────────
-class LeftPaneNested extends ConsumerStatefulWidget {
+class LeftPaneNested extends ConsumerStatefulWidget{
   const LeftPaneNested({super.key, required this.state});
   final GoRouterState state;
 
@@ -88,13 +89,13 @@ class LeftPaneNested extends ConsumerStatefulWidget {
   ConsumerState<LeftPaneNested> createState() => _LeftPaneNestedState();
 }
 
-class _LeftPaneNestedState extends ConsumerState<LeftPaneNested> {
+class _LeftPaneNestedState extends ConsumerState<LeftPaneNested> with StateLogger<LeftPaneNested> {
   String? get _enquiryId => widget.state.pathParameters['enquiryId'];
   String? get _responseId => widget.state.pathParameters['responseId'];
 
   @override
   Widget build(BuildContext context) {
-    d('🔍 Building left pane');
+    logBuild();
     return _EnquiriesTree(
       initiallyOpenEnquiryId: _enquiryId,
       initiallyOpenResponseId: _responseId,
@@ -106,7 +107,7 @@ class _LeftPaneNestedState extends ConsumerState<LeftPaneNested> {
 /// Enquiries list (within the LeftPaneNested) with expandable responses
 /// ─────────────────────────────────────────────────────────────────────────
 
-class _EnquiriesTree extends ConsumerWidget {
+class _EnquiriesTree extends ConsumerWidget with BuildLogger{
   const _EnquiriesTree({
     required this.initiallyOpenEnquiryId,
     required this.initiallyOpenResponseId,
@@ -117,7 +118,7 @@ class _EnquiriesTree extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    d('🔍 Building enquiries list');
+    logBuild();
     final filter = ref.watch(enquiryFilterProvider);
     final itemsAsync = ref.watch(
       combinedEnquiriesProvider((statusFilter: filter.status))
@@ -218,7 +219,7 @@ class _EnquiriesTree extends ConsumerWidget {
 /// ─────────────────────────────────────────────────────────────────────────
 /// Responses which expand under an enquiry (within LeftPaneNested)
 /// ─────────────────────────────────────────────────────────────────────────
-class _ResponsesBranch extends StatelessWidget {
+class _ResponsesBranch extends StatelessWidget with BuildLogger {
   const _ResponsesBranch({
     required this.enquiryId,
     required this.initiallyOpenResponseId,
@@ -229,7 +230,7 @@ class _ResponsesBranch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    d('🔍 Building responses list');
+    logBuild();
     final q = FirebaseFirestore.instance
         .collection('enquiries')
         .doc(enquiryId)

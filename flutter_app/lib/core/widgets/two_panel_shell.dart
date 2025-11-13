@@ -1,7 +1,7 @@
 // flutter_app/lib/core/widgets/two_panel_shell.dart
 import 'package:flutter/material.dart';
 
-import 'package:rule_post/debug/debug.dart';
+import 'package:rule_post/debug/build_logger.dart';
 
 
 /// Two-pane layout with four explicit slots (left/right headers + contents).
@@ -76,7 +76,7 @@ class TwoPaneFourSlot extends StatefulWidget {
   State<TwoPaneFourSlot> createState() => _TwoPaneFourSlotState();
 }
 
-class _TwoPaneFourSlotState extends State<TwoPaneFourSlot> {
+class _TwoPaneFourSlotState extends State<TwoPaneFourSlot> with StateLogger{
   late double _leftWidth;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -98,7 +98,7 @@ class _TwoPaneFourSlotState extends State<TwoPaneFourSlot> {
 
   @override
   Widget build(BuildContext context) {
-    d('🔍 TwoPaneShell rebuild');
+    logBuild();
     return LayoutBuilder(
       builder: (context, constraints) {
         final totalW = constraints.maxWidth;
