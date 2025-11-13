@@ -1,6 +1,9 @@
+// flutter_app/lib/content/widgets/status_card.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+
+// A card showing the current enquiry stage, with start/end times and next stage info
 class StatusCard extends StatelessWidget {
   const StatusCard({
     super.key,
@@ -137,4 +140,3 @@ class StatusCard extends StatelessWidget {
     return '$sign$h:$m';
   }
 }
-

@@ -1,5 +1,7 @@
+// flutter_app/lib/content/widgets/progress_dialog.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
+
 
 /// Shows a progress dialog that:
 ///  - cycles through [steps] every [stepInterval]

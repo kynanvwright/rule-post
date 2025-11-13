@@ -1,10 +1,12 @@
+// flutter_app/lib/content/widgets/detail_scaffold.dart
 import 'package:flutter/material.dart';
 
-import '../widgets/header_block.dart';
-import '../widgets/section_card.dart';
-import '../widgets/status_card.dart';
+import 'package:rule_post/content/widgets/header_block.dart';
+import 'package:rule_post/content/widgets/section_card.dart';
+import 'package:rule_post/content/widgets/status_card.dart';
 
-/// -------------------- SHARED DETAIL SCAFFOLD (Card-based) --------------------
+
+// Used in the enquiry and response detail pages
 class DetailScaffold extends StatelessWidget {
   const DetailScaffold({
     super.key,

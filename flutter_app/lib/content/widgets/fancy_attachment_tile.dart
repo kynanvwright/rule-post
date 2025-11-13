@@ -1,9 +1,10 @@
+// flutter_app/lib/content/widgets/fancy_attachment_tile.dart
+import 'dart:ui_web' as ui_web;           // platformViewRegistry for web
+import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher_string.dart';
-import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:web/web.dart' as web;      // DOM bindings (no dart:html)
-import 'dart:ui_web' as ui_web;           // platformViewRegistry for web
 
 /// Drop-in attachment tile that supports inline preview for PDFs and Word docs.
 /// - PDFs render directly in an <iframe>.
@@ -356,4 +357,3 @@ class _InlineDocIFrameState extends State<_InlineDocIFrame> {
     );
   }
 }
-

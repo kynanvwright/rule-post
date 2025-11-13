@@ -1,6 +1,8 @@
+// flutter_app/lib/content/widgets/list_tile.dart
 import 'package:flutter/material.dart';
 
-/// -------------------- COLLAPSIBLE TEXT (for comments) --------------------
+
+// special tile for comments, which can be expanded/collapsed if the text is long
 class ListTileCollapsibleText extends StatefulWidget {
   const ListTileCollapsibleText(
     this.text, {

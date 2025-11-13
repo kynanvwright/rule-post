@@ -2,19 +2,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/widgets/doc_view.dart';
-import '../../navigation/nav.dart';
-import '../../riverpod/post_streams.dart';
-import '../../riverpod/user_detail.dart';
-import '../../riverpod/unread_post_provider.dart';
-import 'list_tile.dart';
-import '../../core/buttons/new_post_button.dart' show NewPostButton;
-import 'parse_hex_colour.dart';
-import 'section_card.dart';
+import 'package:rule_post/content/widgets/list_tile.dart';
+import 'package:rule_post/content/widgets/parse_hex_colour.dart';
+import 'package:rule_post/content/widgets/section_card.dart';
+import 'package:rule_post/core/buttons/new_post_button.dart' show NewPostButton;
 import 'package:rule_post/core/models/post_types.dart';
+import 'package:rule_post/core/widgets/doc_view.dart';
+import 'package:rule_post/navigation/nav.dart';
+import 'package:rule_post/riverpod/post_streams.dart';
+import 'package:rule_post/riverpod/unread_post_provider.dart';
+import 'package:rule_post/riverpod/user_detail.dart';
 
 
-/// -------------------- CHILDREN SECTION (Responses / Comments) --------------------
+// Used in the detail pages to show tiles of the child posts (responses or comments).
 class ChildrenSection extends ConsumerWidget {
   const ChildrenSection({
     super.key,
@@ -101,10 +101,8 @@ class ChildrenSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // 1) Read any deps ONCE (used for the key)
     final teamId = ref.watch(teamProvider);
-
     // 2) Build the stream ONCE (don’t call this again for the key)
     final stream = builder(context, ref);
-
     // 3) Use a stable key that DOESN’T include the stream
     final keyForList = ValueKey<String>('$title|$teamId');
 

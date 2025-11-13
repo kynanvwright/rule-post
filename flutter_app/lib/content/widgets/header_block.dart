@@ -1,5 +1,8 @@
+// flutter_app/lib/content/widgets/header_block.dart
 import 'package:flutter/material.dart';
 
+
+// header content for the enquiry and response detail pages
 class HeaderBlock extends StatelessWidget {
   const HeaderBlock({
     super.key,

@@ -1,7 +1,8 @@
-
+// flutter_app/lib/content/widgets/section_card.dart
 import 'package:flutter/material.dart';
 
-/// -------------------- PRESENTATION HELPERS --------------------
+
+// used in detail scaffold to get a consistent card style
 class SectionCard extends StatelessWidget {
   const SectionCard({
     super.key,

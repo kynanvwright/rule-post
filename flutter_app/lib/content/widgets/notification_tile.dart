@@ -1,10 +1,12 @@
-//content/widgets/notification_tile.dart
+// flutter_app/lib/content/widgets/notification_tile.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:rule_post/api/notification_api.dart';
 import 'package:rule_post/riverpod/user_detail.dart';
 
+
+// Allows email notifications to be toggled on/off
 class EmailNotificationsTile extends ConsumerStatefulWidget {
   const EmailNotificationsTile({super.key});
 

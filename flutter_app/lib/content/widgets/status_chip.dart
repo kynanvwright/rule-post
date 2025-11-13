@@ -1,6 +1,8 @@
+// flutter_app/lib/content/widgets/status_chip.dart
 import 'package:flutter/material.dart';
 
 
+// used in the detail page header block to highlight interesting post info
 class StatusChip extends StatelessWidget {
   const StatusChip(this.label, {super.key, this.color});
   final String label;

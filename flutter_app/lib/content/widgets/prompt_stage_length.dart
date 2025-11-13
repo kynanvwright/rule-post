@@ -1,8 +1,9 @@
-// flutter_app/lib/content/prompt_stage_length.dart
+// flutter_app/lib/content/widgets/prompt_stage_length.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 
+// Used in rules committee function to alter stage lengths
 Future<int?> promptStageLength(
   BuildContext context, {
   required Future<int> Function() loadCurrent,
