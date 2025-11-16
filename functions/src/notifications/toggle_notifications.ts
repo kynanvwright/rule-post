@@ -6,7 +6,7 @@ import { getFirestore } from "firebase-admin/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 
 /**
- * Callable v2 function: setEmailNotificationsOn
+ * Callable v2 function: toggleEmailNotifications
  * - Only the signed-in user can update their own setting
  * - Conditions enforced here:
  *     1) user doc must exist

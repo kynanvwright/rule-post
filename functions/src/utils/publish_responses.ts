@@ -29,14 +29,14 @@ export async function publishResponses(
   const publishedAt = FieldValue.serverTimestamp();
   const enquiryData = enquiryDoc.data();
   const enquiryRef = enquiryDoc.ref;
-  const roundNumber = enquiryData?.roundNumber ?? 99;
+  const roundNumber = (enquiryData?.roundNumber ?? 99) + (isRcResponse ? 1 : 0);
 
   // 1) Get responses
   const unpublishedSnap = await enquiryRef
     .collection("responses")
     .where("isPublished", "==", false)
     .where("fromRC", "==", isRcResponse)
-    .where("roundNumber", "==", roundNumber + (isRcResponse ? 1 : 0))
+    .where("roundNumber", "==", roundNumber)
     .get();
   // Copy docs into a mutable array
   const shuffled = [...unpublishedSnap.docs];
@@ -58,11 +58,13 @@ export async function publishResponses(
     }
   }
   // 2) Edit response documents to publish them
+  let responseNumber = 0;
   for (let i = 0; i < shuffled.length; i++) {
     // 2a) publish response document
+    responseNumber = isRcResponse ? 0 : i + 1;
     writer.update(shuffled[i].ref, {
       isPublished: true,
-      responseNumber: isRcResponse ? 0 : i + 1,
+      responseNumber,
       publishedAt,
     });
     // 2b) make attachments readble to all
@@ -86,7 +88,7 @@ export async function publishResponses(
     await createUnreadForAllUsers(
       writer,
       "response",
-      `Response ${shuffled[i].data()?.roundNumber}.${shuffled[i].data()?.responseNumber}`,
+      `Response ${roundNumber}.${responseNumber}`,
       shuffled[i].ref.id,
       true,
       {

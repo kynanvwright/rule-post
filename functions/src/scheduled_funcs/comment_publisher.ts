@@ -75,12 +75,14 @@ export const commentPublisher = onSchedule(
           .get();
         if (unpublishedCommentsSnap.empty) continue;
 
+        let commentNumber = 0;
         for (const [i, c] of unpublishedCommentsSnap.docs.entries()) {
           // publish comment
+          commentNumber = i + 1;
           writer.update(c.ref, {
             isPublished: true,
-            publishedAt: publishedAt,
-            commentNumber: i + 1,
+            publishedAt,
+            commentNumber,
           });
           totalCommentsPublished += 1;
 
@@ -98,7 +100,7 @@ export const commentPublisher = onSchedule(
           await createUnreadForAllUsers(
             writer,
             "comment",
-            `Comment #${c.data().commentNumber}`,
+            `Comment #${commentNumber}`,
             c.ref.id,
             true,
             {
