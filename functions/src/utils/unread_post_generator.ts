@@ -175,15 +175,78 @@ export async function createUnreadForAllUsers<T extends PostType>(
  * @param docId        the post Id
  * @returns
  */
-export async function deleteUnreadForAllUsers(docId: string): Promise<void> {
+export async function deleteUnreadForAllUsers(
+  docId: string,
+  postType: PostType,
+): Promise<void> {
   const q: FirebaseFirestore.Query = db.collection("user_data");
 
   const usersSnap = await q.select().get();
   logger.info(`[deleteUnreadForAllUsers] userCount=${usersSnap.size}`);
 
-  // Enqueue writes and flush every N to apply backpressure
+  // Loop through users and delete the unreadPost doc
   for (const userDoc of usersSnap.docs) {
     const ref = userDoc.ref.collection("unreadPosts").doc(docId);
+    const parentId = (await ref.get()).get("parentId");
+
+    if (postType == "comment") {
+      // check if parentDoc is unread
+      const responseRef = userDoc.ref.collection("unreadPosts").doc(parentId);
+      const responseSnap = await responseRef.get();
+      const responseIsUnread = responseSnap.get("isUnread") === true;
+
+      // check if this is the only child of the parent response
+      const siblingCount = await userDoc.ref
+        .collection("unreadPosts")
+        .where("postType", "==", "comment")
+        .where("parentId", "==", parentId)
+        .get()
+        .then((snap) => snap.size);
+
+      // check if grandparentDoc is unread
+      const grandparentId = responseSnap.get("parentId");
+      const enquiryRef = userDoc.ref
+        .collection("unreadPosts")
+        .doc(grandparentId);
+      const enquirySnap = await enquiryRef.get();
+      const enquiryIsUnread = enquirySnap.get("isUnread") === true;
+
+      // check if the response is the only child of the grandparent enquiry
+      const piblingCount = await userDoc.ref
+        .collection("unreadPosts")
+        .where("postType", "==", "response")
+        .where("parentId", "==", grandparentId)
+        .get()
+        .then((snap) => snap.size);
+
+      // If this was the only child, and the response wasn't unread itself, delete the parent
+      if (siblingCount == 1 && parentId && !responseIsUnread) {
+        await responseRef.delete();
+        // If the parent was the only child of the enquiry, and the enquiry wasn't unread itself, delete the grandparent
+        if (piblingCount == 1 && grandparentId && !enquiryIsUnread) {
+          await enquiryRef.delete();
+        }
+      }
+    }
+    if (postType == "response") {
+      // check if parentDoc is unread
+      const enquiryRef = userDoc.ref.collection("unreadPosts").doc(parentId);
+      const enquirySnap = await enquiryRef.get();
+      const enquiryIsUnread = enquirySnap.get("isUnread") === true;
+
+      // check if this is the only child of the parent enquiry
+      const siblingCount = await userDoc.ref
+        .collection("unreadPosts")
+        .where("postType", "==", "response")
+        .where("parentId", "==", parentId)
+        .get()
+        .then((snap) => snap.size);
+
+      // If this was the only child, and the enquiry wasn't unread itself, delete the parent
+      if (siblingCount == 1 && parentId && !enquiryIsUnread) {
+        await enquiryRef.delete();
+      }
+    }
     await ref.delete();
   }
   return;

@@ -50,7 +50,7 @@ async function handleDeletion(args: {
     await deleteFolder(`enquiries/${enquiryId}/`);
 
     // delete unreadPost records
-    await deleteUnreadForAllUsers(enquiryId);
+    await deleteUnreadForAllUsers(enquiryId, "enquiry");
   } else if (kind === "response" && responseId) {
     // Delete draft record of the post
     await deleteDraftDoc(responseId);
@@ -78,7 +78,7 @@ async function handleDeletion(args: {
     await deleteFolder(path);
 
     // delete unreadPost records
-    await deleteUnreadForAllUsers(responseId);
+    await deleteUnreadForAllUsers(responseId, "response");
     // Add some logic to deal with response numbering
   } else if (kind === "comment" && commentId) {
     // Delete draft record of the post
@@ -98,7 +98,7 @@ async function handleDeletion(args: {
     await deleteFolder(path);
 
     // delete unreadPost records
-    await deleteUnreadForAllUsers(commentId);
+    await deleteUnreadForAllUsers(commentId, "comment");
     // Add some logic to deal with comment numbering
   }
 
