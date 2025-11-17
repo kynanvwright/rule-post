@@ -91,7 +91,6 @@ service cloud.firestore {
           match /meta/{doc} {
             allow read, write: if false;
           }
-          
         }
       }
     }
@@ -113,6 +112,5 @@ service cloud.firestore {
         allow read, write: if docIsUsers(uid);
       }
     }
-
   }
 }
