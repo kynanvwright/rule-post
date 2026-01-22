@@ -110,7 +110,7 @@ class _FancyAttachmentTileState extends State<FancyAttachmentTile> {
                         ? (_expanded ? 'Hide preview' : 'Show content')
                         : 'Open',
                     icon: Icon(canPreviewInline
-                        ? (_expanded ? Icons.expand_less : Icons.search)
+                        ? (_expanded ? Icons.expand_less : Icons.expand_more)
                         : Icons.open_in_new),
                     onPressed: hasUrl
                         ? () {
