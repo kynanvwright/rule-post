@@ -28,7 +28,7 @@ class HelpFaqScreen extends StatelessWidget {
           {
             "question": "How can I keep up to date with new posts?",
             "answer":
-                "Enable email notifications under your account settings to receive updates when new posts are made. Posts you haven't read yet will alos have a visual indicator, and be listed in the 'unread posts' dropdown."
+                "Enable email notifications under your account settings to receive updates when new posts are made. Posts you haven't read yet will also have a visual indicator, and be listed in the 'unread posts' dropdown."
           },
           {
             "question": "How do I get an account?",
