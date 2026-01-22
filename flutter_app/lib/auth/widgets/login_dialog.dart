@@ -31,8 +31,8 @@ class _LoginDialogState extends ConsumerState<LoginDialog> {
   final _formKeyA = GlobalKey<FormState>();
 
   final _authService = AuthService();
-  final _email = TextEditingController(text: 'kynan.wright@emiratesteamnz.com');
-  final _password = TextEditingController(text: 'test1234');
+  final _email = TextEditingController();
+  final _password = TextEditingController();
 
   bool _closed = false;
 
