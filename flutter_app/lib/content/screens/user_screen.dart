@@ -1,14 +1,15 @@
 // flutter_app/lib/content/screens/user_screen.dart
 import 'dart:convert';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:rule_post/core/widgets/team_admin_panel.dart';
 import 'package:rule_post/content/widgets/notification_tile.dart';
-import 'package:rule_post/core/models/types.dart' show ClaimSpec;
 import 'package:rule_post/core/buttons/back_button.dart';
+import 'package:rule_post/core/models/types.dart' show ClaimSpec;
+import 'package:rule_post/core/widgets/team_admin_panel.dart';
 import 'package:rule_post/riverpod/user_detail.dart';
-
 
 class ClaimsScreen extends ConsumerStatefulWidget {
   const ClaimsScreen({super.key});
@@ -17,13 +18,44 @@ class ClaimsScreen extends ConsumerStatefulWidget {
 }
 
 class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
-
   // ✅ Only show these claim keys if present (edit to taste)
   static const List<ClaimSpec> _shownClaimSpecs = [
     ClaimSpec(key: 'email', label: 'Email', icon: Icons.email),
     ClaimSpec(key: 'role', label: 'Role', icon: Icons.verified_user),
     ClaimSpec(key: 'team', label: 'Team', icon: Icons.flag),
   ];
+
+  bool _sendingReset = false;
+
+  Future<void> _sendPasswordReset(BuildContext context) async {
+    final email = FirebaseAuth.instance.currentUser?.email;
+
+    if (email == null || email.isEmpty) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Your account has no email address.')),
+      );
+      return;
+    }
+
+    setState(() => _sendingReset = true);
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Password reset email sent to $email')),
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not send reset email (${e.code}).')),
+      );
+    } finally {
+      if (mounted) setState(() => _sendingReset = false);
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -32,17 +64,16 @@ class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: Padding(
-          padding: const EdgeInsets.all(12),
+        leading: const Padding(
+          padding: EdgeInsets.all(12),
           child: BackButtonCompact(),
         ),
         title: const Text('Profile'),
-    ),
+      ),
       body: claimsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (claims) {
-
           // Build tiles only for claims that exist
           final infoTiles = _shownClaimSpecs
               .where((spec) => claims.containsKey(spec.key))
@@ -60,12 +91,14 @@ class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
             padding: const EdgeInsets.all(16),
             children: [
               // ===== User Information =====
-              Text('User Information',
-                  style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                'User Information',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: 8),
               if (infoTiles.isEmpty)
-                Card(
-                  child: const ListTile(
+                const Card(
+                  child: ListTile(
                     leading: Icon(Icons.info_outline),
                     title: Text('No visible user info'),
                     subtitle: Text(
@@ -79,20 +112,46 @@ class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
                   child: Column(children: infoTiles),
                 ),
 
+              // ===== Password Reset =====
+              const SizedBox(height: 8),
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.lock_reset),
+                  title: const Text('Reset password'),
+                  subtitle: const Text('Send a password reset email'),
+                  trailing: _sendingReset
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.chevron_right),
+                  enabled: !_sendingReset,
+                  onTap:
+                      _sendingReset ? null : () => _sendPasswordReset(context),
+                ),
+              ),
+
               const SizedBox(height: 24),
 
               // ===== Settings =====
-              Text('Settings', style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                'Settings',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: 8),
-              Card(child: EmailNotificationsTile()),
+              const Card(child: EmailNotificationsTile()),
               const SizedBox(height: 24),
 
               // ===== Team Admin panel =====
-              if (isTeamAdmin)...[
-              Text('Team Admin Panel', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              Card(child: TeamAdminPanel()),
-              const SizedBox(height: 24),
+              if (isTeamAdmin) ...[
+                Text(
+                  'Team Admin Panel',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                const Card(child: TeamAdminPanel()),
+                const SizedBox(height: 24),
               ],
             ],
           );
