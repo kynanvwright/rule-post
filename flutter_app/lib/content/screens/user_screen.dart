@@ -106,29 +106,27 @@ class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
                     ),
                     dense: true,
                   ),
+                  
                 )
-              else
-                Card(
-                  child: Column(children: infoTiles),
-                ),
-
-              // ===== Password Reset =====
-              const SizedBox(height: 8),
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.lock_reset),
-                  title: const Text('Reset password'),
-                  subtitle: const Text('Send a password reset email'),
-                  trailing: _sendingReset
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.chevron_right),
-                  enabled: !_sendingReset,
-                  onTap:
-                      _sendingReset ? null : () => _sendPasswordReset(context),
+              else Card(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ...infoTiles,
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: FilledButton.icon(
+                          onPressed: _sendingReset
+                              ? null
+                              : () => _sendPasswordReset(context),
+                          icon: const Icon(Icons.lock_reset),
+                          label: const Text('Send password reset email'),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
