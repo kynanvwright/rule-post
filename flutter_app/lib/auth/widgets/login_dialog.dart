@@ -68,7 +68,7 @@ class _LoginDialogState extends ConsumerState<LoginDialog> {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
 
       if (!mounted) return;
-      messenger.showSnackBar(SnackBar(content: Text('If account exists, password reset email sent to $email')));
+      messenger.showSnackBar(SnackBar(content: Text('Password reset email sent to $email (if account exists)')));
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       final msg = (e.code == 'too-many-requests')
