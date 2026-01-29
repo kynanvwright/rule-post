@@ -144,31 +144,26 @@ class _LoginDialogState extends ConsumerState<LoginDialog> {
                   TextFormField(
                     controller: _password,
                     obscureText: !_isPasswordVisible,
+                    textInputAction: TextInputAction.done,
+                    onEditingComplete: () => _onSignInPressed(),
                     decoration: InputDecoration(
                       labelText: 'Password',
                       hintText: 'Enter your password',
                       prefixIcon: const Icon(Icons.lock_outline_rounded),
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
-                        icon: Icon(_isPasswordVisible
-                            ? Icons.visibility_off
-                            : Icons.visibility),
-                        onPressed: () => setState(
-                            () => _isPasswordVisible = !_isPasswordVisible),
+                        icon: Icon(_isPasswordVisible ? Icons.visibility_off : Icons.visibility),
+                        onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
                       ),
                     ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter some text';
-                      }
-                      if (value.length < 6) {
-                        return 'Password must be at least 6 characters';
-                      }
+                      if (value == null || value.isEmpty) return 'Please enter some text';
+                      if (value.length < 6) return 'Password must be at least 6 characters';
                       return null;
                     },
                     autofillHints: const [AutofillHints.password],
-                    onFieldSubmitted: (_) => _onSignInPressed(),
                   ),
+
 
                   // Remember me
                   const SizedBox(height: 8),
