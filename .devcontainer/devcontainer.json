@@ -8,9 +8,15 @@
     "ghcr.io/devcontainers/features/node:1": {
       "version": "20"
     },
-    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/git:1": {
+      "configureGitHubCLICredentialHelper": true
+    },
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },
+
+  "mounts": [
+    "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,consistency=cached"
+  ],
 
   "customizations": {
     "vscode": {
