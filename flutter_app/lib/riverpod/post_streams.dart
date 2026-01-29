@@ -260,6 +260,24 @@ Stream<List<DocView>> combinedResponsesStream({
   });
 }
 
+// Used to check if a team has already submitted a draft response, to lock the new post button
+Stream<List<String>> responseDraftIdsStream({
+  required String enquiryId,
+  required String teamId,
+}) {
+  return db
+      .collection('drafts')
+      .doc('posts')
+      .collection(teamId)
+      .where("postType", isEqualTo: "response")
+      .where('parentIds', arrayContains: enquiryId)
+      .limit(2)
+      .snapshots()
+      .map((snap) => snap.docs.map((d) => d.id).toList())
+      .map((ids) { ids.sort(); return ids; })
+      .distinct(listEquals);
+}
+
 
 Stream<List<DocView>> publicCommentsStream({
   // required Map<String, String> filter,

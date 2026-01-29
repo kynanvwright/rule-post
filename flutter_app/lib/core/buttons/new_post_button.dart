@@ -16,7 +16,7 @@ import 'package:rule_post/core/models/post_types.dart';
 import 'package:rule_post/core/models/types.dart' show NewPostPayload;
 
 
-/// Used to create a new post, will be unpublished until scheduled funciton runs
+/// Used to create a new post, will be unpublished until scheduled function runs
 class NewPostButton extends StatefulWidget {
   const NewPostButton({
     super.key,
@@ -56,7 +56,7 @@ class _NewPostButtonState extends State<NewPostButton> {
 
     return Semantics(
       button: true,
-      enabled: !locked, // SRs know it's unavailable, but we keep it focusable.
+      enabled: !locked,
       label: locked && widget.lockedReason != null
           ? 'New (locked — ${widget.lockedReason})'
           : 'New',

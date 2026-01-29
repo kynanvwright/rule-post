@@ -12,6 +12,7 @@ import 'package:rule_post/navigation/nav.dart';
 import 'package:rule_post/riverpod/post_streams.dart';
 import 'package:rule_post/core/widgets/unread_dot.dart';
 import 'package:rule_post/riverpod/user_detail.dart';
+import 'package:rule_post/riverpod/draft_provider.dart';
 import 'package:rule_post/debug/debug.dart';
 
 
@@ -38,14 +39,34 @@ class ChildrenSection extends ConsumerWidget {
         child: Consumer(
           builder: (context, ref, _) {
             final isLoggedIn = ref.watch(isLoggedInProvider);
-            return isLoggedIn
-              ? NewPostButton(
+            if (!isLoggedIn) return const SizedBox.shrink(); // empty widget when logged out
+
+            if (lockedResponses) {
+              return NewPostButton(
+                type: PostType.response,
+                parentIds: [enquiryId],
+                isLocked: true,
+                lockedReason: lockedReason,
+              );
+            }
+
+            // If button is unlocked, check for existing response drafts and lock new post button if found
+            final teamId = ref.watch(teamProvider);
+            final hasDraft = teamId == null
+              ? false
+              : ref
+                .watch(hasResponseDraftProvider((enquiryId: enquiryId, teamId: teamId)))
+                .valueOrNull;
+            final isLockedNow = hasDraft == true;
+            final reasonNow = isLockedNow
+                ? 'Your team already has a response draft for this enquiry.'
+                : '';
+            return NewPostButton(
               type: PostType.response,
               parentIds: [enquiryId],
-              isLocked: lockedResponses,
-              lockedReason: lockedReason,
-            )
-            : const SizedBox.shrink(); // empty widget when logged out
+              isLocked: isLockedNow,
+              lockedReason: reasonNow,
+            );
           },
         ),
       ),
