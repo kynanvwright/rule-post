@@ -94,6 +94,10 @@ class _LoginDialogState extends ConsumerState<LoginDialog> {
       },
     );
 
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    const logoLogical = 100.0; // image size in logical pixels
+    final logoPhysical = (logoLogical * dpr).round();
+
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       child: ConstrainedBox(
@@ -106,8 +110,27 @@ class _LoginDialogState extends ConsumerState<LoginDialog> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Header
-                  Image.asset('assets/images/cup_logo2.jpg', width: 100),
+                  // Logo with a coloured background and rounded corners
+                  SizedBox.square(
+                    dimension: logoLogical,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(5),
+                        child: Image.asset(
+                          'assets/images/cup_logo.png',
+                          fit: BoxFit.contain,
+                          filterQuality: FilterQuality.high,
+                          cacheWidth: logoPhysical,
+                          cacheHeight: logoPhysical,
+                          isAntiAlias: true,
+                        ),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   Text("Welcome to Rule Post!",
                       style: Theme.of(context).textTheme.titleMedium),
