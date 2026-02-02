@@ -66,6 +66,10 @@ class _EditPostButtonState extends State<EditPostButton> {
           icon: Icon(Icons.edit, color: fg),
           label: const Text(labelText),
           onPressed: () async {
+            // extra step to allow missing attachment field when editing comments
+            final initialTempAttachments = (widget.initialAttachments ?? const <Map<String, dynamic>>[])
+              .map(TempAttachment.fromMap)
+              .toList();
             final payload = await showDialog<NewPostPayload>(
               context: context,
               builder: (_) => NewPostDialog(
@@ -74,7 +78,7 @@ class _EditPostButtonState extends State<EditPostButton> {
                 postType: widget.type.singular,
                 initialTitle: widget.initialTitle,
                 initialText: widget.initialText,
-                initialAttachments: widget.initialAttachments!.map((m) => TempAttachment.fromMap(m)).toList(),
+                initialAttachments: initialTempAttachments,
               ),
             );
             if (payload == null) return;
@@ -100,7 +104,10 @@ class _EditPostButtonState extends State<EditPostButton> {
               }
               if (removedAttachmentNumber > 0) {
                 editAttachments.remove = true;
-                final initialPaths = widget.initialAttachments?.map((m) => m['path'] as String).toList() ?? [];
+                final initialPaths = (widget.initialAttachments ?? const [])
+                  .map((m) => (m['storagePath'] ?? m['path'])?.toString())
+                  .whereType<String>()
+                  .toList();
                 final finalPaths = payload.attachments.map((m) => m.storagePath).toList();
 
                 editAttachments.removeList = initialPaths.toSet().difference(finalPaths.toSet()).toList();
