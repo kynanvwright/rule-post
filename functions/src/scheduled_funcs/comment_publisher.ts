@@ -75,10 +75,16 @@ export const commentPublisher = onSchedule(
           .get();
         if (unpublishedCommentsSnap.empty) continue;
 
-        let commentNumber = 0;
+        const publishedCountSnap = await commentsCol
+          .where("isPublished", "==", true)
+          .count()
+          .get();
+
+        const alreadyPublished = publishedCountSnap.data().count;
+
         for (const [i, c] of unpublishedCommentsSnap.docs.entries()) {
           // publish comment
-          commentNumber = i + 1;
+          const commentNumber = alreadyPublished + 1 + i;
           writer.update(c.ref, {
             isPublished: true,
             publishedAt,
