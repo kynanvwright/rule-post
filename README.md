@@ -1,153 +1,245 @@
-# Rule Post App
-A website for facilitating America's Cup Rule Enquiries.
+# Rule Post
 
-## General Structure
-- **Frontend**: Built with [Flutter](https://flutter.dev/) (Dart).
-- **Backend**: Implemented with [Firebase Cloud Functions](https://firebase.google.com/docs/functions) (TypeScript).
-- **Services**: Uses Firebase Authentication, Cloud Storage for Firebase, and Firebase Hosting.
+Rule Post is a **Flutter + Firebase** web application used by America’s Cup teams and the Rules Committee to manage **Rule Enquiries**, **Responses**, and **Comments** through a structured, rule-aligned workflow.
 
-## Current Features
-- Authentication
-  - sign in/out
-  - registration blocked outside of firebase console
-  - app check feature looks for bots
-  - log in to post
-  - team admins can create new users
-- New enquiry creation
-  - storage of those enquiries
-  - optional attachments for those enquiries
-  - automated enquiry numbering
-- Nested structure of enquiries, responses and comments
-  - coloured by author, unique mapping per enquiry
-- Database and storage writing implemented via backend functions, frontend write access blocked
-  - as an exception, frontend can write to temporary file storage
-  - Cloud Storage rule for clearing out temporary file storage (1+ days old)
-- Delayed publishing with cloud functions
-- Automated locking/unlocking of submission permissions with cloud functions
-  - frontend buttons aligned with backend permissions
-- Basic custom claims set up, assigns user role and team to their account
-  - allows both frontend and backend to query user's access level without database permissions
-  - triggers cloud function whenever the `user_data` collection is updated
-- Inline pdf and doc viewing
-- Adaptive screen sizing
-- Enquiry filtering and title text search
+Most users can browse content while logged out. **Posting and notification settings require authentication.**
 
-## Targets
+---
 
-### MVP
-- New accounts can be created [done]
-- Scheduled publishing [done]
-- RC can skip scheduling as detailed in the rule [done]
-- Basic email alerts [done]
-- Colour-coding (optional but good) [done]
+## What this repository contains
 
-### Published version
-- Site mostly used while logged out [done]
-  - only log in for posting or notification settings [done]
-- One team lead user per team, can add new users [done]
-- Email notifications with customisation [done]
-- Publishing permissions move via schedule or RC acceleration [done]
-  - allow alternative stage lengths [done]
-- Identify RC in all of their posts [done]
-- Pre-publication editing available after submission [done]
-- Search/filter in navigation pane [done]
-- Robust testing
-- Allow RC to close the enquiry in their response
-  - allow RC to close enqury with button [done]
-  - add mechanism for circulating for Docusign?
-- Add commercial product area
+* **Frontend**: Flutter Web (Dart)
+* **Backend**: Firebase Cloud Functions (TypeScript)
+* **Firebase services**:
 
-## 📌 Future Features
+  * Firestore (primary datastore)
+  * Cloud Functions (business logic & enforcement)
+  * Cloud Storage (attachments)
+  * Authentication (email/password + custom claims)
+  * Hosting (deployment)
 
-### 🔒 Permissions & Roles
-- Require email verification (via Firebase Auth)
-  - superseded by allowing team leads to add accounts
-- Limit the access of cloud functions. Full admin may not be necessary and increase exploitation risk.
-- Check that users can't edit or delete (Firebase Rules)
-- Add rate limiting on functions and queries
+---
 
-### 📤 Publishing & Workflow
-- Anonymity toggle (default ON to start)  
-  - optionally allows teams to identify themselves
-- Add amendment/interpretation/neither tag on enquiry closure, to allow filtering later
-  - done, need to add matching filters and status chips
-- have a page summarising all open enquiry deadlines
-- would prefer to replace draft flow with simple stream instead of separate collection
+## Key features
 
-### 📑 Enquiries & Responses
-- Add per-user limits on new enquiries and attachments per day
+* **Structured Rule Enquiry workflow**
 
-### 🎨 UI / UX
-- Set navigation pane to minimum of:
-  - Current width
-  - Smallest width where all title text shown
-- In navigation pane, allow final RC response to be labelled 'interpretation' or 'amendment'
-- Add subheaders to navigation pane for rounds
-- Add symbols with colour-coding for colour-blind folks
-- Make left pane collapsible
-- Consider making the logo having matching text colour to "Rule Post"
-- Indicate when an enquiry has an unusual stage length
-- Tighten padding on phones
+  * Enquiry → Response → Comment nesting
+  * Stage-based windows for team responses, comments, and RC replies
+  * RC can close an enquiry as *Interpretation*, *Amendment*, or *Neither*
+  * Optional stage-length changes for urgent cases
 
-### 📧 Notifications & Alerts
-- Add (toggleable) email alerts to users for when:
-  - posts are published [done]
-  - deadlines are approaching (and the team hasn't submitted)
-- Add email alerts for admins when server/Firestore billing costs are spiking
-- Extend notifications to WhatsApp/text
-- Add website alert for new posts, allow them to be ignored or read, as a way of tracking what's been read
+* **Delayed publishing**
 
-### 🛠 Testing & Validation
-- Make testing pages for attempting to read/write from the frontend without proper permissions  
-  - Test as signed in vs signed out  
-  - Try to read author IDs  
-  - Try to edit published posts  
-  - Try to read unpublished posts  
-  - Try to read unpublished post attachments
-  - Try to read/write app_data and user_data
-  - Try to edit user roles
+  * Posts exist as drafts until a scheduled publish time
+  * RC/admin override for instant publication when required
 
-### 🗂 Data & Models
-- Write data models in JSON, then run code to convert into Dart and TypeScript (one source of truth)
-- Consolidate data models for post types
+* **Security-first model**
 
-### Commercial Product Requests
+  * Read-mostly frontend; core writes enforced in Cloud Functions
+  * Firestore & Storage rules are deny-by-default for writes
+  * Drafts visible only to the authoring team
+  * Anonymous public posting (author identity stored in backend-only metadata)
 
-### Read Receipts
-- Mark all as unread for new users
-- Allow all posts to be marked as read with button press
-- Have unread posts dropdown with links [done]
-- Show dot for unread content in:
-  - Nav pane [done]
-  - Child stream tiles [done] [for responses only]
-- For stream tiles, show dot next to comments if they're unread, instead of response
-- Have button to mark post as unread for all users
-  - Shouldn't need to be used much, but good for testing
+* **Attachments**
 
-## Fixes
-- Check which widgets/screens are still in use, delete as required
-- Look for edge cases where RC speeds up stage end and team response gets stuck. 
-  - Need to block submission in that case so it doesn't end up getting published in the next round, or alongside the RC without them reading it.
-- Enforce overall enquiry timeline even if RC responds late
-  - notify Competitors that they have slightly less time than is ideal
-- Fix stage ends to be on the hour and cloud functions to run at 1 minute past
-- Should the email digest delete entries rather than marking them as processed?
-- Switch childrenSection streams to providers to avoid reload on log-in?
-- Check cloud functions and delete ones that aren't in use
-- the enquiryNumber on unpublished enquiries can be wrong if a draft gets deleted
-- Currently, my data structure has a lot of copied and duplicated fields. It would be nicer to link to a single source of truth to make updates easier.
-- Behaviour is a bit weird with multiple tabs open
+  * Enquiries and Responses support attachments
+  * Inline preview for PDF/DOC/DOCX with download fallback
+  * Temporary upload workflow during post creation
 
-## Other Notes
-- Check how it looks on various devices
+* **Notifications & unread tracking**
 
-### Useful commands to remember (Powershell)
-- firebase firestore:indexes --project rule-post > firestore.indexes.json (download indexes from console)
-- npx ts-node makeAdmin.ts (run local script to assign custom role attributes)
-- firebase deploy --only functions:createPost (update/create one function)
-- firebase deploy (update all firebase from local files, functions, rules etc)
-- npx eslint "src/**/*.{js,ts,tsx}" --fix (fix formatting of ts files)
-- flutter clean (remove compiled code from flutter build after making decent changes)
-- flutter pub get (rebuilds what was lost during flutter clean)
-- flutter run -d chrome (run flutter app locally in chrome)
-- npx ts-node applyClaims.ts --serviceAccount ./serviceAccountKey.json --collection user_data [--uids uid1,uid2] [--fields role,team] [--dry-run] [--replace]
+  * Email notifications via Resend
+  * Per-user unread tracking with visual indicators
+
+* **Usability**
+
+  * Responsive layout (desktop, tablet, mobile)
+  * Navigation pane search and filtering
+  * Per-enquiry colour-coded authorship (consistent within an enquiry)
+
+---
+
+## Core concepts
+
+### Entities
+
+* **Enquiry**
+  Initial question or proposed amendment raised by a team or the Rules Committee.
+  Automatically numbered; may include attachments.
+
+* **Response**
+  A detailed response to an enquiry, submitted by teams or the RC.
+  Attachments supported; RC responses advance the workflow stage.
+
+* **Comment**
+  Short feedback on a response. Multiple comments allowed per response.
+  Attachments are not supported.
+
+---
+
+## Draft → publish flow (simplified)
+
+1. User creates a draft post in the UI
+2. Frontend sends a validated payload to a Cloud Function
+3. Cloud Function writes to Firestore and schedules publication
+4. A scheduled publisher sets `isPublished = true` at the correct time
+5. Publish events generate unread and notification records
+6. Frontend listens to Firestore streams and updates the UI
+
+---
+
+## Permissions & roles
+
+Authentication uses email/password. **Custom claims** allow both frontend and backend to enforce permissions without additional database lookups.
+
+Typical claims:
+
+* `role`: `User` / `Admin`
+* `team`: `RC`, `NZL`, `GBR`, etc.
+* `teamAdmin`: `true | false` (can create/delete users for their team)
+* `emailNotificationsOn`: `true | false`
+
+Security goals:
+
+* Published content is readable without login
+* Unpublished drafts are only readable by the authoring team
+* Editing is only allowed **before publication**, by the authoring team
+* Most writes are blocked from the client and enforced in Cloud Functions
+* Author identity is never publicly exposed
+
+---
+
+## Repository structure (high level)
+
+```
+functions/          # Firebase Cloud Functions (TypeScript)
+flutter_app/        # Flutter Web frontend
+firestore.rules     # Firestore security rules
+storage.rules       # Cloud Storage security rules
+docs/               # Architecture & workflow documentation
+```
+
+Documentation:
+
+* `docs/overview` – product overview and data flow
+* `docs/backend` – Cloud Functions, Firestore structure, security model
+* `docs/frontend` – Flutter architecture, UI, navigation, attachments
+
+---
+
+## Getting started (development)
+
+### Prerequisites
+
+* Flutter SDK (Web enabled)
+* Node.js + npm
+* Firebase CLI
+* A Firebase project with:
+
+  * Firestore
+  * Authentication (email/password)
+  * Cloud Storage
+  * Hosting
+  * Cloud Functions
+
+### Run the frontend locally
+
+```bash
+flutter clean
+flutter pub get
+flutter run -d chrome
+```
+
+### Work on Cloud Functions locally
+
+```bash
+npm install
+npm run build
+# optional
+firebase emulators:start
+```
+
+---
+
+## Deployment
+
+### Deploy everything
+
+```bash
+firebase deploy
+```
+
+### Deploy a single function (example)
+
+```bash
+firebase deploy --only functions:createPost
+```
+
+### Useful maintenance commands
+
+```bash
+# Download Firestore indexes from the console project
+firebase firestore:indexes --project rule-post > firestore.indexes.json
+
+# Lint and autofix TypeScript
+npx eslint "src/**/*.{js,ts,tsx}" --fix
+```
+
+---
+
+## Cloud Functions overview
+
+**User-triggered**:
+
+* `createPost`, `editPost`
+* `toggleEmailNotifications`
+* Team admin: `createUserWithProfile`, `deleteUser`
+* RC/admin: `changeStageLength`, `closeEnquiry`, `responseInstantPublisher`
+
+**Scheduled publishers**:
+
+* `enquiryPublisher`
+* `teamResponsePublisher`
+* `commentPublisher`
+* `committeeResponsePublisher`
+
+**Event-triggered**:
+
+* `syncCustomClaims`
+* Publish events on `isPublished` transitions
+* Deletion cleanup for attachments and unread records
+
+See **`docs/backend`** for full details.
+
+---
+
+## Firestore & Storage model (summary)
+
+Key collections:
+
+* `app_data` – shared configuration (colour wheel, enquiry counter, team names)
+* `drafts` – per-team draft visibility
+* `enquiries` – public post data with nested responses and comments
+
+  * Sensitive fields live in a backend-only `meta` subcollection
+* `publishEvents` – records publications for notifications
+* `user_data` – user profiles and unread tracking
+
+---
+
+## Roadmap & Known Issues
+
+* detailed further in docs/roadmap.md
+
+---
+
+## Contributing
+
+This project relies on a **low-trust client** model. When making changes:
+
+* Keep core writes enforced in Cloud Functions
+* Be cautious with Firestore/Storage rule changes
+* Update documentation when workflows or permissions change
+
+---
