@@ -175,6 +175,7 @@ class ChildrenSection extends ConsumerWidget {
               final responseNumber = (d['responseNumber'] ?? 'x').toString().trim();
               final fromRC = d['fromRC'] ?? false;
               final isPublished = d['isPublished'] ?? false;
+              final publishedAt = d['publishedAt'];
               final teamColourHex = d['colour'];
               final Color teamColourFaded = teamColourHex == null
                   ? Colors.transparent
@@ -211,14 +212,15 @@ class ChildrenSection extends ConsumerWidget {
                 tile = ListTileCollapsibleText(
                   isPublished ? text : '(Draft) $text',
                   maxLines: 3,
-                  sideWidget: isPublished ? null : 
-                    EditPostButton( // allow comment editing
-                      type: PostType.comment,
-                      postId: id,
-                      initialText: text,
-                      parentIds: [enquiryId, responseId],
-                      isPublished: isPublished,
-                    ),
+                  sideWidget: isPublished 
+                    ? publishedAtSideWidget(publishedAt) 
+                    : EditPostButton( // allow comment editing
+                        type: PostType.comment,
+                        postId: id,
+                        initialText: text,
+                        parentIds: [enquiryId, responseId],
+                        isPublished: isPublished,
+                      ),
                   // sideWidget: UnreadDot(id), // not working because data is deleted before it loads
                 );
               }

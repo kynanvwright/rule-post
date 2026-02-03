@@ -1,5 +1,6 @@
 // flutter_app/lib/content/widgets/list_tile.dart
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 
 // special tile for comments, which can be expanded/collapsed if the text is long
@@ -130,4 +131,53 @@ class _ListTileCollapsibleTextState extends State<ListTileCollapsibleText>
       },
     );
   }
+}
+
+
+
+  String _fmt(DateTime? dt) {
+    if (dt == null) return '';
+    // Show in local time with short readable format
+    return '${dt.day.toString().padLeft(2, '0')} '
+        '${_month(dt.month)} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+
+  String _month(int m) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return months[m - 1];
+  }
+
+  DateTime? _asLocal(dynamic v) {
+    if (v == null) return null;
+
+    DateTime asUtc;
+    if (v is DateTime) {
+      asUtc = v.isUtc ? v : v.toUtc();
+    } else if (v is Timestamp) {
+      asUtc = v.toDate().toUtc();
+    } else if (v is int) {
+      asUtc = DateTime.fromMillisecondsSinceEpoch(v, isUtc: true);
+    } else if (v is String) {
+      asUtc = DateTime.parse(v).toUtc(); // expects ISO-8601
+    } else {
+      throw ArgumentError('Unsupported date type: ${v.runtimeType}');
+    }
+    return asUtc.toLocal(); // ← device/browser local time zone
+  }
+
+Widget publishedAtSideWidget(dynamic publishedAt) {
+  final dt = _asLocal(publishedAt);
+  if (dt == null) return const SizedBox.shrink();
+
+  return Text(
+    _fmt(dt),
+    style: const TextStyle(
+      fontSize: 12,
+      color: Colors.grey,
+    ),
+    textAlign: TextAlign.right,
+  );
 }
