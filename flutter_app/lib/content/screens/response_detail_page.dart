@@ -8,7 +8,6 @@ import 'package:rule_post/content/widgets/fancy_attachment_tile.dart';
 import 'package:rule_post/content/widgets/parse_hex_colour.dart';
 import 'package:rule_post/content/widgets/status_chip.dart';
 import 'package:rule_post/core/buttons/edit_post_button.dart';
-import 'package:rule_post/core/buttons/mark_unread_button.dart';
 import 'package:rule_post/core/models/post_types.dart';
 import 'package:rule_post/riverpod/doc_providers.dart';
 import 'package:rule_post/riverpod/read_receipts.dart';
@@ -43,7 +42,6 @@ class _ResponseDetailPageState extends ConsumerState<ResponseDetailPage> {
     final eAsync = ref.watch(enquiryDocProvider(widget.enquiryId));
     final rAsync = ref.watch(responseDocProvider((enquiryId: widget.enquiryId, responseId: widget.responseId)));
     final userTeam = ref.watch(teamProvider);
-    final userRole = ref.watch(roleProvider);
 
         // Unified gate:
     if (eAsync.isLoading || rAsync.isLoading) {
@@ -75,7 +73,6 @@ class _ResponseDetailPageState extends ConsumerState<ResponseDetailPage> {
     final currentRound = e['roundNumber'] == e['roundNumber'];
     final teamsCanComment = e['teamsCanComment'] ?? false;
     final isRC = userTeam == 'RC';
-    final isAdmin = userRole == 'admin';
     final lockedComments = !isPublished || isRC || fromRC || !isOpen || !currentRound || !teamsCanComment;
     final lockedCommentReason = !lockedComments ? '' 
       : !isPublished ? "Can't comment on unpublished response"
@@ -88,11 +85,6 @@ class _ResponseDetailPageState extends ConsumerState<ResponseDetailPage> {
       headerLines: ['Response $roundNumber.$responseNumber'],
       subHeaderLines: ['Rule Enquiry #$enquiryNumber'],
       headerButton: isPublished ? 
-        isAdmin ?
-          MarkUnreadButton(
-            enquiryId: widget.enquiryId,
-            responseId: widget.responseId,
-          ) :
         null : 
       EditPostButton(
         type: PostType.response,

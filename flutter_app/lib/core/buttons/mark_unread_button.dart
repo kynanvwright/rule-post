@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:rule_post/api/admin_apis.dart';
 
 
-/// Used by admins to mark posts as unread
+// (Legacy) Used by admins to mark posts as unread for testing
 class MarkUnreadButton extends StatefulWidget {
   const MarkUnreadButton({
     super.key,
