@@ -10,16 +10,14 @@ class ListTileCollapsibleText extends StatefulWidget {
     super.key,
     this.maxLines = 3,
     this.contentPadding = const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-    this.showCollapsedHint = true,
-    this.tileColor, // NEW: mimic ListTile.tileColor
+    this.tileColor,
     this.sideWidget,
   });
 
   final String text;
   final int maxLines;
   final EdgeInsetsGeometry contentPadding;
-  final bool showCollapsedHint;
-  final Color? tileColor; // NEW
+  final Color? tileColor;
   final Widget? sideWidget;
 
   @override
@@ -60,14 +58,11 @@ class _ListTileCollapsibleTextState extends State<ListTileCollapsibleText>
         _checkOverflow(constraints, textStyle, dir, resolvedPad);
 
         return Material(
-          // NEW: allow background colour like ListTile.tileColor
           color: widget.tileColor ?? Colors.transparent,
           child: InkWell(
             onTap: _overflows ? () => setState(() => _expanded = !_expanded) : null,
-            // DEPRECATION: MaterialStateProperty -> WidgetStateProperty
             overlayColor: WidgetStateProperty.resolveWith((states) {
               final base = theme.colorScheme.onSurface;
-              // DEPRECATION: withOpacity -> withValues(alpha: ...)
               if (states.contains(WidgetState.pressed) || states.contains(WidgetState.focused)) {
                 return base.withValues(alpha: 0.12);
               }
@@ -96,27 +91,48 @@ class _ListTileCollapsibleTextState extends State<ListTileCollapsibleText>
                           ),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       if (widget.sideWidget != null) widget.sideWidget!,
-                      if (_overflows) ...[
-                        const SizedBox(width: 8),
-                        AnimatedRotation(
-                          duration: const Duration(milliseconds: 160),
-                          turns: _expanded ? 0.5 : 0.0,
-                          child: Icon(Icons.expand_more, size: 24, color: iconColor),
-                        ),
-                      ],
                     ],
                   ),
-                  if (_overflows && !_expanded && widget.showCollapsedHint) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      "…",
-                      style: textStyle.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontStyle: FontStyle.italic,
-                      ),
+
+                  if (_overflows) ...[
+                    // One row under the main content:
+                    // - left side: "…" hint that not all text is showing
+                    // - right side: chevron button for expanding/collapsing tile
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Collapsed hint on the left (only when collapsed + enabled)
+                        if (!_expanded)
+                          Expanded(
+                            child: Text(
+                              "…",
+                              style: textStyle.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          )
+                        else
+                          const Spacer(),
+
+                        InkWell(
+                          onTap: () => setState(() => _expanded = !_expanded),
+                          borderRadius: BorderRadius.circular(16),
+                          child: Padding(
+                            padding: const EdgeInsets.all(4),
+                            child: AnimatedRotation(
+                              duration: const Duration(milliseconds: 160),
+                              turns: _expanded ? 0.5 : 0.0,
+                              child: Icon(Icons.expand_more, size: 24, color: iconColor),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
+
                   Semantics(
                     button: true,
                     expanded: _expanded,
@@ -134,39 +150,41 @@ class _ListTileCollapsibleTextState extends State<ListTileCollapsibleText>
 }
 
 
+String _fmt(DateTime? dt) {
+  if (dt == null) return '';
+  // Show in local time with short readable format
+  return '${dt.day.toString().padLeft(2, '0')} '
+      '${_month(dt.month)} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+}
 
-  String _fmt(DateTime? dt) {
-    if (dt == null) return '';
-    // Show in local time with short readable format
-    return '${dt.day.toString().padLeft(2, '0')} '
-        '${_month(dt.month)} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+
+String _month(int m) {
+  const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+  return months[m - 1];
+}
+
+
+DateTime? _asLocal(dynamic v) {
+  if (v == null) return null;
+
+  DateTime asUtc;
+  if (v is DateTime) {
+    asUtc = v.isUtc ? v : v.toUtc();
+  } else if (v is Timestamp) {
+    asUtc = v.toDate().toUtc();
+  } else if (v is int) {
+    asUtc = DateTime.fromMillisecondsSinceEpoch(v, isUtc: true);
+  } else if (v is String) {
+    asUtc = DateTime.parse(v).toUtc(); // expects ISO-8601
+  } else {
+    throw ArgumentError('Unsupported date type: ${v.runtimeType}');
   }
+  return asUtc.toLocal(); // ← device/browser local time zone
+}
 
-  String _month(int m) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    return months[m - 1];
-  }
-
-  DateTime? _asLocal(dynamic v) {
-    if (v == null) return null;
-
-    DateTime asUtc;
-    if (v is DateTime) {
-      asUtc = v.isUtc ? v : v.toUtc();
-    } else if (v is Timestamp) {
-      asUtc = v.toDate().toUtc();
-    } else if (v is int) {
-      asUtc = DateTime.fromMillisecondsSinceEpoch(v, isUtc: true);
-    } else if (v is String) {
-      asUtc = DateTime.parse(v).toUtc(); // expects ISO-8601
-    } else {
-      throw ArgumentError('Unsupported date type: ${v.runtimeType}');
-    }
-    return asUtc.toLocal(); // ← device/browser local time zone
-  }
 
 Widget publishedAtSideWidget(dynamic publishedAt) {
   final dt = _asLocal(publishedAt);
