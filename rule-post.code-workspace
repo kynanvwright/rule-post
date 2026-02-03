@@ -1,0 +1,13 @@
+{
+  "folders": [
+    {
+      "path": "flutter_app"
+    },
+    {
+      "path": "functions"
+    }
+  ],
+  "settings": {
+    "dart.analysisServerFolding": true
+  }
+}

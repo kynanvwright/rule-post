@@ -6,7 +6,7 @@ import { setGlobalOptions } from "firebase-functions/v2";
 
 /** Global options for all functions. */
 setGlobalOptions({
-  region: "europe-west8",
+  region: "europe-west6",
   maxInstances: 10,
 });
 

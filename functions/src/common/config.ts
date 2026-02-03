@@ -2,7 +2,7 @@
 // File: src/common/config.ts
 // Purpose: Central config constants
 // ────────────────────────────────────────────────────────────────────────────
-export const REGION = "europe-west8";
+export const REGION = "europe-west6";
 export const SCHED_REGION_ROME = "europe-west6" as const;
 export const ROME_TZ = "Europe/Rome";
 export const MEMORY = "256MiB" as const;
