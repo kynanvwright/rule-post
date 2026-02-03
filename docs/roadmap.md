@@ -24,6 +24,9 @@ To record ideas for future development and document observed bugs.
 
 ## Future Work
 
+- Rate limiting
+    - we need to restrict downloads and any functions that can be triggered by unauthenticated users, otherwise the website is susceptible to attack
+    - also consider limiting to authenticated users, and emailing admins with details when rates are hit
 - Emails
     - set up mailing list that always gets notified for new enquiries
         - alternatively have separate buttons for enquiry notification vs global notification
