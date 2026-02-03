@@ -14,6 +14,7 @@ class DetailScaffold extends StatelessWidget {
     this.meta,
     this.subHeaderLines = const <String>[],
     this.headerButton,
+    this.headerColour,
     this.summary,
     this.commentary,
     this.attachments = const <Widget>[],
@@ -25,6 +26,7 @@ class DetailScaffold extends StatelessWidget {
   final List<String> headerLines;
   final List<String> subHeaderLines;
   final Widget? headerButton;
+  final Color? headerColour;            // allows the header to be coloured by author (for responses)
   final Widget? meta;                   // usually MetaChips (+ optional status chips)
   final Widget? summary;                // null => hide section
   final Widget? commentary;             // null => hide section
@@ -45,6 +47,7 @@ class DetailScaffold extends StatelessWidget {
           // HEADER CARD
           SectionCard(
             padding: const EdgeInsets.fromLTRB(16, 16, 12, 16),
+            backgroundColor: headerColour,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
