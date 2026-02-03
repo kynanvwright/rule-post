@@ -15,6 +15,8 @@ To record ideas for future development and document observed bugs.
     - instead, RC should have the option to auto-end enquiry when their submission publishes
 - Navigation
     - if you attempt to navigate to a page that requires authentication, you get a GoRouter error instead of being redirected
+- UI
+    - On a cell phone or small device, "sideWidgets" don't wrap, so they take up lots of space and make the content squish onto 4-5 lines
 - Performance
     - on an initial website visit, everything is quite slow to load. This improves later due to caching
 - Multiple sessions
