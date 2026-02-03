@@ -52,4 +52,3 @@ export { markPostUnread } from "./admin_funcs/mark_post_unread";
 export { responseInstantPublisher } from "./admin_funcs/response_instant_publisher";
 
 /** ─────────────────────────────── Utils ─────────────────────────────── */
-export { listTeamUsers } from "./utils/list_team_users";

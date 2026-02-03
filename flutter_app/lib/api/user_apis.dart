@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:rule_post/api/api_template.dart';
 import 'package:rule_post/core/models/types.dart';
 
+
 final api = ApiTemplate();
 
 
@@ -28,19 +29,4 @@ Future<void> deleteUserByEmail(BuildContext context, String email) async {
     successMessage: 'User deleted.',
     failureMessage: 'User deletion failed.'
   );
-}
-
-
-// Used by the team admin to view which users are assigned to their team
-Future<List<String>> listTeamUsers() async {
-  // called without dialog as this function is refreshed by other operations
-  final result = await api.call<Json>('listTeamUsers', {});
-  final data = result['emails'];
-
-  if (data is List) {
-    return data.map((e) => e.toString()).toList();
-  } else {
-    throw StateError(
-        'Unexpected response format: expected List<String>, got ${data.runtimeType}');
-  }
 }

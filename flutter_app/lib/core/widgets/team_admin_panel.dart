@@ -26,30 +26,24 @@ class TeamAdminPanel extends ConsumerWidget {
             // ── Current team members block
             ExpansionTile(
               tilePadding: EdgeInsets.zero,
+              initiallyExpanded: true,
               title: const Text('Team member list:'),
-              trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                IconButton(
-                  tooltip: 'Fetch members',
-                  onPressed: () => ref.read(teamMembersProvider.notifier).fetch(),
-                  icon: const Icon(Icons.refresh),
-                ),
-                const Icon(Icons.expand_more),
-              ]),
+              // Remove trailing entirely to keep default expand/collapse chevron
               children: [
-                switch (members) {
-                  AsyncData(:final value) => value.isEmpty
-                      ? const ListTile(title: Text('No members yet. Click refresh to load.'))
+                members.when(
+                  data: (value) => value.isEmpty
+                      ? const ListTile(title: Text('No members yet.'))
                       : _MembersList(value),
-                  AsyncError(:final error) => ListTile(
-                      title: const Text('Failed to load members'),
-                      subtitle: Text(error.toString()),
-                      leading: const Icon(Icons.error_outline),
-                    ),
-                  _ => const Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Center(child: CircularProgressIndicator()),
-                      ),
-                }
+                  error: (error, _) => ListTile(
+                    title: const Text('Failed to load members'),
+                    subtitle: Text(error.toString()),
+                    leading: const Icon(Icons.error_outline),
+                  ),
+                  loading: () => const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 24),
@@ -73,13 +67,12 @@ class TeamAdminPanel extends ConsumerWidget {
     );
     if (result == null) return;
     if (!context.mounted) return;
-    try {
+
     await createUserFromFrontend(context, result.email);
-    } finally {
-      await ref.read(teamMembersProvider.notifier).fetch();
-    }
+    // stream updates automatically
   }
 }
+
 
 // Shows which users belong to the tead admin's team
 class _MembersList extends ConsumerWidget {
@@ -100,7 +93,7 @@ class _MembersList extends ConsumerWidget {
             icon: const Icon(Icons.delete),
             onPressed: () async {
               await deleteUserByEmail(context, m.email);
-              await ref.read(teamMembersProvider.notifier).fetch();
+              // await ref.read(teamMembersProvider.notifier).fetch();
             },
           ),
         );

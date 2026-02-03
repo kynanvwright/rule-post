@@ -65,6 +65,16 @@ service cloud.firestore {
       return request.auth.uid == uid;
     }
 
+    // Functions for team admin panel
+    function isTeamAdmin() {
+      return isSignedIn() && request.auth.token.teamAdmin == true;
+    }
+
+    function isUsersTeamMine() {
+      return equalAndNotNull(resource.data.team, userTeam()); // uses the target doc’s team field
+    }
+
+
     match /enquiries/{id} {
       allow read: if isPublished()
                || (isDraft() && enquiryAuthorCanEdit(id));
@@ -106,7 +116,9 @@ service cloud.firestore {
     }
 
     match /user_data/{uid} {
-      allow read: if docIsUsers(uid);
+    // Users can read their own doc.
+    // Team admins can read user docs, but only within their team.
+    allow read: if docIsUsers(uid) || (isTeamAdmin() && isUsersTeamMine());
 
       match /unreadPosts/{eid=**} {
         allow read, write: if docIsUsers(uid);
