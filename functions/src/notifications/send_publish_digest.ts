@@ -253,7 +253,8 @@ async function sendDigestFor(
   const resend = new Resend(process.env.RESEND_API_KEY as string);
   await resend.emails.send({
     from: "Rule Post <send@rulepost.com>", // must be verified in Resend
-    to,
+    to: "Rule Post <send@rulepost.com>", // should be an internal address
+    bcc: to, // mailing list moved to bcc for privacy
     subject,
     html,
   });
