@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'package:rule_post/api/post_apis.dart';
 import 'package:rule_post/core/models/post_types.dart';
+import 'package:rule_post/navigation/nav.dart';
 
 
 /// Button to delete unpublished posts
@@ -50,6 +51,25 @@ class DeletePostButton extends StatelessWidget {
       postId: postId,
       parentIds: parentIds,
     );
+    if (!context.mounted) return;
+
+    // Navigate up to a valid page after deleting enquiries/responses.
+    switch (type) {
+      case PostType.enquiry:
+        Nav.goHome(context);
+        break;
+      case PostType.response:
+        final parents = parentIds;
+        if (parents != null && parents.isNotEmpty) {
+          Nav.goEnquiry(context, parents[0]);
+        } else {
+          Nav.goHome(context);
+        }
+        break;
+      case PostType.comment:
+        // stay on response detail page
+        break;
+    }
   }
 
   @override
