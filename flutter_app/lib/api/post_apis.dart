@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'package:rule_post/api/api_template.dart';
 import 'package:rule_post/core/models/post_payloads.dart' show PostPayload;
+import 'package:rule_post/core/models/post_types.dart' show PostType;
 import 'package:rule_post/core/models/types.dart' show Json;
 
 final api = ApiTemplate();
@@ -47,6 +48,33 @@ Future<void> editPost(
       'Checking user authentication…',
       'Populating additional post data…',
       'Saving post to database…',
+    ],
+  );
+}
+
+// Used to delete an unpublished post
+Future<void> deletePost(
+    BuildContext context, {
+    required PostType type,
+    required String postId,
+    List<String>? parentIds,
+}) async {
+  await api.callWithProgress<Json>(
+    context: context,
+    name: 'deletePost', 
+    data: {
+      'postType': type.singular,
+      'postId': postId,
+      'parentIds': parentIds ?? [],
+    },
+    successTitle: 'Post deleted',
+    successMessage: 'Your post has been permanently deleted.',
+    failureTitle: 'Couldn’t delete post',
+    failureMessage: 'Please check details and try again.',
+    steps: const [
+      'Checking user authentication…',
+      'Verifying permissions…',
+      'Deleting post…',
     ],
   );
 }

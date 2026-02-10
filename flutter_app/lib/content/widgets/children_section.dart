@@ -7,6 +7,7 @@ import 'package:rule_post/content/widgets/parse_hex_colour.dart';
 import 'package:rule_post/content/widgets/section_card.dart';
 import 'package:rule_post/core/buttons/new_post_button.dart' show NewPostButton;
 import 'package:rule_post/core/buttons/edit_post_button.dart' show EditPostButton;
+import 'package:rule_post/core/buttons/delete_post_button.dart' show DeletePostButton;
 import 'package:rule_post/core/models/post_types.dart';
 import 'package:rule_post/core/models/types.dart' show DocView;
 import 'package:rule_post/navigation/nav.dart';
@@ -214,12 +215,23 @@ class ChildrenSection extends ConsumerWidget {
                   maxLines: 3,
                   sideWidget: isPublished 
                     ? publishedAtSideWidget(publishedAt) 
-                    : EditPostButton( // allow comment editing
-                        type: PostType.comment,
-                        postId: id,
-                        initialText: text,
-                        parentIds: [enquiryId, responseId],
-                        isPublished: isPublished,
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          EditPostButton(
+                            type: PostType.comment,
+                            postId: id,
+                            initialText: text,
+                            parentIds: [enquiryId, responseId],
+                            isPublished: isPublished,
+                          ),
+                          const SizedBox(width: 4),
+                          DeletePostButton(
+                            type: PostType.comment,
+                            postId: id,
+                            parentIds: [enquiryId, responseId],
+                          ),
+                        ],
                       ),
                   // sideWidget: UnreadDot(id), // not working because data is deleted before it loads
                 );

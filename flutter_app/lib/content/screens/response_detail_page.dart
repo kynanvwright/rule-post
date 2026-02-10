@@ -8,6 +8,7 @@ import 'package:rule_post/content/widgets/fancy_attachment_tile.dart';
 import 'package:rule_post/content/widgets/parse_hex_colour.dart';
 import 'package:rule_post/content/widgets/status_chip.dart';
 import 'package:rule_post/core/buttons/edit_post_button.dart';
+import 'package:rule_post/core/buttons/delete_post_button.dart';
 import 'package:rule_post/core/models/post_types.dart';
 import 'package:rule_post/riverpod/doc_providers.dart';
 import 'package:rule_post/riverpod/read_receipts.dart';
@@ -86,14 +87,25 @@ class _ResponseDetailPageState extends ConsumerState<ResponseDetailPage> {
       subHeaderLines: ['Rule Enquiry #$enquiryNumber'],
       headerButton: isPublished ? 
         null : 
-      EditPostButton(
-        type: PostType.response,
-        initialTitle: summary,
-        initialText: text,
-        initialAttachments: attachments,
-        postId: widget.responseId,
-        parentIds: [widget.enquiryId],
-        isPublished: isPublished,
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          EditPostButton(
+            type: PostType.response,
+            initialTitle: summary,
+            initialText: text,
+            initialAttachments: attachments,
+            postId: widget.responseId,
+            parentIds: [widget.enquiryId],
+            isPublished: isPublished,
+          ),
+          const SizedBox(width: 8),
+          DeletePostButton(
+            type: PostType.response,
+            postId: widget.responseId,
+            parentIds: [widget.enquiryId],
+          ),
+        ],
       ),
       headerColour: teamColourFaded,
       meta: Wrap(

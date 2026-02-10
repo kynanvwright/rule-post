@@ -24,6 +24,7 @@ export { syncCustomClaims } from "./users/claims_sync";
 /** ─────────────────────────────── Posts ─────────────────────────────── */
 export { createPost } from "./posts/create_post";
 export { editPost } from "./posts/edit_post";
+export { deletePost } from "./posts/delete_post";
 export {
   onEnquiryDeleted,
   onResponseDeleted,

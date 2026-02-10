@@ -7,6 +7,7 @@ import 'package:rule_post/content/widgets/children_section.dart';
 import 'package:rule_post/content/widgets/detail_scaffold.dart';
 import 'package:rule_post/content/widgets/status_chip.dart';
 import 'package:rule_post/core/buttons/edit_post_button.dart';
+import 'package:rule_post/core/buttons/delete_post_button.dart';
 import 'package:rule_post/content/widgets/fancy_attachment_tile.dart';
 import 'package:rule_post/core/widgets/rules_committee_panel.dart';
 import 'package:rule_post/core/models/post_types.dart';
@@ -73,14 +74,24 @@ class _EnquiryDetailPageState extends ConsumerState<EnquiryDetailPage> {
           subHeaderLines: ['Rule Enquiry #$enquiryNumber'],
           headerButton: isPublished ? 
             null : 
-          EditPostButton(
-            type: PostType.enquiry,
-            initialTitle: title,
-            initialText: postText,
-            initialAttachments: attachments,
-            postId: widget.enquiryId,
-            isPublished: isPublished,
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              EditPostButton(
+                type: PostType.enquiry,
+                initialTitle: title,
+                initialText: postText,
+                initialAttachments: attachments,
+                postId: widget.enquiryId,
+                isPublished: isPublished,
+              ),
+              const SizedBox(width: 8),
+              DeletePostButton(
+                type: PostType.enquiry,
+                postId: widget.enquiryId,
+              ),
+            ],
+          ),
           meta: Wrap(
             spacing: 8, runSpacing: 8, children: [
               if (d.containsKey('isOpen') && !isOpen && d.containsKey('enquiryConclusion')) StatusChip(enquiryConclusionLabels[d['enquiryConclusion']] ?? 'Closed', color: Colors.red),

@@ -40,6 +40,12 @@ export type EditPostData = CreatePostData & {
   editAttachments: EditAttachmentMap;
 };
 
+export type DeletePostData = {
+  postType: PostType;
+  postId: string;
+  parentIds?: string[];
+};
+
 export type AuthorInfo = {
   uid: string;
   team: string; // validated non-empty
