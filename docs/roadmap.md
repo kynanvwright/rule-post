@@ -48,6 +48,8 @@ To record ideas for future development and document observed bugs.
     - should these be deleted instead of marked as processed?
 - Deleted enquiry drafts
     - check if numbering gets messed up (including other drafts)
+- Response submission
+    - users reported confusion when attempting to do a round 2 submission. Consider whether we should add a response button on the RC reponse itself, so they don't have to navigate up to the enquiry first.
 
 ## General thoughts
 - How do deadlines work if the RC responds late?
