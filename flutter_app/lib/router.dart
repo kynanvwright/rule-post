@@ -43,13 +43,10 @@ GoRouter buildRouter() {
     refreshListenable: refreshListenable,
     redirect: (context, state) {
       final isLoggedIn = FirebaseAuth.instance.currentUser != null;
-      final goingToLogin = state.matchedLocation == '/login';
-      if (!isLoggedIn && needsAuth(state) && !goingToLogin) {
-        final from = Uri.encodeComponent(state.uri.toString());
-        return '/login?from=$from';
-      }
-      if (isLoggedIn && goingToLogin) {
-        return state.uri.queryParameters['from'] ?? '/enquiries';
+      // If the target route requires authentication and the user is not
+      // logged in, fall back to the enquiries (home) page
+      if (!isLoggedIn && needsAuth(state)) {
+        return '/enquiries';
       }
       return null;
     },
