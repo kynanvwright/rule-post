@@ -18,9 +18,6 @@ import 'package:rule_post/riverpod/user_detail.dart';
 import 'package:rule_post/riverpod/draft_provider.dart';
 import 'package:rule_post/debug/debug.dart';
 
-// Set to true to enable debug logging for next comment publication time
-const _debugNextCommentPublicationTime = false;
-
 // Provider for reading the next scheduled comment publication time from Firebase
 final nextCommentPublicationTimeProvider =
     StreamProvider<DateTime?>((ref) {
@@ -31,39 +28,19 @@ final nextCommentPublicationTimeProvider =
       .snapshots()
       .map((snap) {
     try {
-      if (_debugNextCommentPublicationTime) {
-        d('[nextCommentPublicationTimeProvider] Snapshot received');
-        d('[nextCommentPublicationTimeProvider] All fields: ${snap.data()}');
-      }
-      
       final raw = snap.get('nextCommentPublicationTime');
-      if (_debugNextCommentPublicationTime) {
-        d('[nextCommentPublicationTimeProvider] Raw value: $raw (type: ${raw.runtimeType})');
-      }
       
       if (raw == null) {
-        if (_debugNextCommentPublicationTime) {
-          d('[nextCommentPublicationTimeProvider] Field is null!');
-        }
         return null;
       }
       
       if (raw is Timestamp) {
         final dt = raw.toDate();
-        if (_debugNextCommentPublicationTime) {
-          d('[nextCommentPublicationTimeProvider] Converted Timestamp to DateTime: $dt');
-        }
         return dt;
       }
       
-      if (_debugNextCommentPublicationTime) {
-        d('[nextCommentPublicationTimeProvider] ERROR: Value is ${raw.runtimeType}, expected Timestamp');
-      }
       return null;
     } catch (e) {
-      if (_debugNextCommentPublicationTime) {
-        d('[nextCommentPublicationTimeProvider] ERROR: $e');
-      }
       return null;
     }
   });
@@ -182,9 +159,6 @@ class ChildrenSection extends ConsumerWidget {
     final keyForList = ValueKey<String>('$title|$teamId');    
     // 4) Read the next publication time ONCE at the widget level (shared across all items)
     final nextPublicationTimeAsync = ref.watch(nextCommentPublicationTimeProvider);
-    if (_debugNextCommentPublicationTime) {
-      d('[ChildrenSection.build] nextPublicationTimeAsync: $nextPublicationTimeAsync');
-    }
     return SectionCard(
       title: title,
       trailing: newChildButton,
@@ -222,18 +196,8 @@ class ChildrenSection extends ConsumerWidget {
             itemBuilder: (context, i) {
               // Use the publication time read at the widget level (not per-item)
               final nextPublicationTime = nextPublicationTimeAsync.maybeWhen(
-                data: (dt) {
-                  if (_debugNextCommentPublicationTime) {
-                    d('[ChildrenSection.itemBuilder] nextPublicationTime data: $dt');
-                  }
-                  return dt;
-                },
-                orElse: () {
-                  if (_debugNextCommentPublicationTime) {
-                    d('[ChildrenSection.itemBuilder] nextPublicationTime is not data state');
-                  }
-                  return null;
-                },
+                data: (dt) => dt,
+                orElse: () => null,
               );
               
               final docData = docs[i].data();
@@ -334,7 +298,6 @@ class ChildrenSection extends ConsumerWidget {
 
 /// Calculates the next scheduled comment publication time from Firestore.
 /// The backend updates this field whenever commentPublisher runs.
-// (Removed local calculation - now reading from backend)
 
 String _fmt(DateTime? dt) {
   if (dt == null) return '';

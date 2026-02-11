@@ -177,13 +177,11 @@ export const commentPublisher = onSchedule(
 /**
  * Calculates the next scheduled comment publication time in Rome timezone.
  * Comments publish at 00:00 and 12:00 Rome time.
- * 
+ *
  * @param nowRome Current time in Rome timezone (ROME_TZ)
  * @returns DateTime in Rome timezone for the next publication slot
  */
-function calculateNextCommentPublicationTime(
-  nowRome: DateTime,
-): DateTime {
+function calculateNextCommentPublicationTime(nowRome: DateTime): DateTime {
   // If we're before noon, next publication is at noon today
   if (nowRome.hour < 12) {
     return nowRome.set({ hour: 12, minute: 0, second: 0, millisecond: 0 });
