@@ -18,6 +18,7 @@ class EmailNotificationsTile extends ConsumerStatefulWidget {
 
 class _EmailNotificationsTileState extends ConsumerState<EmailNotificationsTile> {
   bool _busy = false;
+  String? _scopeOverride;
 
   bool? _override;   // what we show immediately after the call returns
 
@@ -33,8 +34,20 @@ class _EmailNotificationsTileState extends ConsumerState<EmailNotificationsTile>
       }
     });
 
+    // Clear scope override once provider reflects the value
+    ref.listen<String>(emailNotificationsScopeProvider, (prev, curr) {
+      if (_scopeOverride != null && curr == _scopeOverride) {
+        if (!mounted) return;
+        setState(() {
+          _scopeOverride = null;
+        });
+      }
+    });
+
     final current = ref.watch(emailNotificationsOnProvider);
+    final currentScope = ref.watch(emailNotificationsScopeProvider);
     final displayValue = _override ?? current;
+    final displayScope = _scopeOverride ?? currentScope;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -85,45 +98,82 @@ class _EmailNotificationsTileState extends ConsumerState<EmailNotificationsTile>
         // Scope chooser (only when notifications are enabled)
         if (displayValue) ...[
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: 
-            Column(
+            padding: const EdgeInsets.fromLTRB(32, 16, 16, 16),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Notify for:'),
-                RadioGroup<String>(
-                  onChanged: (v) async {
-                    if (v == null) return;
+                Text(
+                  'Receive notifications for:',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                const SizedBox(height: 12),
+                GestureDetector(
+                  onTap: () async {
+                    final newScope = displayScope == 'all' ? 'enquiries' : 'all';
+                    setState(() => _scopeOverride = newScope);
                     try {
-                      await setEmailNotificationScope(v);
+                      await setEmailNotificationScope(newScope);
                       await forceRefreshClaims();
                       ref.invalidate(allClaimsProvider);
                     } catch (e, st) {
                       d('setEmailNotificationScope failed: $e\n$st');
+                      if (!mounted) return;
+                      setState(() => _scopeOverride = null);
                     }
                   },
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Radio<String>(value: 'all'),
-                          const Padding(
-                            padding: EdgeInsets.only(left: 8),
-                            child: Text('All activity (enquiries, responses, comments)'),
-                          ),
-                        ],
+                      Text(
+                        'All activity (enquiries, responses, comments)',
+                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                          color: displayScope == 'all' 
+                            ? Theme.of(context).textTheme.bodyMedium?.color 
+                            : Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+                        ),
                       ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Radio<String>(value: 'enquiries'),
-                          const Padding(
-                            padding: EdgeInsets.only(left: 8),
-                            child: Text('New enquiries only'),
-                          ),
-                        ],
+                      const SizedBox(width: 12),
+                      Container(
+                        width: 48,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: displayScope == 'all' 
+                            ? Theme.of(context).colorScheme.primary 
+                            : Colors.grey[300],
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Stack(
+                          children: [
+                            AnimatedAlign(
+                              alignment: displayScope == 'all' ? Alignment.centerLeft : Alignment.centerRight,
+                              duration: const Duration(milliseconds: 200),
+                              child: Container(
+                                width: 24,
+                                height: 24,
+                                margin: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.1),
+                                      blurRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'New enquiries only',
+                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                          color: displayScope == 'enquiries' 
+                            ? Theme.of(context).textTheme.bodyMedium?.color 
+                            : Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+                        ),
                       ),
                     ],
                   ),
