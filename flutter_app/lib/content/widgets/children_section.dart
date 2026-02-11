@@ -1,4 +1,5 @@
 // flutter_app/lib/content/widgets/children_section.dart
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -17,6 +18,56 @@ import 'package:rule_post/riverpod/user_detail.dart';
 import 'package:rule_post/riverpod/draft_provider.dart';
 import 'package:rule_post/debug/debug.dart';
 
+// Set to true to enable debug logging for next comment publication time
+const _debugNextCommentPublicationTime = false;
+
+// Provider for reading the next scheduled comment publication time from Firebase
+final nextCommentPublicationTimeProvider =
+    StreamProvider<DateTime?>((ref) {
+  final db = FirebaseFirestore.instance;
+  return db
+      .collection('app_data')
+      .doc('date_times')
+      .snapshots()
+      .map((snap) {
+    try {
+      if (_debugNextCommentPublicationTime) {
+        d('[nextCommentPublicationTimeProvider] Snapshot received');
+        d('[nextCommentPublicationTimeProvider] All fields: ${snap.data()}');
+      }
+      
+      final raw = snap.get('nextCommentPublicationTime');
+      if (_debugNextCommentPublicationTime) {
+        d('[nextCommentPublicationTimeProvider] Raw value: $raw (type: ${raw.runtimeType})');
+      }
+      
+      if (raw == null) {
+        if (_debugNextCommentPublicationTime) {
+          d('[nextCommentPublicationTimeProvider] Field is null!');
+        }
+        return null;
+      }
+      
+      if (raw is Timestamp) {
+        final dt = raw.toDate();
+        if (_debugNextCommentPublicationTime) {
+          d('[nextCommentPublicationTimeProvider] Converted Timestamp to DateTime: $dt');
+        }
+        return dt;
+      }
+      
+      if (_debugNextCommentPublicationTime) {
+        d('[nextCommentPublicationTimeProvider] ERROR: Value is ${raw.runtimeType}, expected Timestamp');
+      }
+      return null;
+    } catch (e) {
+      if (_debugNextCommentPublicationTime) {
+        d('[nextCommentPublicationTimeProvider] ERROR: $e');
+      }
+      return null;
+    }
+  });
+});
 
 // Used in the detail pages to show tiles of the child posts (responses or comments).
 class ChildrenSection extends ConsumerWidget {
@@ -128,8 +179,12 @@ class ChildrenSection extends ConsumerWidget {
     // 2) Build the stream ONCE (don’t call this again for the key)
     final stream = builder(context, ref);
     // 3) Use a stable key that DOESN’T include the stream
-    final keyForList = ValueKey<String>('$title|$teamId');
-
+    final keyForList = ValueKey<String>('$title|$teamId');    
+    // 4) Read the next publication time ONCE at the widget level (shared across all items)
+    final nextPublicationTimeAsync = ref.watch(nextCommentPublicationTimeProvider);
+    if (_debugNextCommentPublicationTime) {
+      d('[ChildrenSection.build] nextPublicationTimeAsync: $nextPublicationTimeAsync');
+    }
     return SectionCard(
       title: title,
       trailing: newChildButton,
@@ -165,19 +220,35 @@ class ChildrenSection extends ConsumerWidget {
             itemCount: docs.length,
             separatorBuilder: (_, i_) => const SizedBox(height: 8),
             itemBuilder: (context, i) {
-              final d = docs[i].data();
+              // Use the publication time read at the widget level (not per-item)
+              final nextPublicationTime = nextPublicationTimeAsync.maybeWhen(
+                data: (dt) {
+                  if (_debugNextCommentPublicationTime) {
+                    d('[ChildrenSection.itemBuilder] nextPublicationTime data: $dt');
+                  }
+                  return dt;
+                },
+                orElse: () {
+                  if (_debugNextCommentPublicationTime) {
+                    d('[ChildrenSection.itemBuilder] nextPublicationTime is not data state');
+                  }
+                  return null;
+                },
+              );
+              
+              final docData = docs[i].data();
               final id = docs[i].id;
               final segments = docs[i].reference.path.split('/');
               final enquiryId = segments.length > 1 ? segments[1] : '';
               final responseId = segments.length > 3 ? segments[3] : '';
-              final title = (d['title'] ?? '').toString().trim();
-              final text = (d['postText'] ?? '').toString().trim();
-              final roundNumber = (d['roundNumber'] ?? 'x').toString().trim();
-              final responseNumber = (d['responseNumber'] ?? 'x').toString().trim();
-              final fromRC = d['fromRC'] ?? false;
-              final isPublished = d['isPublished'] ?? false;
-              final publishedAt = d['publishedAt'];
-              final teamColourHex = d['colour'];
+              final title = (docData['title'] ?? '').toString().trim();
+              final text = (docData['postText'] ?? '').toString().trim();
+              final roundNumber = (docData['roundNumber'] ?? 'x').toString().trim();
+              final responseNumber = (docData['responseNumber'] ?? 'x').toString().trim();
+              final fromRC = docData['fromRC'] ?? false;
+              final isPublished = docData['isPublished'] ?? false;
+              final publishedAt = docData['publishedAt'];
+              final teamColourHex = docData['colour'];
               final Color teamColourFaded = teamColourHex == null
                   ? Colors.transparent
                   : parseHexColour(teamColourHex).withValues(alpha: 0.2);
@@ -187,7 +258,7 @@ class ChildrenSection extends ConsumerWidget {
                 final titleSnippet = title.isEmpty
                     ? null
                     : (title.length > 140 ? '${title.substring(0, 140)}…' : title);
-                final commentCount = d['commentCount'] ?? 0;
+                final commentCount = docData['commentCount'] ?? 0;
                 final trailingText = Text( 
                   fromRC==false 
                     ? commentCount == 1
@@ -210,8 +281,12 @@ class ChildrenSection extends ConsumerWidget {
                   onTap: () => Nav.goResponse(context, enquiryId, responseId),
                 );
               } else if (segments.contains('comments')) {
+                final scheduledText = isPublished 
+                  ? text 
+                  : '(Draft, scheduled for publication at ${_fmt(nextPublicationTime)})\n$text';
+                
                 tile = ListTileCollapsibleText(
-                  isPublished ? text : '(Draft) $text',
+                  scheduledText,
                   maxLines: 3,
                   sideWidget: isPublished 
                     ? publishedAtSideWidget(publishedAt) 
@@ -254,4 +329,25 @@ class ChildrenSection extends ConsumerWidget {
       ),
     );
   }
+}
+
+
+/// Calculates the next scheduled comment publication time from Firestore.
+/// The backend updates this field whenever commentPublisher runs.
+// (Removed local calculation - now reading from backend)
+
+String _fmt(DateTime? dt) {
+  if (dt == null) return '';
+  // Show in local time with short readable format
+  return '${dt.day.toString().padLeft(2, '0')} '
+      '${_month(dt.month)} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+}
+
+
+String _month(int m) {
+  const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+  return months[m - 1];
 }

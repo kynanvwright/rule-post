@@ -105,8 +105,9 @@ service cloud.firestore {
       }
     }
 
-    match /appData/{doc} {
-      allow read, write: if false;
+    match /app_data/{doc} {
+      allow read: if isSignedIn();
+      allow write: if false;
     }
     
     match /drafts/posts {

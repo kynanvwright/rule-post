@@ -21,7 +21,7 @@ const db3 = getFirestore();
 export const commentPublisher = onSchedule(
   {
     region: SCHED_REGION_ROME,
-    schedule: "0 0,12 * * *",
+    schedule: "0 0,12 * * *", // if changed, requires change to calculateNextCommentPublicationTime
     timeZone: ROME_TZ,
     timeoutSeconds: TIMEOUT_SECONDS,
   },
@@ -165,5 +165,32 @@ export const commentPublisher = onSchedule(
     logger.info(
       `[commentPublisher] Processed ${processedEnquiries} enquiries; published ${totalCommentsPublished} comments.`,
     );
+
+    // Calculate and save the next scheduled publication time
+    const nextPublicationTime = calculateNextCommentPublicationTime(nowRome);
+    await db3.collection("app_data").doc("date_times").update({
+      nextCommentPublicationTime: nextPublicationTime.toJSDate(),
+    });
   },
 );
+
+/**
+ * Calculates the next scheduled comment publication time in Rome timezone.
+ * Comments publish at 00:00 and 12:00 Rome time.
+ * 
+ * @param nowRome Current time in Rome timezone (ROME_TZ)
+ * @returns DateTime in Rome timezone for the next publication slot
+ */
+function calculateNextCommentPublicationTime(
+  nowRome: DateTime,
+): DateTime {
+  // If we're before noon, next publication is at noon today
+  if (nowRome.hour < 12) {
+    return nowRome.set({ hour: 12, minute: 0, second: 0, millisecond: 0 });
+  }
+
+  // Otherwise, next publication is at midnight tomorrow
+  return nowRome
+    .plus({ days: 1 })
+    .set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
+}
