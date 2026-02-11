@@ -15,6 +15,7 @@ import type {
   FinalisedAttachment,
   CreatePostData,
   EditPostData,
+  EnquiryConclusion,
 } from "../common/types";
 
 export function coerceAndValidateInput(
@@ -32,7 +33,8 @@ export function coerceAndValidateInput(
     : [];
   const attachments = Array.isArray(raw.attachments) ? raw.attachments : [];
   const closeEnquiryOnPublish = Boolean(raw.closeEnquiryOnPublish);
-  const enquiryConclusion = (raw.enquiryConclusion ?? "") as any;
+  const enquiryConclusion: EnquiryConclusion = (raw.enquiryConclusion ??
+    "") as EnquiryConclusion;
   let removingAttachment: boolean = false;
   if ("editAttachments" in raw) {
     removingAttachment = raw.editAttachments.remove;
