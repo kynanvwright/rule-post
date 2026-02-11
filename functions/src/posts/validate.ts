@@ -31,6 +31,8 @@ export function coerceAndValidateInput(
     ? raw.parentIds.map(String)
     : [];
   const attachments = Array.isArray(raw.attachments) ? raw.attachments : [];
+  const closeEnquiryOnPublish = Boolean(raw.closeEnquiryOnPublish);
+  const enquiryConclusion = (raw.enquiryConclusion ?? "") as any;
   let removingAttachment: boolean = false;
   if ("editAttachments" in raw) {
     removingAttachment = raw.editAttachments.remove;
@@ -68,7 +70,15 @@ export function coerceAndValidateInput(
     }
   }
 
-  return { postType, title, postText, parentIds, attachments };
+  return {
+    postType,
+    title,
+    postText,
+    parentIds,
+    attachments,
+    closeEnquiryOnPublish,
+    enquiryConclusion,
+  };
 }
 
 export async function validateAttachments(options: {
