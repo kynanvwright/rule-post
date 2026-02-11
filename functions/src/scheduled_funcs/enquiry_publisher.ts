@@ -47,7 +47,7 @@ export const enquiryPublisher = onSchedule(
       const stageLength = enquiryData.stageLength ?? 4;
       const stageEndsDate = computeStageEnds(stageLength, {
         hour: 19,
-        minute: 55,
+        minute: 59,
       });
 
       // 2) publish fields

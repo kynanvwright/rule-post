@@ -14,7 +14,7 @@ import type { TargetTime } from "../common/types";
  * Returns a JS Date for the target time in Rome, N working days ahead of "now" (inclusive of today).
  * - Counts working days inclusive of today.
  * - If today's target time has already passed, rolls to the next working day.
- * - Target time defaults to 19:55:00.000 if omitted.
+ * - Target time defaults to 19:59:00.000 if omitted.
  */
 export function computeStageEnds(
   workDaysAhead: number,
@@ -29,7 +29,7 @@ export function computeStageEnds(
 
   const tt = {
     hour: 19,
-    minute: 55,
+    minute: 59,
     second: 0,
     millisecond: 0,
     ...(targetTime ?? {}),

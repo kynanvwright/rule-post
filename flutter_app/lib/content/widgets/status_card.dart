@@ -98,10 +98,6 @@ class StatusCard extends StatelessWidget {
 
   String _fmt(DateTime? dt) {
     if (dt == null) return '';
-    // Add 5 minutes because stage ends are usually 5 minutes earlier than required by rules
-    if (dt.minute == 55) {
-      dt = dt.add(const Duration(minutes: 5));
-    }
     // Show in local time with short readable format
     return '${dt.day.toString().padLeft(2, '0')} '
         '${_month(dt.month)} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';

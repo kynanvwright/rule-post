@@ -6,9 +6,6 @@ To record ideas for future development and document observed bugs.
 
 ## Bugs
 
-- Submission windows
-    - currently set to 5 minutes before the hour, potentially blocking legitimate submissions
-        - suggested solve: lock submissions on the hour, move scheduled functions to 1-5 minutes past
 - Closing an enquiry
     - current process requires RC submission then another button click in the RC Panel
     - this opens team responses for a while
@@ -26,8 +23,6 @@ To record ideas for future development and document observed bugs.
     - we need to restrict downloads and any functions that can be triggered by unauthenticated users, otherwise the website is susceptible to attack
     - also consider limiting to authenticated users, and emailing admins with details when rates are hit
 - Emails
-    - set up mailing list that always gets notified for new enquiries
-        - alternatively have separate buttons for enquiry notification vs global notification
     - notify teams when an enquiry round is ending and they haven't submitted
 - Publication
     - users should be able to see when comments will next be published, during open submission periods
@@ -38,6 +33,11 @@ To record ideas for future development and document observed bugs.
     - have a more relational database, with single sources of truth
         - save storage
         - prevent values from only being updated in some places
+- Submission timing
+    - currently submissions are locked and unlocked by a series of scheduled functions
+    - we have a lot of different functions running around the same times
+    - these have no proper order, it's just that submissions are locked after drafts are published
+    - we should create a proper flow which is race-safe and makes sure things are done in the proper order
 - Unused code
     - check through cloud functions and other widgets etc to ensure they're still in use
 - Review 'publishEvents' collection

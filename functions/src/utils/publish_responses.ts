@@ -102,8 +102,8 @@ export async function publishResponses(
   // 3) advance stage for enquiry
   const stageLength = enquiryData?.stageLength ?? 4;
   const newStageEnds = isRcResponse
-    ? computeStageEnds(stageLength, { hour: 19, minute: 55 })
-    : computeStageEnds(stageLength + 1, { hour: 11, minute: 55 });
+    ? computeStageEnds(stageLength, { hour: 19, minute: 59 })
+    : computeStageEnds(stageLength + 1, { hour: 11, minute: 59 });
   writer.update(enquiryRef, {
     teamsCanRespond: isRcResponse,
     teamsCanComment: !isRcResponse,
