@@ -98,6 +98,8 @@ class _ResponseDetailPageState extends ConsumerState<ResponseDetailPage> {
             postId: widget.responseId,
             parentIds: [widget.enquiryId],
             isPublished: isPublished,
+            initialCloseEnquiryOnPublish: r['closeEnquiryOnPublish'] ?? false,
+            initialEnquiryConclusion: r['enquiryConclusion']?.toString(),
           ),
           const SizedBox(width: 8),
           DeletePostButton(
