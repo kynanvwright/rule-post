@@ -36,11 +36,14 @@ class _EmailNotificationsTileState extends ConsumerState<EmailNotificationsTile>
     final current = ref.watch(emailNotificationsOnProvider);
     final displayValue = _override ?? current;
 
-    return SwitchListTile.adaptive(
-      title: const Text('Email notifications'),
-      subtitle: const Text('Receive updates on new enquiries, responses and comments'),
-      value: displayValue,
-      onChanged: _busy
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SwitchListTile.adaptive(
+          title: const Text('Email notifications'),
+          subtitle: const Text('Receive updates on new activity'),
+          value: displayValue,
+          onChanged: _busy
           ? null
           : (next) async {
               setState(() {
@@ -70,13 +73,67 @@ class _EmailNotificationsTileState extends ConsumerState<EmailNotificationsTile>
                 });
               }
             },
-      secondary: _busy
-          ? const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : null,
+          secondary: _busy
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : null,
+        ),
+
+        // Scope chooser (only when notifications are enabled)
+        if (displayValue) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: 
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Notify for:'),
+                RadioGroup<String>(
+                  onChanged: (v) async {
+                    if (v == null) return;
+                    try {
+                      await setEmailNotificationScope(v);
+                      await forceRefreshClaims();
+                      ref.invalidate(allClaimsProvider);
+                    } catch (e, st) {
+                      d('setEmailNotificationScope failed: $e\n$st');
+                    }
+                  },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Radio<String>(value: 'all'),
+                          const Padding(
+                            padding: EdgeInsets.only(left: 8),
+                            child: Text('All activity (enquiries, responses, comments)'),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Radio<String>(value: 'enquiries'),
+                          const Padding(
+                            padding: EdgeInsets.only(left: 8),
+                            child: Text('New enquiries only'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
+

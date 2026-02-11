@@ -66,6 +66,7 @@ export const createUserWithProfile = onCall(
           role: "user",
           team: req.auth?.token.team,
           emailNotificationsOn: false,
+          emailNotificationsScope: "all",
           createdAt: FieldValue.serverTimestamp(),
         });
       console.log("✅ Firestore entry created for:", userRecord.uid);

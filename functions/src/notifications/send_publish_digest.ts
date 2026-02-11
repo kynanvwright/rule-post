@@ -32,17 +32,7 @@ function becamePublished(
   return Boolean(after.isPublished) && before.isPublished !== after.isPublished;
 }
 
-/** all recipients who opted in */
-async function getRecipients(): Promise<string[]> {
-  const snap = await db
-    .collection("user_data")
-    .where("emailNotificationsOn", "==", true)
-    .get();
-
-  return snap.docs
-    .map((d) => (d.data() as UserData).email)
-    .filter((e): e is string => Boolean(e));
-}
+// Note: recipient partitioning is handled inside sendDigestFor below.
 
 /** simple digest email HTML */
 function renderDigestHTML(groups: {
@@ -218,8 +208,23 @@ async function sendDigestFor(
 ): Promise<void> {
   if (events.length === 0) return;
 
-  const to = await getRecipients();
-  if (!to.length) {
+  // Fetch recipients and partition by scope.
+  const snap = await db
+    .collection("user_data")
+    .where("emailNotificationsOn", "==", true)
+    .get();
+  const recipientsAll: string[] = [];
+  const recipientsEnquiriesOnly: string[] = [];
+  snap.docs.forEach((d) => {
+    const ud = d.data() as UserData;
+    const email = ud.email;
+    if (!email) return;
+    const scope = ud.emailNotificationsScope ?? "all";
+    if (scope === "enquiries") recipientsEnquiriesOnly.push(email);
+    else recipientsAll.push(email);
+  });
+
+  if (!recipientsAll.length && !recipientsEnquiriesOnly.length) {
     logger.info("No recipients; marking events processed without sending.");
     const batch = db.batch();
     events.forEach((d) =>
@@ -247,17 +252,36 @@ async function sendDigestFor(
     else if (e.kind === "comment") groups.comments.push(e);
   }
 
-  const html = renderDigestHTML(groups);
   const subject = "New publications on Rule Post";
-
   const resend = new Resend(process.env.RESEND_API_KEY as string);
-  await resend.emails.send({
-    from: "Rule Post <send@rulepost.com>", // must be verified in Resend
-    to: "Rule Post <send@rulepost.com>", // should be an internal address
-    bcc: to, // mailing list moved to bcc for privacy
-    subject,
-    html,
-  });
+
+  // Send full digest to users who want all activity
+  if (recipientsAll.length > 0) {
+    const htmlAll = renderDigestHTML(groups);
+    await resend.emails.send({
+      from: "Rule Post <send@rulepost.com>",
+      to: "Rule Post <send@rulepost.com>",
+      bcc: recipientsAll,
+      subject,
+      html: htmlAll,
+    });
+  }
+
+  // Send enquiries-only digest to users who opted in for enquiries only
+  if (recipientsEnquiriesOnly.length > 0 && groups.enquiries.length > 0) {
+    const htmlEnquiries = renderDigestHTML({
+      enquiries: groups.enquiries,
+      responses: [],
+      comments: [],
+    });
+    await resend.emails.send({
+      from: "Rule Post <send@rulepost.com>",
+      to: "Rule Post <send@rulepost.com>",
+      bcc: recipientsEnquiriesOnly,
+      subject,
+      html: htmlEnquiries,
+    });
+  }
 
   const batch = db.batch();
   events.forEach((d) =>

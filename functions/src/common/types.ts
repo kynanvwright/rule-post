@@ -137,6 +137,8 @@ export interface CommentParams extends ResponseParams {
 
 export interface UserData {
   emailNotificationsOn?: boolean;
+  /** 'all' = all activity; 'enquiries' = only enquiries */
+  emailNotificationsScope?: "all" | "enquiries";
   email?: string;
 }
 

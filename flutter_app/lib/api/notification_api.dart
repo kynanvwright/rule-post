@@ -16,7 +16,14 @@ Future<bool> toggleEmailNotifications(bool emailNotificationsOn) async {
   return result['emailNotificationsOn'];
 }
 
-
+ 
+Future<String> setEmailNotificationScope(String scope) async {
+  final result = await api.call<Json>(
+    'toggleEmailNotifications',
+    {'scope': scope},
+  );
+  return (result['emailNotificationsScope'] as String?) ?? 'all';
+}
 // version with progress dialog
 // Future<bool> toggleEmailNotifications(BuildContext context, bool emailNotificationsOn) async {
   //   final result = await api.callWithProgress<Json>(

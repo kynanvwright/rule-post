@@ -89,3 +89,9 @@ final emailNotificationsOnProvider = Provider<bool>((ref) {
   final claims = claimsAsync.asData?.value ?? const <String, Object?>{};
   return (claims['emailNotificationsOn'] as bool?) ?? false;
 });
+
+final emailNotificationsScopeProvider = Provider<String>((ref) {
+  final claimsAsync = ref.watch(allClaimsProvider);
+  final claims = claimsAsync.asData?.value ?? const <String, Object?>{};
+  return (claims['emailNotificationsScope'] as String?) ?? 'all';
+});
