@@ -6,10 +6,6 @@ To record ideas for future development and document observed bugs.
 
 ## Bugs
 
-- Closing an enquiry
-    - current process requires RC submission then another button click in the RC Panel
-    - this opens team responses for a while
-    - instead, RC should have the option to auto-end enquiry when their submission publishes
 - UI
     - On a cell phone or small device, "sideWidgets" don't wrap, so they take up lots of space and make the content squish onto 4-5 lines
 - Performance
@@ -24,8 +20,6 @@ To record ideas for future development and document observed bugs.
     - also consider limiting to authenticated users, and emailing admins with details when rates are hit
 - Emails
     - notify teams when an enquiry round is ending and they haven't submitted
-- Publication
-    - users should be able to see when comments will next be published, during open submission periods
 - Login
     - make sure Google/Bitwarden can autofill credentials
 - Data structure
