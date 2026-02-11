@@ -16,6 +16,8 @@ final class PostPayload {
   final String? postId;
   final bool? isPublished;
   final EditAttachmentMap editAttachments;
+  final bool closeEnquiryOnPublish;
+  final String? enquiryConclusion; // "amendment", "interpretation", "noResult"
 
   const PostPayload._({
     required this.postType,
@@ -26,6 +28,8 @@ final class PostPayload {
     required this.postId,
     required this.isPublished,
     required this.editAttachments,
+    required this.closeEnquiryOnPublish,
+    required this.enquiryConclusion,
   });
 
   /// Single entry-point: pick behaviour based on `postType`.
@@ -38,6 +42,8 @@ final class PostPayload {
     String? postId,
     bool? isPublished,
     EditAttachmentMap? editAttachments,
+    bool closeEnquiryOnPublish = false,
+    String? enquiryConclusion,
   }) {
     // String normaliser: trim -> null if empty
     String? norm(String? s) {
@@ -119,6 +125,8 @@ final class PostPayload {
       postId: normPostId,
       isPublished: isPublished,
       editAttachments: safeEditAtts,
+      closeEnquiryOnPublish: closeEnquiryOnPublish,
+      enquiryConclusion: enquiryConclusion,
     );
   }
 
@@ -139,6 +147,14 @@ final class PostPayload {
 
       if (isEdit) 'postId': postId,
       if (isPublished != null) 'isPublished': isPublished,
+      
+      // Only include closeEnquiryOnPublish for response posts
+      if (postType == PostType.response && closeEnquiryOnPublish)
+        'closeEnquiryOnPublish': closeEnquiryOnPublish,
+      
+      // Only include enquiryConclusion for response posts when closing
+      if (postType == PostType.response && closeEnquiryOnPublish && enquiryConclusion != null)
+        'enquiryConclusion': enquiryConclusion,
     };
 
     // Attachments:

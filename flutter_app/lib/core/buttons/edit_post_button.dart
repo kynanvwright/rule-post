@@ -20,6 +20,8 @@ class EditPostButton extends StatefulWidget {
     this.initialText,
     this.initialAttachments,
     required this.isPublished,
+    this.initialCloseEnquiryOnPublish = false,
+    this.initialEnquiryConclusion,
   });
 
   final PostType type;
@@ -29,6 +31,8 @@ class EditPostButton extends StatefulWidget {
   final String? initialText;
   final List<Map<String, dynamic>>? initialAttachments;
   final bool isPublished;
+  final bool initialCloseEnquiryOnPublish;
+  final String? initialEnquiryConclusion;
 
   @override
   State<EditPostButton> createState() => _EditPostButtonState();
@@ -81,6 +85,8 @@ class _EditPostButtonState extends State<EditPostButton> {
                 initialTitle: widget.initialTitle,
                 initialText: widget.initialText,
                 initialAttachments: initialTempAttachments,
+                initialCloseEnquiryOnPublish: widget.initialCloseEnquiryOnPublish,
+                initialEnquiryConclusion: widget.initialEnquiryConclusion,
               ),
             );
             if (payload == null) return;
@@ -130,6 +136,8 @@ class _EditPostButtonState extends State<EditPostButton> {
               postId: widget.postId,
               isPublished: widget.isPublished,
               editAttachments: editAttachments,
+              closeEnquiryOnPublish: payload.closeEnquiryOnPublish,
+              enquiryConclusion: payload.enquiryConclusion,
               );
             
             if (!context.mounted) return;

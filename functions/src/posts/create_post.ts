@@ -83,6 +83,8 @@ export const createPost = onCall<CreatePostData>(
       tempDocRef,
       4,
       { uid: authorUid, team: authorTeam },
+      data.closeEnquiryOnPublish,
+      data.enquiryConclusion,
     );
     logger.info("postTx paths", {
       pre: postFolder,

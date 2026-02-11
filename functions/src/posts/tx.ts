@@ -46,6 +46,8 @@ export async function runCreatePostTx(
   docRef: DocumentReference<DocumentData>,
   stageLength: number,
   author: AuthorInfo,
+  closeEnquiryOnPublish?: boolean,
+  enquiryConclusion?: string,
 ): Promise<TxResult> {
   const postId = docRef.id;
   const postPath = docRef.path;
@@ -147,6 +149,14 @@ export async function runCreatePostTx(
           author.team,
           teamColourMap,
         );
+
+        // Add closeEnquiryOnPublish flag if set and user is RC
+        if (closeEnquiryOnPublish && author.team === "RC") {
+          publicDoc.closeEnquiryOnPublish = true;
+          if (enquiryConclusion) {
+            publicDoc.enquiryConclusion = enquiryConclusion;
+          }
+        }
 
         // Uniqueness guard
         const guardRef = enquiryRef
@@ -251,6 +261,8 @@ export async function runEditPostTx(
   postText: string | undefined,
   docRef: DocumentReference<DocumentData>, // <- existing doc we are editing
   author: AuthorInfo, // { uid, team }
+  closeEnquiryOnPublish?: boolean,
+  enquiryConclusion?: string,
 ): Promise<TxResult> {
   const postId = docRef.id;
   const postPath = docRef.path;
@@ -299,6 +311,18 @@ export async function runEditPostTx(
     const publicUpdates: Record<string, unknown> = {};
     if (title !== undefined) publicUpdates.title = title;
     if (postText !== undefined) publicUpdates.postText = postText;
+
+    // Add closeEnquiryOnPublish flag if set and user is RC for response edits
+    if (
+      closeEnquiryOnPublish &&
+      postType === "response" &&
+      author.team === "RC"
+    ) {
+      publicUpdates.closeEnquiryOnPublish = true;
+      if (enquiryConclusion) {
+        publicUpdates.enquiryConclusion = enquiryConclusion;
+      }
+    }
 
     // if (Object.keys(publicUpdates).length === 0) {
     //   // nothing to change in main doc, but we may still record editedAt

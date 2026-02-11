@@ -140,7 +140,7 @@ export const commentPublisher = onSchedule(
         | undefined;
       const nowTs = Timestamp.now();
       if (stageEnds && stageEnds.toMillis() < nowTs.toMillis()) {
-        const newStageEndsDate = computeStageEnds(1, { hour: 23, minute: 55 });
+        const newStageEndsDate = computeStageEnds(1, { hour: 23, minute: 59 });
         writer.update(enquiryRef, {
           teamsCanRespond: false,
           teamsCanComment: false,

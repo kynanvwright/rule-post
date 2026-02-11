@@ -26,6 +26,8 @@ export async function publishResponses(
 ): Promise<PublishResult> {
   // declare variables
   let totalResponsesPublished = 0;
+  let shouldCloseEnquiry = false;
+  let enquiryConclusion: string | undefined;
   const publishedAt = FieldValue.serverTimestamp();
   const enquiryData = enquiryDoc.data();
   const enquiryRef = enquiryDoc.ref;
@@ -74,7 +76,16 @@ export async function publishResponses(
       shuffled[i].get("attachments"),
     );
 
-    // 2c) delete draft document
+    // 2c) Check if this response should close the enquiry
+    if (isRcResponse && shuffled[i].get("closeEnquiryOnPublish") === true) {
+      shouldCloseEnquiry = true;
+      enquiryConclusion = shuffled[i].get("enquiryConclusion");
+      logger.info(
+        `[${debugPrefix}] RC response ${shuffled[i].id} has closeEnquiryOnPublish flag with conclusion "${enquiryConclusion}", enquiry will be closed.`,
+      );
+    }
+
+    // 2d) delete draft document
     const team = await readAuthorTeam(shuffled[i].ref);
     if (!team) {
       logger.warn(
@@ -84,7 +95,7 @@ export async function publishResponses(
       queueDraftDelete(writer, team, shuffled[i].id);
     }
 
-    // 2d) generate unreadPost record for all users
+    // 2e) generate unreadPost record for all users
     await createUnreadForAllUsers(
       writer,
       "response",
@@ -99,17 +110,30 @@ export async function publishResponses(
     totalResponsesPublished += 1;
   }
 
-  // 3) advance stage for enquiry
+  // 3) advance stage for enquiry (or close it)
   const stageLength = enquiryData?.stageLength ?? 4;
   const newStageEnds = isRcResponse
     ? computeStageEnds(stageLength, { hour: 19, minute: 59 })
     : computeStageEnds(stageLength + 1, { hour: 11, minute: 59 });
-  writer.update(enquiryRef, {
-    teamsCanRespond: isRcResponse,
-    teamsCanComment: !isRcResponse,
-    ...(isRcResponse && { roundNumber: FieldValue.increment(1) }),
-    ...stageUpdatePayload(newStageEnds),
-  });
+
+  if (shouldCloseEnquiry && isRcResponse) {
+    // Close the enquiry when RC response is published with closeEnquiryOnPublish flag
+    writer.update(enquiryRef, {
+      isOpen: false,
+      teamsCanRespond: false,
+      teamsCanComment: false,
+      ...(enquiryConclusion && { enquiryConclusion }),
+      ...stageUpdatePayload(newStageEnds),
+    });
+  } else {
+    // Normal stage advancement
+    writer.update(enquiryRef, {
+      teamsCanRespond: isRcResponse,
+      teamsCanComment: !isRcResponse,
+      ...(isRcResponse && { roundNumber: FieldValue.increment(1) }),
+      ...stageUpdatePayload(newStageEnds),
+    });
+  }
 
   // 4) mark parent enquiry as having unread child data
   await createUnreadForAllUsers(

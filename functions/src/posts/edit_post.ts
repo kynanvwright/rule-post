@@ -92,6 +92,8 @@ export const editPost = onCall<EditPostData>(
       data.postText,
       draftDocRef,
       { uid: authorUid, team: authorTeam },
+      data.closeEnquiryOnPublish,
+      data.enquiryConclusion,
     );
     logger.info("postTx paths", {
       pre: postFolder,

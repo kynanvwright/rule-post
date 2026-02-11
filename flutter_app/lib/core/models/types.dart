@@ -32,11 +32,15 @@ class NewPostPayload {
     required this.title,
     required this.text,
     required this.attachments,
+    this.closeEnquiryOnPublish = false,
+    this.enquiryConclusion,
   });
 
   final String title;
   final String text;
   final List<TempAttachment> attachments;
+  final bool closeEnquiryOnPublish;
+  final String? enquiryConclusion; // "amendment", "interpretation", "noResult"
 }
 
 

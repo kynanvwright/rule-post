@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:web/web.dart' as web;
 
 import 'package:rule_post/api/post_apis.dart';
@@ -14,10 +15,11 @@ import 'package:rule_post/core/models/attachments.dart';
 import 'package:rule_post/core/models/post_payloads.dart';
 import 'package:rule_post/core/models/post_types.dart';
 import 'package:rule_post/core/models/types.dart' show NewPostPayload;
+import 'package:rule_post/riverpod/user_detail.dart';
 
 
 /// Used to create a new post, will be unpublished until scheduled function runs
-class NewPostButton extends StatefulWidget {
+class NewPostButton extends ConsumerStatefulWidget {
   const NewPostButton({
     super.key,
     required this.type,
@@ -34,11 +36,11 @@ class NewPostButton extends StatefulWidget {
   final bool edit;
 
   @override
-  State<NewPostButton> createState() => _NewPostButtonState();
+  ConsumerState<NewPostButton> createState() => _NewPostButtonState();
 }
 
 
-class _NewPostButtonState extends State<NewPostButton> {
+class _NewPostButtonState extends ConsumerState<NewPostButton> {
   final _tooltipKey = GlobalKey<TooltipState>();
 
   @override
@@ -102,6 +104,8 @@ class _NewPostButtonState extends State<NewPostButton> {
               postText: payload.text,
               attachments: payload.attachments,
               parentIds: widget.parentIds,
+              closeEnquiryOnPublish: payload.closeEnquiryOnPublish,
+              enquiryConclusion: payload.enquiryConclusion,
               );
             
             if (!context.mounted) return;
@@ -117,7 +121,7 @@ class _NewPostButtonState extends State<NewPostButton> {
 }
 
 
-class NewPostDialog extends StatefulWidget {
+class NewPostDialog extends ConsumerStatefulWidget {
   const NewPostDialog({
     super.key,
     required this.dialogTitle,
@@ -127,6 +131,8 @@ class NewPostDialog extends StatefulWidget {
     this.initialTitle,
     this.initialText,
     this.initialAttachments,
+    this.initialCloseEnquiryOnPublish = false,
+    this.initialEnquiryConclusion,
   });
 
   final String dialogTitle;
@@ -136,20 +142,24 @@ class NewPostDialog extends StatefulWidget {
   final String? initialTitle;
   final String? initialText;
   final List<TempAttachment>? initialAttachments;
+  final bool initialCloseEnquiryOnPublish;
+  final String? initialEnquiryConclusion; // "amendment", "interpretation", "noResult" or null
 
 
   @override
-  State<NewPostDialog> createState() => _NewPostDialogState();
+  ConsumerState<NewPostDialog> createState() => _NewPostDialogState();
 }
 
 
-class _NewPostDialogState extends State<NewPostDialog> {
+class _NewPostDialogState extends ConsumerState<NewPostDialog> {
   final _form = GlobalKey<FormState>();
   late final TextEditingController _title;
   late final TextEditingController _text;
   late final List<TempAttachment> _pending;
   bool _busy = false;
   bool _uploading = false;
+  bool _closeEnquiryOnPublish = false;
+  String? _enquiryConclusion; // "amendment", "interpretation", "noResult"
   final Map<String, double> _fileProgress = {}; // key = file path or name
   double get _aggregateProgress =>
       _fileProgress.isEmpty
@@ -164,6 +174,8 @@ class _NewPostDialogState extends State<NewPostDialog> {
     _text  = TextEditingController(text: widget.initialText ?? '');
 
     _pending = [...(widget.initialAttachments ?? const [])];
+    _closeEnquiryOnPublish = widget.initialCloseEnquiryOnPublish;
+    _enquiryConclusion = widget.initialEnquiryConclusion;
   }
 
   @override
@@ -176,6 +188,12 @@ class _NewPostDialogState extends State<NewPostDialog> {
   @override
   Widget build(BuildContext context) {
     final canSubmit = !_busy && !_uploading;
+    
+    // Show closure option only for RC users posting a response (not comment) or enquiry edits with conclusion
+    final userTeam = ref.watch(teamProvider);
+    final isRC = userTeam == 'RC';
+    final isResponsePost = widget.postType == 'response';
+    final showCloseOption = isRC && isResponsePost;
 
     return AlertDialog(
       title: Text(widget.dialogTitle),
@@ -212,6 +230,50 @@ class _NewPostDialogState extends State<NewPostDialog> {
                         ((widget.postType == 'comment') && (v == null || v.trim().isEmpty)) ? 'Content is required' : null,
                   ),
                   const SizedBox(height: 16),
+                if (showCloseOption) ...[
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Tooltip(
+                      message: 'When published, this response will close the enquiry and prevent further submissions',
+                      child: CheckboxListTile(
+                        value: _closeEnquiryOnPublish,
+                        onChanged: (val) => setState(() => _closeEnquiryOnPublish = val ?? false),
+                        title: const Text('Close enquiry?'),
+                        contentPadding: EdgeInsets.zero,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (_closeEnquiryOnPublish) ...[
+                    DropdownButtonFormField<String>(
+                      initialValue: _enquiryConclusion,
+                      items: const [
+                        DropdownMenuItem(
+                          value: "amendment",
+                          child: Text('Amendment'),
+                        ),
+                        DropdownMenuItem(
+                          value: "interpretation",
+                          child: Text('Interpretation'),
+                        ),
+                        DropdownMenuItem(
+                          value: "noResult",
+                          child: Text('No result'),
+                        ),
+                      ],
+                      onChanged: (val) => setState(() => _enquiryConclusion = val),
+                      decoration: const InputDecoration(
+                        labelText: 'How did this enquiry conclude?',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (v) => _closeEnquiryOnPublish && v == null 
+                          ? 'Select a conclusion type' 
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ],
                 if (widget.postType != 'comment') ...[
                   Row(
                     children: [
@@ -290,6 +352,8 @@ class _NewPostDialogState extends State<NewPostDialog> {
                         title: _title.text.trim(),
                         text: _text.text.trim(),
                         attachments: _pending.toList(),
+                        closeEnquiryOnPublish: _closeEnquiryOnPublish,
+                        enquiryConclusion: _enquiryConclusion,
                       ),
                     );
                   }

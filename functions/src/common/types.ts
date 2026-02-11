@@ -26,6 +26,8 @@ export type CreatePostData = {
   postText?: string;
   attachments?: TempAttachmentIn[];
   parentIds?: string[]; // response: [enquiryId], comment: [enquiryId, responseId]
+  closeEnquiryOnPublish?: boolean; // only for responses
+  enquiryConclusion?: EnquiryConclusion; // only for responses when closeEnquiryOnPublish is true
 };
 
 type EditAttachmentMap = {
