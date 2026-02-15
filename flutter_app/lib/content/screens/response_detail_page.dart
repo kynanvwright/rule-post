@@ -10,6 +10,7 @@ import 'package:rule_post/content/widgets/status_chip.dart';
 import 'package:rule_post/core/buttons/edit_post_button.dart';
 import 'package:rule_post/core/buttons/delete_post_button.dart';
 import 'package:rule_post/core/models/post_types.dart';
+import 'package:rule_post/core/widgets/markdown_display.dart';
 import 'package:rule_post/riverpod/doc_providers.dart';
 import 'package:rule_post/riverpod/read_receipts.dart';
 import 'package:rule_post/riverpod/user_detail.dart';
@@ -130,9 +131,9 @@ class _ResponseDetailPageState extends ConsumerState<ResponseDetailPage> {
       ),
         
       // SUMMARY
-      summary: summary.isEmpty ? null : SelectableText(summary),
+      summary: summary.isEmpty ? null : MarkdownDisplay(summary),
       // COMMENTARY
-      commentary: text.isEmpty ? null : SelectableText(text),
+      commentary: text.isEmpty ? null : MarkdownDisplay(text),
       // ATTACHMENTS
       attachments: attachments.map((m) => FancyAttachmentTile.fromMap(
         m,

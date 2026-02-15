@@ -218,12 +218,9 @@ class _NewPostDialogState extends ConsumerState<NewPostDialog> {
                     controller: _text,
                     decoration: InputDecoration(
                       labelText: widget.postType == 'comment' ? 'Comment' : 'Details',
-                      suffixIcon: widget.postType == 'comment' 
-                      ? null 
-                      : Tooltip(
-                        message: 'Plain text alternative to attaching a file',
-                        child: Icon(Icons.info_outline, size: 18),
-                        ),
+                      suffixIcon: _buildTextFieldSuffixIcon(),
+                      helperText: 'Markdown formatting is supported: **bold**, _italic_, `code`, etc.',
+                      helperMaxLines: 2,
                     ),
                     maxLines: 5,
                     validator: (v) =>
@@ -504,6 +501,16 @@ class _NewPostDialogState extends ConsumerState<NewPostDialog> {
     return list.isEmpty ? null : list;
   }
 
+  /// Build suffix icon for text field showing markdown formatting help
+  Widget? _buildTextFieldSuffixIcon() {
+    return Tooltip(
+      message: 'Markdown formatting supported:\n'
+          '**bold**, _italic_, ***bold+italic***,\n'
+          '`code`, # Headers, - lists, > quotes',
+      showDuration: const Duration(seconds: 5),
+      child: Icon(Icons.info_outline, size: 18),
+    );
+  }
 
   void _toast(String msg) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));

@@ -12,6 +12,7 @@ import 'package:rule_post/content/widgets/fancy_attachment_tile.dart';
 import 'package:rule_post/core/widgets/rules_committee_panel.dart';
 import 'package:rule_post/core/models/post_types.dart';
 import 'package:rule_post/core/widgets/get_stage_length.dart';
+import 'package:rule_post/core/widgets/markdown_display.dart';
 import 'package:rule_post/debug/debug.dart' as debug;
 import 'package:rule_post/riverpod/doc_providers.dart';
 import 'package:rule_post/riverpod/read_receipts.dart';
@@ -107,7 +108,7 @@ class _EnquiryDetailPageState extends ConsumerState<EnquiryDetailPage> {
             'stageStarts': stageStarts,
             'stageEnds': stageEnds,
           },
-          commentary: postText.isEmpty ? null : SelectableText(postText),
+          commentary: postText.isEmpty ? null : MarkdownDisplay(postText),
           attachments: attachments.map((m) =>
             FancyAttachmentTile.fromMap(m, previewHeight: MediaQuery.of(context).size.height * 0.6),
           ).toList(),

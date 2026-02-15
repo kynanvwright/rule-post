@@ -1,6 +1,7 @@
 // flutter_app/lib/content/widgets/list_tile.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 
 // special tile for comments, which can be expanded/collapsed if the text is long
@@ -83,11 +84,11 @@ class _ListTileCollapsibleTextState extends State<ListTileCollapsibleText>
                         child: AnimatedSize(
                           duration: const Duration(milliseconds: 160),
                           alignment: Alignment.topLeft,
-                          child: Text(
+                          child: _buildTextContent(
                             widget.text,
-                            style: textStyle,
-                            maxLines: _expanded ? null : widget.maxLines,
-                            overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                            textStyle,
+                            _expanded ? null : widget.maxLines,
+                            _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
                           ),
                         ),
                       ),
@@ -146,6 +147,74 @@ class _ListTileCollapsibleTextState extends State<ListTileCollapsibleText>
         );
       },
     );
+  }
+
+  /// Build markdown-aware text content
+  /// Renders markdown if detected, otherwise shows plain text
+  Widget _buildTextContent(
+    String text,
+    TextStyle baseStyle,
+    int? maxLines,
+    TextOverflow overflow,
+  ) {
+    // Quick check for markdown
+    if (_containsMarkdown(text)) {
+      // For collapsed view, just show plain text truncated
+      if (!_expanded && maxLines != null) {
+        return Text(
+          text,
+          style: baseStyle,
+          maxLines: maxLines,
+          overflow: overflow,
+        );
+      }
+      // For expanded view, render markdown
+      return MarkdownBody(
+        data: text,
+        selectable: true,
+        shrinkWrap: true,
+        styleSheet: _buildMarkdownStyle(baseStyle),
+      );
+    }
+
+    // No markdown, render as plain text
+    return Text(
+      text,
+      style: baseStyle,
+      maxLines: maxLines,
+      overflow: overflow,
+    );
+  }
+
+  /// Build markdown style sheet matching the tile's text style
+  MarkdownStyleSheet _buildMarkdownStyle(TextStyle baseStyle) {
+    return MarkdownStyleSheet(
+      p: baseStyle,
+      em: baseStyle.copyWith(fontStyle: FontStyle.italic),
+      strong: baseStyle.copyWith(fontWeight: FontWeight.bold),
+      code: baseStyle.copyWith(
+        fontFamily: 'monospace',
+        fontSize: baseStyle.fontSize != null ? baseStyle.fontSize! * 0.9 : null,
+      ),
+    );
+  }
+
+  /// Check if text contains markdown syntax
+  static bool _containsMarkdown(String text) {
+    final markdownPatterns = [
+      RegExp(r'\*\*\*.+?\*\*\*'),   // ***bold+italic***
+      RegExp(r'\*\*.+?\*\*'),       // **bold**
+      RegExp(r'__.+?__'),           // __bold__
+      RegExp(r'\*.+?\*'),           // *italic*
+      RegExp(r'_.+?_'),             // _italic_
+      RegExp(r'`[^`]+`'),           // `code`
+      RegExp(r'^#+\s'),             // # Headers
+      RegExp(r'^\s*[-*+]\s'),       // - lists
+      RegExp(r'^\s*\d+\.\s'),       // 1. numbered lists
+      RegExp(r'>.+'),               // > blockquotes
+    ];
+
+    return markdownPatterns.any((pattern) => pattern.hasMatch(text));
   }
 }
 

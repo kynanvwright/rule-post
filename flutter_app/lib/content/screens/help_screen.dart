@@ -96,6 +96,9 @@ class HelpFaqScreen extends StatelessWidget {
             "answer":
                 "Details are better for website performance, but attachments are useful for images and complex content."
           },
+          {"question": "Can I use markdown formatting in my post?",
+            "answer":
+                "Yes. The following markdown syntax is supported; italics, bold text, lists, headers, blockquotes and code blocks."},
         ]
       },
 
