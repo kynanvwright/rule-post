@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:rule_post/content/widgets/author_tag.dart';
 import 'package:rule_post/content/widgets/children_section.dart';
 import 'package:rule_post/content/widgets/detail_scaffold.dart';
 import 'package:rule_post/content/widgets/status_chip.dart';
@@ -14,6 +15,7 @@ import 'package:rule_post/core/models/post_types.dart';
 import 'package:rule_post/core/widgets/get_stage_length.dart';
 import 'package:rule_post/core/widgets/markdown_display.dart';
 import 'package:rule_post/debug/debug.dart' as debug;
+import 'package:rule_post/riverpod/admin_providers.dart';
 import 'package:rule_post/riverpod/doc_providers.dart';
 import 'package:rule_post/riverpod/read_receipts.dart';
 import 'package:rule_post/riverpod/user_detail.dart';
@@ -42,6 +44,7 @@ class _EnquiryDetailPageState extends ConsumerState<EnquiryDetailPage> {
     final docAsync = ref.watch(enquiryDocProvider(widget.enquiryId));
     final userRole = ref.watch(roleProvider);
     final userTeam = ref.watch(teamProvider);
+    final authorsAsync = ref.watch(postAuthorsProvider(widget.enquiryId));
 
     return docAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -70,6 +73,12 @@ class _EnquiryDetailPageState extends ConsumerState<EnquiryDetailPage> {
 
         debug.d("attachments: $attachments");
 
+        // Extract enquiry author from cache (safely handle all async states)
+        final enquiryAuthorTeam = authorsAsync.maybeWhen(
+          data: (authors) => authors?[widget.enquiryId],
+          orElse: () => null,
+        );
+
         return DetailScaffold(
           headerLines: [title],
           subHeaderLines: ['Rule Enquiry #$enquiryNumber'],
@@ -95,6 +104,7 @@ class _EnquiryDetailPageState extends ConsumerState<EnquiryDetailPage> {
           ),
           meta: Wrap(
             spacing: 8, runSpacing: 8, children: [
+              if (enquiryAuthorTeam != null) AuthorTag(authorTeam: enquiryAuthorTeam),
               if (d.containsKey('isOpen') && !isOpen && d.containsKey('enquiryConclusion')) StatusChip(enquiryConclusionLabels[d['enquiryConclusion']] ?? 'Closed', color: Colors.red),
               if (d.containsKey('isPublished') && !isPublished) StatusChip('Unpublished', color: Colors.orange),
               if (d.containsKey('fromRC') && fromRC) StatusChip('Rules Committee Enquiry', color: Colors.blue),

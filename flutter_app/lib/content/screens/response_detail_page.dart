@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:rule_post/content/widgets/author_tag.dart';
 import 'package:rule_post/content/widgets/children_section.dart';
 import 'package:rule_post/content/widgets/detail_scaffold.dart';
 import 'package:rule_post/content/widgets/fancy_attachment_tile.dart';
@@ -11,6 +12,7 @@ import 'package:rule_post/core/buttons/edit_post_button.dart';
 import 'package:rule_post/core/buttons/delete_post_button.dart';
 import 'package:rule_post/core/models/post_types.dart';
 import 'package:rule_post/core/widgets/markdown_display.dart';
+import 'package:rule_post/riverpod/admin_providers.dart';
 import 'package:rule_post/riverpod/doc_providers.dart';
 import 'package:rule_post/riverpod/read_receipts.dart';
 import 'package:rule_post/riverpod/user_detail.dart';
@@ -44,6 +46,7 @@ class _ResponseDetailPageState extends ConsumerState<ResponseDetailPage> {
     final eAsync = ref.watch(enquiryDocProvider(widget.enquiryId));
     final rAsync = ref.watch(responseDocProvider((enquiryId: widget.enquiryId, responseId: widget.responseId)));
     final userTeam = ref.watch(teamProvider);
+    final authorsAsync = ref.watch(postAuthorsProvider(widget.enquiryId));
 
         // Unified gate:
     if (eAsync.isLoading || rAsync.isLoading) {
@@ -75,6 +78,13 @@ class _ResponseDetailPageState extends ConsumerState<ResponseDetailPage> {
     final currentRound = e['roundNumber'] == e['roundNumber'];
     final teamsCanComment = e['teamsCanComment'] ?? false;
     final isRC = userTeam == 'RC';
+    
+    // Extract response author from cache (safely handle all async states)
+    final responseAuthorTeam = authorsAsync.maybeWhen(
+      data: (authors) => authors?[widget.responseId],
+      orElse: () => null,
+    );
+    
     final lockedComments = !isPublished || isRC || fromRC || !isOpen || !currentRound || !teamsCanComment;
     final lockedCommentReason = !lockedComments ? '' 
       : !isPublished ? "Can't comment on unpublished response"
@@ -115,6 +125,7 @@ class _ResponseDetailPageState extends ConsumerState<ResponseDetailPage> {
         spacing: 8,
         runSpacing: 8,
         children: [
+          if (responseAuthorTeam != null) AuthorTag(authorTeam: responseAuthorTeam),
           if (e.containsKey('isOpen') && !isOpen)
             StatusChip('Enquiry closed', color: Colors.red)
           else if (r.containsKey('isPublished') && !isPublished) 

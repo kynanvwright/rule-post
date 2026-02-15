@@ -53,7 +53,7 @@ The backend relies on Firebase services:
 #### deleteUser
 - delete a user from your team
 
-### Admins/RC
+### Admin/RC
 
 #### changeStageLength
 - allows the default number of working days between enquiry stages to be changed
@@ -62,6 +62,12 @@ The backend relies on Firebase services:
 #### closeEnquiry
 - allows the RC to close an enquiry once concluded
 - they are required to indicate how it ended (interpretation, amendment etc)
+
+#### getPostAuthorsForEnquiry
+- retrieves author team identities for all posts (responses, comments) in an enquiry
+- RC/admin only; returns map of {postId: authorTeam}
+- server-mediated for security; all calls logged for audit trail
+- prevents author identity leakage to non-admin users
 
 #### responseInstantPublisher
 - allows the RC to instantly publish a scheduled post, completing the current enquiry stage
@@ -159,6 +165,19 @@ Small collection containing:
 - **Posts must only be editable:**
   - **before publication**
   - **by the authoring team**
+- **Author identities remain hidden from all users except admin/RC** (see "Author Reveal" below)
+
+### Author Reveal (Admin/RC only)
+- Author team identities are stored in protected `/meta/data` subcollections (inaccessible to frontend)
+- RC/admin users can call `getPostAuthorsForEnquiry(enquiryId)` to retrieve author identities
+- This is a **server-mediated** endpoint: author data never stored on client, only in backend logs
+- All calls are logged (uid, enquiryId, timestamp) for audit trail
+- Frontend displays "By [Team]" tags only to admin/RC users
+- **Security model**:
+  - Firestore rules unchanged; `/meta/data` remains fully restricted
+  - Backend has full admin access; can safely fetch meta documents
+  - Frontend cannot access author data directly; must use callable function
+  - Non-admins never fetch authors (Riverpod provider gated by role check)
 
 ### Implementation
 - Firebase implements deny-by-default to the frontend

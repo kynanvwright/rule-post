@@ -49,6 +49,7 @@ export { commentPublisher } from "./scheduled_funcs/comment_publisher";
 /** ─────────────────────────────── Admin ─────────────────────────────── */
 export { changeStageLength } from "./admin_funcs/change_stage_length";
 export { closeEnquiry } from "./admin_funcs/close_enquiry";
+export { getPostAuthorsForEnquiry } from "./admin_funcs/get_post_authors";
 // export { markPostUnread } from "./admin_funcs/mark_post_unread";
 export { responseInstantPublisher } from "./admin_funcs/response_instant_publisher";
 

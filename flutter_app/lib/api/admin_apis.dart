@@ -81,3 +81,31 @@ Future<void> publishRcResponse(BuildContext context, String enquiryId) async {
     failureBuilder: (res) => 'Function failed due to: ${res['reason']}.'
   );
 }
+
+
+/// Retrieves author team identities for all posts in an enquiry.
+/// Only accessible to admins and RC members.
+/// Returns a map {postId: authorTeam} for efficient client-side caching.
+/// No progress UI—intended for background fetching (e.g., Riverpod provider).
+Future<Map<String, String>> getPostAuthorsForEnquiry(String enquiryId) async {
+  try {
+    final result = await api.call<Json>(
+      'getPostAuthorsForEnquiry',
+      {
+        'enquiryId': enquiryId.trim(),
+      },
+    );
+    
+    // Extract authors map from response
+    final authors = result['authors'] as Map<String, dynamic>?;
+    if (authors == null) {
+      return {};
+    }
+    
+    // Convert to Map<String, String> (strip optional types)
+    return authors.cast<String, String>();
+  } catch (e) {
+    debugPrint('[getPostAuthorsForEnquiry] Error: $e');
+    rethrow;
+  }
+}
