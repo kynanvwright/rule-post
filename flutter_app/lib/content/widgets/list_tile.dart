@@ -93,7 +93,11 @@ class _ListTileCollapsibleTextState extends State<ListTileCollapsibleText>
                         ),
                       ),
                       const SizedBox(width: 8),
-                      if (widget.sideWidget != null) widget.sideWidget!,
+                      if (widget.sideWidget != null)
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 240),
+                          child: widget.sideWidget!,
+                        ),
                     ],
                   ),
 

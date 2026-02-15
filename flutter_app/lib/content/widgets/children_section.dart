@@ -246,7 +246,10 @@ class ChildrenSection extends ConsumerWidget {
                     ],
                   ),
                   subtitle: titleSnippet == null ? null : Text(titleSnippet),
-                  trailing: trailingText,
+                  trailing: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 140),
+                    child: trailingText,
+                  ),
                   onTap: () => Nav.goResponse(context, enquiryId, responseId),
                 );
               } else if (segments.contains('comments')) {
