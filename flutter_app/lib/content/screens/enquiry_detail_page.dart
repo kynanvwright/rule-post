@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:rule_post/content/widgets/author_tag.dart';
+import 'package:rule_post/content/widgets/author_tag.dart' show formatAuthorSuffix;
 import 'package:rule_post/content/widgets/children_section.dart';
 import 'package:rule_post/content/widgets/detail_scaffold.dart';
 import 'package:rule_post/content/widgets/status_chip.dart';
@@ -80,7 +80,7 @@ class _EnquiryDetailPageState extends ConsumerState<EnquiryDetailPage> {
         );
 
         return DetailScaffold(
-          headerLines: [title],
+          headerLines: ['title${formatAuthorSuffix(enquiryAuthorTeam)}'],
           subHeaderLines: ['Rule Enquiry #$enquiryNumber'],
           headerButton: isPublished ? 
             null : 
@@ -104,7 +104,6 @@ class _EnquiryDetailPageState extends ConsumerState<EnquiryDetailPage> {
           ),
           meta: Wrap(
             spacing: 8, runSpacing: 8, children: [
-              if (enquiryAuthorTeam != null) AuthorTag(authorTeam: enquiryAuthorTeam),
               if (d.containsKey('isOpen') && !isOpen && d.containsKey('enquiryConclusion')) StatusChip(enquiryConclusionLabels[d['enquiryConclusion']] ?? 'Closed', color: Colors.red),
               if (d.containsKey('isPublished') && !isPublished) StatusChip('Unpublished', color: Colors.orange),
               if (d.containsKey('fromRC') && fromRC) StatusChip('Rules Committee Enquiry', color: Colors.blue),
@@ -126,6 +125,10 @@ class _EnquiryDetailPageState extends ConsumerState<EnquiryDetailPage> {
             enquiryId: widget.enquiryId,
             lockedResponses: lockedResponses,
             lockedReason: lockedResponseReason,
+            authors: authorsAsync.maybeWhen(
+              data: (a) => a,
+              orElse: () => null,
+            ),
           ),
           adminPanel: (isRC || isAdmin)
               ? AdminCard(

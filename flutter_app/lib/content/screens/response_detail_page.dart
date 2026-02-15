@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:rule_post/content/widgets/author_tag.dart';
+import 'package:rule_post/content/widgets/author_tag.dart' show formatAuthorSuffix;
 import 'package:rule_post/content/widgets/children_section.dart';
 import 'package:rule_post/content/widgets/detail_scaffold.dart';
 import 'package:rule_post/content/widgets/fancy_attachment_tile.dart';
@@ -94,7 +94,7 @@ class _ResponseDetailPageState extends ConsumerState<ResponseDetailPage> {
       : !currentRound ? 'This round is closed'
       : 'Comments currently closed';
     return DetailScaffold(
-      headerLines: ['Response $roundNumber.$responseNumber'],
+      headerLines: ['Response $roundNumber.$responseNumber${formatAuthorSuffix(responseAuthorTeam)}'],
       subHeaderLines: ['Rule Enquiry #$enquiryNumber'],
       headerButton: isPublished ? 
         null : 
@@ -125,7 +125,6 @@ class _ResponseDetailPageState extends ConsumerState<ResponseDetailPage> {
         spacing: 8,
         runSpacing: 8,
         children: [
-          if (responseAuthorTeam != null) AuthorTag(authorTeam: responseAuthorTeam),
           if (e.containsKey('isOpen') && !isOpen)
             StatusChip('Enquiry closed', color: Colors.red)
           else if (r.containsKey('isPublished') && !isPublished) 
@@ -159,6 +158,10 @@ class _ResponseDetailPageState extends ConsumerState<ResponseDetailPage> {
             responseId: widget.responseId,
             lockedComments: lockedComments,
             lockedReason: lockedCommentReason,
+            authors: authorsAsync.maybeWhen(
+              data: (a) => a,
+              orElse: () => null,
+            ),
           ),
     );
   }

@@ -53,14 +53,17 @@ class ChildrenSection extends ConsumerWidget {
     required this.title,
     required this.builder,
     required this.newChildButton,
+    this.authors,
   });
 
   final Stream<List<DocView>> Function(BuildContext, WidgetRef) builder;
+  final Map<String, String>? authors;
 
   factory ChildrenSection.responses({
     required String enquiryId,
     bool lockedResponses = false,
     String lockedReason = '',
+    Map<String, String>? authors,
   }) {
     return ChildrenSection(
       title: 'Responses',
@@ -107,6 +110,7 @@ class ChildrenSection extends ConsumerWidget {
           teamId: teamId, // null => only public; non-null => merge team drafts
         );
       },
+      authors: authors,
     );
   }
 
@@ -115,7 +119,7 @@ class ChildrenSection extends ConsumerWidget {
     required String responseId,
     bool lockedComments = false,
     String lockedReason = '',
-    // Map<String, String> filter = const {},
+    Map<String, String>? authors,
   }) {
     return ChildrenSection(
       title: 'Comments',
@@ -143,6 +147,7 @@ class ChildrenSection extends ConsumerWidget {
           teamId: teamId, // null => only public; non-null => merge team drafts
         );
       },
+      authors: authors,
     );
   }
 
@@ -235,7 +240,7 @@ class ChildrenSection extends ConsumerWidget {
                     children: [
                       Text(!isPublished
                         ? 'Response $roundNumber.$responseNumber (Draft)'
-                        : 'Response $roundNumber.$responseNumber',
+                        : 'Response $roundNumber.$responseNumber${authors?[responseId] != null ? ' (${authors![responseId]})' : ''}',
                       ),
                       UnreadDot(id),
                     ],
@@ -245,9 +250,12 @@ class ChildrenSection extends ConsumerWidget {
                   onTap: () => Nav.goResponse(context, enquiryId, responseId),
                 );
               } else if (segments.contains('comments')) {
+                final author = authors?['${responseId}_$id'];
+                final authorSuffix = author != null ? ' ($author)' : '';
+
                 final scheduledText = isPublished 
-                  ? text 
-                  : '(Draft, scheduled for publication at ${_fmt(nextPublicationTime)})\n$text';
+                  ? text + authorSuffix
+                  : '(Draft, scheduled for publication at ${_fmt(nextPublicationTime)})$authorSuffix\n$text';
                 
                 tile = ListTileCollapsibleText(
                   scheduledText,
