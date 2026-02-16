@@ -5,7 +5,9 @@
 To record ideas for future development and document observed bugs.
 
 ## Bugs
-
+- Emails
+    - check the rules to see if emails should send at 1200 NZT on a monday (0000 Europe/Rome)
+    - sent emails are bouncing
 - Performance
     - on an initial website visit, everything is quite slow to load. This improves later due to caching
 - Multiple sessions
