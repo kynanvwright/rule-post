@@ -12,6 +12,7 @@ import 'package:rule_post/core/buttons/edit_post_button.dart';
 import 'package:rule_post/core/buttons/delete_post_button.dart';
 import 'package:rule_post/core/models/post_types.dart';
 import 'package:rule_post/core/widgets/markdown_display.dart';
+import 'package:rule_post/debug/debug.dart' as debug;
 import 'package:rule_post/riverpod/admin_providers.dart';
 import 'package:rule_post/riverpod/doc_providers.dart';
 import 'package:rule_post/riverpod/read_receipts.dart';
@@ -58,6 +59,19 @@ class _ResponseDetailPageState extends ConsumerState<ResponseDetailPage> {
         data: (r) {
           final enquiryData = e ?? const <String, dynamic>{};
           final responseData = r ?? const <String, dynamic>{};
+          // Validate schemas: warn if expected keys are missing
+          debug.validateDocSchema(
+            e,
+            ['enquiryNumber', 'isOpen', 'isPublished'],
+            docType: 'Enquiry',
+            docId: widget.enquiryId,
+          );
+          debug.validateDocSchema(
+            r,
+            ['title', 'postText', 'roundNumber', 'responseNumber', 'isPublished'],
+            docType: 'Response',
+            docId: widget.responseId,
+          );
 
           // --- response fields---
           final summary = (responseData['title'] ?? '').toString().trim();

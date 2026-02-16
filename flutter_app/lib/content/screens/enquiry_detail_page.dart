@@ -51,6 +51,13 @@ class _EnquiryDetailPageState extends ConsumerState<EnquiryDetailPage> {
       error: (_, i_) => const Center(child: Text('Failed to load enquiry')),
       data: (data) {
         final d = data ?? const {};
+        // Validate schema: warn if expected keys are missing
+        debug.validateDocSchema(
+          data,
+          ['enquiryNumber', 'title', 'postText', 'isOpen', 'isPublished'],
+          docType: 'Enquiry',
+          docId: widget.enquiryId,
+        );
         final title = (d['title'] ?? 'Untitled').toString();
         final enquiryNumber = (d['enquiryNumber'] ?? '—').toString();
         final postText = (d['postText'] ?? '').toString().trim();
