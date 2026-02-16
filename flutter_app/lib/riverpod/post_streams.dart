@@ -83,7 +83,8 @@ Stream<List<DocView>> publicEnquiriesStream({
       )
       .snapshots()
       .map((snap) => snap.docs.map((d) => DocView(d.id, d.reference, d.data())).toList())
-      .map(makeFilterSorter(statusFilter: statusFilter));
+      .map(makeFilterSorter(statusFilter: statusFilter))
+      .onErrorReturn([]);  // Transient errors (network, backend hiccup) → empty list
 
     d('[publicEnquiriesStream] Public stream built fine.');
     return public$;
@@ -186,7 +187,8 @@ Stream<List<DocView>> publicResponsesStream({
         toFirestore: (v, _) => v,
       )
       .snapshots()
-      .map((snap) => snap.docs.map((d) => DocView(d.id, d.reference, d.data())).toList());
+      .map((snap) => snap.docs.map((d) => DocView(d.id, d.reference, d.data())).toList())
+      .onErrorReturn([]);  // Transient errors → empty list
   return public$;
 }
 

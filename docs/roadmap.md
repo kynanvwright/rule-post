@@ -6,8 +6,6 @@ To record ideas for future development and document observed bugs.
 
 ## Bugs
 
-- UI
-    - On a cell phone or small device, "sideWidgets" don't wrap, so they take up lots of space and make the content squish onto 4-5 lines
 - Performance
     - on an initial website visit, everything is quite slow to load. This improves later due to caching
 - Multiple sessions
