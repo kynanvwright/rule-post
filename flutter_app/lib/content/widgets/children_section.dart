@@ -51,6 +51,7 @@ class ChildrenSection extends ConsumerWidget {
   const ChildrenSection({
     super.key,
     required this.title,
+    required this.contentId,
     required this.builder,
     required this.newChildButton,
     this.authors,
@@ -58,6 +59,7 @@ class ChildrenSection extends ConsumerWidget {
 
   final Stream<List<DocView>> Function(BuildContext, WidgetRef) builder;
   final Map<String, String>? authors;
+  final String contentId;
 
   factory ChildrenSection.responses({
     required String enquiryId,
@@ -67,6 +69,7 @@ class ChildrenSection extends ConsumerWidget {
   }) {
     return ChildrenSection(
       title: 'Responses',
+      contentId: enquiryId,
       newChildButton: Align(
         alignment: Alignment.centerLeft,
         child: Consumer(
@@ -123,6 +126,7 @@ class ChildrenSection extends ConsumerWidget {
   }) {
     return ChildrenSection(
       title: 'Comments',
+      contentId: responseId,
       newChildButton: Align(
         alignment: Alignment.centerLeft,
         child: Consumer(
@@ -156,12 +160,11 @@ class ChildrenSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 1) Read any deps ONCE (used for the key)
-    final teamId = ref.watch(teamProvider);
-    // 2) Build the stream ONCE (don’t call this again for the key)
+    // 1) Build the stream ONCE (don't call this again for the key)
     final stream = builder(context, ref);
-    // 3) Use a stable key that DOESN’T include the stream
-    final keyForList = ValueKey<String>('$title|$teamId');    
+    // 2) Derive key from content ID (enquiryId for responses, responseId for comments)
+    //    This ensures key is stable and independent of parent state changes
+    final keyForList = ValueKey<String>('$title|$contentId');
     // 4) Read the next publication time ONCE at the widget level (shared across all items)
     final nextPublicationTimeAsync = ref.watch(nextCommentPublicationTimeProvider);
     return SectionCard(
