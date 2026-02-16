@@ -45,6 +45,7 @@ export { enquiryPublisher } from "./scheduled_funcs/enquiry_publisher";
 export { teamResponsePublisher } from "./scheduled_funcs/team_response_publisher";
 export { committeeResponsePublisher } from "./scheduled_funcs/committee_response_publisher";
 export { commentPublisher } from "./scheduled_funcs/comment_publisher";
+export { commentPublicationScheduleRefresher } from "./scheduled_funcs/comment_publication_schedule";
 
 /** ─────────────────────────────── Admin ─────────────────────────────── */
 export { changeStageLength } from "./admin_funcs/change_stage_length";
