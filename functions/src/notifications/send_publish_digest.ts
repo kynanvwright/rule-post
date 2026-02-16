@@ -260,7 +260,7 @@ async function sendDigestFor(
     const htmlAll = renderDigestHTML(groups);
     await resend.emails.send({
       from: "Rule Post <send@rulepost.com>",
-      to: "Rule Post <send@rulepost.com>",
+      to: "Rule Post <rulepost@americascup.com>",
       bcc: recipientsAll,
       subject,
       html: htmlAll,
@@ -276,7 +276,7 @@ async function sendDigestFor(
     });
     await resend.emails.send({
       from: "Rule Post <send@rulepost.com>",
-      to: "Rule Post <send@rulepost.com>",
+      to: "Rule Post <rulepost@americascup.com>",
       bcc: recipientsEnquiriesOnly,
       subject,
       html: htmlEnquiries,
