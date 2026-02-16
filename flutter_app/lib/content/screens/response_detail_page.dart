@@ -48,52 +48,53 @@ class _ResponseDetailPageState extends ConsumerState<ResponseDetailPage> {
     final userTeam = ref.watch(teamProvider);
     final authorsAsync = ref.watch(postAuthorsProvider(widget.enquiryId));
 
-        // Unified gate:
-    if (eAsync.isLoading || rAsync.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (eAsync.hasError)   return const Center(child: Text('Failed to load enquiry'));
-    if (rAsync.hasError)  return const Center(child: Text('Failed to load response'));
+    // Use idiomatic nested .when() pattern: load enquiry, then response
+    return eAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, _) => const Center(child: Text('Failed to load enquiry')),
+      data: (e) => rAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (_, _) => const Center(child: Text('Failed to load response')),
+        data: (r) {
+          final enquiryData = e ?? const <String, dynamic>{};
+          final responseData = r ?? const <String, dynamic>{};
 
-    final e = eAsync.value ?? const <String, dynamic>{};
-    final r = rAsync.value ?? const <String, dynamic>{};
+          // --- response fields---
+          final summary = (responseData['title'] ?? '').toString().trim();
+          final text = (responseData['postText'] ?? '').toString().trim();
+          final roundNumber = (responseData['roundNumber'] ?? 'x').toString();
+          final responseNumber = (responseData['responseNumber'] ?? 'x').toString();
+          final attachments =
+              (responseData['attachments'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
+          final fromRC = responseData['fromRC'] ?? false;
+          final isPublished = responseData['isPublished'] ?? false;
+          final teamColourHex = responseData['colour'];
+          final Color teamColourFaded = teamColourHex == null
+              ? Colors.transparent
+              : parseHexColour(teamColourHex).withValues(alpha: 0.2);
 
-    // --- response fields---
-    final summary = (r['title'] ?? '').toString().trim();
-    final text = (r['postText'] ?? '').toString().trim();
-    final roundNumber = (r['roundNumber'] ?? 'x').toString();
-    final responseNumber = (r['responseNumber'] ?? 'x').toString();
-    final attachments =
-        (r['attachments'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
-    final fromRC = r['fromRC'] ?? false;
-    final isPublished = r['isPublished'] ?? false;
-    final teamColourHex = r['colour'];
-    final Color teamColourFaded = teamColourHex == null
-        ? Colors.transparent
-        : parseHexColour(teamColourHex).withValues(alpha: 0.2);
-
-    // --- enquiry fields ---
-    final enquiryNumber = (e['enquiryNumber'] ?? 'x').toString();
-    final isOpen = e['isOpen'] ?? false;
-    final currentRound = e['roundNumber'] == e['roundNumber'];
-    final teamsCanComment = e['teamsCanComment'] ?? false;
-    final isRC = userTeam == 'RC';
-    
-    // Extract response author from cache (safely handle all async states)
-    final responseAuthorTeam = authorsAsync.maybeWhen(
-      data: (authors) => authors?[widget.responseId],
-      orElse: () => null,
-    );
-    
-    final lockedComments = !isPublished || isRC || fromRC || !isOpen || !currentRound || !teamsCanComment;
-    final lockedCommentReason = !lockedComments ? '' 
-      : !isPublished ? "Can't comment on unpublished response"
-      : isRC ? 'Rules Committee may not comment'
-      : fromRC ? 'No comments on Rules Committee responses'
-      : !isOpen ? 'Enquiry closed'
-      : !currentRound ? 'This round is closed'
-      : 'Comments currently closed';
-    return DetailScaffold(
+          // --- enquiry fields ---
+          final enquiryNumber = (enquiryData['enquiryNumber'] ?? 'x').toString();
+          final isOpen = enquiryData['isOpen'] ?? false;
+          final currentRound = enquiryData['roundNumber'] == enquiryData['roundNumber'];
+          final teamsCanComment = enquiryData['teamsCanComment'] ?? false;
+          final isRC = userTeam == 'RC';
+          
+          // Extract response author from cache (safely handle all async states)
+          final responseAuthorTeam = authorsAsync.maybeWhen(
+            data: (authors) => authors?[widget.responseId],
+            orElse: () => null,
+          );
+          
+          final lockedComments = !isPublished || isRC || fromRC || !isOpen || !currentRound || !teamsCanComment;
+          final lockedCommentReason = !lockedComments ? '' 
+            : !isPublished ? "Can't comment on unpublished response"
+            : isRC ? 'Rules Committee may not comment'
+            : fromRC ? 'No comments on Rules Committee responses'
+            : !isOpen ? 'Enquiry closed'
+            : !currentRound ? 'This round is closed'
+            : 'Comments currently closed';
+          return DetailScaffold(
       headerLines: ['Response $roundNumber.$responseNumber${formatAuthorSuffix(responseAuthorTeam)}'],
       subHeaderLines: ['Rule Enquiry #$enquiryNumber'],
       headerButton: isPublished ? 
@@ -109,8 +110,8 @@ class _ResponseDetailPageState extends ConsumerState<ResponseDetailPage> {
             postId: widget.responseId,
             parentIds: [widget.enquiryId],
             isPublished: isPublished,
-            initialCloseEnquiryOnPublish: r['closeEnquiryOnPublish'] ?? false,
-            initialEnquiryConclusion: r['enquiryConclusion']?.toString(),
+            initialCloseEnquiryOnPublish: responseData['closeEnquiryOnPublish'] ?? false,
+            initialEnquiryConclusion: responseData['enquiryConclusion']?.toString(),
           ),
           const SizedBox(width: 8),
           DeletePostButton(
@@ -125,17 +126,17 @@ class _ResponseDetailPageState extends ConsumerState<ResponseDetailPage> {
         spacing: 8,
         runSpacing: 8,
         children: [
-          if (e.containsKey('isOpen') && !isOpen)
+          if (enquiryData.containsKey('isOpen') && !isOpen)
             StatusChip('Enquiry closed', color: Colors.red)
-          else if (r.containsKey('isPublished') && !isPublished) 
+          else if (responseData.containsKey('isPublished') && !isPublished) 
             StatusChip('Unpublished', color: Colors.orange)
-          else if (e.containsKey('roundNumber') && r.containsKey('roundNumber') && !currentRound)
+          else if (enquiryData.containsKey('roundNumber') && responseData.containsKey('roundNumber') && !currentRound)
             StatusChip('Round closed', color: Colors.red)
-          else if (e.containsKey('teamsCanComment') && !fromRC)
+          else if (enquiryData.containsKey('teamsCanComment') && !fromRC)
             StatusChip(teamsCanComment ? 'Competitors may comment' : 'Comments closed', 
             color: teamsCanComment ? Colors.green : Colors.red),
           
-          if (r.containsKey('fromRC') && fromRC)
+          if (responseData.containsKey('fromRC') && fromRC)
             const StatusChip('Rules Committee Response', color: Colors.blue),
         ],
       ),
@@ -163,6 +164,9 @@ class _ResponseDetailPageState extends ConsumerState<ResponseDetailPage> {
               orElse: () => null,
             ),
           ),
+    );
+        },
+      ),
     );
   }
 }
