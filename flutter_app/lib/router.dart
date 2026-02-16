@@ -35,7 +35,9 @@ class RouterRefresh extends ChangeNotifier {
 }
 
 GoRouter buildRouter() {
-  final refreshListenable = RouterRefresh(FirebaseAuth.instance.authStateChanges());
+  // Listen to idTokenChanges (includes login/logout AND claims updates)
+  // This ensures router refreshes when user claims are updated server-side.
+  final refreshListenable = RouterRefresh(FirebaseAuth.instance.idTokenChanges());
 
   return GoRouter(
     navigatorKey: rootKey,
