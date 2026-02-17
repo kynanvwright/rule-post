@@ -21,6 +21,8 @@ To record ideas for future development and document observed bugs.
     - check through cloud functions and other widgets etc to ensure they're still in use
 - Review 'publishEvents' collection
     - should these be deleted instead of marked as processed?
+- Create an admin-only test page:
+    - attempt to trigger a variety of backend functions that should fail, even if the frontend guards are bypassed
 
 ## General thoughts
 - How do deadlines work if the RC responds late?
