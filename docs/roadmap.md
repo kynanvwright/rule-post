@@ -12,6 +12,10 @@ To record ideas for future development and document observed bugs.
     - on an initial website visit, everything is quite slow to load. This improves later due to caching
 - Multiple sessions
     - when you have multiple tabs open, behaviour can be inconsistent
+- Response Guards
+    - when responses are deleted, stale response guard documents can remain in the database
+    - prevents new responses from the same team in the same round with error "ALREADY_EXISTS: Document already exists"
+    - guard cleanup in `deleted_post_actions.ts` may fail silently if the `latestResponseId` field isn't properly set on the guard
 
 ## Future Work
 
@@ -20,8 +24,6 @@ To record ideas for future development and document observed bugs.
     - also consider limiting to authenticated users, and emailing admins with details when rates are hit
 - Emails
     - notify teams when an enquiry round is ending and they haven't submitted
-- Login
-    - make sure Google/Bitwarden can autofill credentials
 - Data structure
     - many fields are currently duplicated
     - have a more relational database, with single sources of truth
@@ -36,8 +38,6 @@ To record ideas for future development and document observed bugs.
     - check through cloud functions and other widgets etc to ensure they're still in use
 - Review 'publishEvents' collection
     - should these be deleted instead of marked as processed?
-- Response submission
-    - users reported confusion when attempting to do a round 2 submission. Consider whether we should add a response button on the RC reponse itself, so they don't have to navigate up to the enquiry first.
 
 ## General thoughts
 - How do deadlines work if the RC responds late?
