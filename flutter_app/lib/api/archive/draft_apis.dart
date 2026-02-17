@@ -5,7 +5,7 @@ import 'package:rule_post/debug/debug.dart';
 
 Future<List<String>> findDrafts(String postType, List<String> parentIds) async {
   try {
-    final functions = FirebaseFunctions.instanceFor(region: 'europe-west8');
+    final functions = FirebaseFunctions.instanceFor(region: 'europe-west6');
     final callable = functions.httpsCallable('findDrafts');
 
     final result = await callable.call({
@@ -28,10 +28,9 @@ Future<List<String>> findDrafts(String postType, List<String> parentIds) async {
   }
 }
 
-
 Future<bool> hasDrafts() async {
   try {
-    final functions = FirebaseFunctions.instanceFor(region: 'europe-west8');
+    final functions = FirebaseFunctions.instanceFor(region: 'europe-west6');
     final callable = functions.httpsCallable('hasDrafts');
 
     final result = await callable.call();

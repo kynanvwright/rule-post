@@ -9,14 +9,17 @@ import 'package:rule_post/debug/debug.dart';
 
 /// Ensures we're logged in and tokens are fresh before a backend call.
 /// Throws a FirebaseAuthException with code 'user-not-logged-in' if no user.
-Future<void> ensureFreshAuth({Duration waitForUser = const Duration(seconds: 3)}) async {
+Future<void> ensureFreshAuth({
+  Duration waitForUser = const Duration(seconds: 3),
+}) async {
   final auth = FirebaseAuth.instance;
 
   // 1) Wait briefly for Firebase to rehydrate user (common on web after reload)
   var user = auth.currentUser;
   if (user == null) {
     try {
-      user = await auth.authStateChanges()
+      user = await auth
+          .authStateChanges()
           .firstWhere((u) => u != null)
           .timeout(waitForUser);
     } on TimeoutException {
@@ -46,19 +49,18 @@ Future<void> ensureFreshAuth({Duration waitForUser = const Duration(seconds: 3)}
   d("App Check successful.");
 }
 
-
 /// Call a callable Cloud Function after making sure auth/app-check are fresh.
 Future<T> callFunctionSafely<T>({
   required String name,
   Map<String, dynamic>? data,
-  String region = 'europe-west8',
+  String region = 'europe-west6',
 }) async {
   await ensureFreshAuth();
 
   final functions = FirebaseFunctions.instanceFor(
     app: Firebase.app(),
-    region: region
-    );
+    region: region,
+  );
   final callable = functions.httpsCallable(name);
 
   try {

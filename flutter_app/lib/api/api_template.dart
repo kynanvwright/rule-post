@@ -7,13 +7,14 @@ import 'package:rule_post/content/widgets/progress_dialog.dart';
 import 'package:rule_post/core/models/firebase_exception_mapper.dart';
 import 'package:rule_post/core/models/types.dart' show Json;
 
-
 // generic wrapper for apis:
 //    makes a call to a backend function, passing any relevant data from the frontend to it
 //    throws errors if backend function fails
 //    can create a progress dialog while the function runs, and give infoabout success/failure
 class ApiTemplate {
-  final FirebaseFunctions _fx = FirebaseFunctions.instanceFor(region: 'europe-west8');
+  final FirebaseFunctions _fx = FirebaseFunctions.instanceFor(
+    region: 'europe-west6',
+  );
 
   /// A. Domain-mapped errors (recommended for app code)
   Future<T> call<T>(String name, Json data) async {
@@ -21,7 +22,10 @@ class ApiTemplate {
       final res = await _fx.httpsCallable(name).call<Json>(data);
       return res.data as T;
     } on FirebaseFunctionsException catch (e, st) {
-      Error.throwWithStackTrace(mapFunctionsError(e), st); // keeps original stack
+      Error.throwWithStackTrace(
+        mapFunctionsError(e),
+        st,
+      ); // keeps original stack
     } catch (e, st) {
       Error.throwWithStackTrace(UnknownIssue(e.toString()), st);
     }
@@ -61,11 +65,17 @@ class ApiTemplate {
     try {
       final result = await showProgressFlow<T>(
         context: context,
-          action: () async {
+        action: () async {
           await ensureFreshAuth();
           return call<T>(name, data);
         },
-        steps: steps ?? const ['Checking user authentication…','Running function…','Verifying results…'],
+        steps:
+            steps ??
+            const [
+              'Checking user authentication…',
+              'Running function…',
+              'Verifying results…',
+            ],
         stepInterval: stepInterval,
         successTitle: successTitle ?? 'Function ran successfully',
         successMessage: successMessage ?? 'Your action completed successfully.',
