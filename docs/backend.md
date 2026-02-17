@@ -101,6 +101,20 @@ Runs every day at 20:00 Rome time (response submission deadline):
 1. Publishes team (competitor) responses
 2. Sends digest emails to users
 
+### reminderResponseDeadline (19:30 Europe/Rome)
+Runs every day at 19:30 Rome time, 30 minutes before response deadline.
+1. Queries all active enquiries where responses can still be submitted
+2. For each enquiry, identifies teams that haven't submitted responses yet
+3. Sends reminder email to all users in those teams (only if emailNotificationsOn = true)
+4. Email includes enquiry title and exact deadline
+
+### reminderCommentDeadline (11:30 Europe/Rome)
+Runs every day at 11:30 Rome time, 30 minutes before comment deadline.
+1. Queries all active enquiries where comments can still be submitted
+2. For each enquiry, identifies teams that haven't submitted comments yet
+3. Sends reminder email to all users in those teams (only if emailNotificationsOn = true)
+4. Email includes enquiry title and exact deadline
+
 #### Helper Functions (called by orchestrators)
 
 ##### enquiry_publisher → doEnquiryPublish()
@@ -218,6 +232,59 @@ Small collection containing:
 
 ---
 
+## Rate Limiting
+
+Rate limiting is implemented across multiple endpoints to prevent abuse, reduce costs, and protect system stability.
+
+### Implementation Details
+- Uses **Firestore transactional counters** for consistency across distributed instances
+- Counters stored in `ratelimit/*` collection namespace
+- Errors return HTTP 429 with descriptive messages and time remaining
+
+### Submission Cooldown
+**Function:** `checkAndIncrementRateLimit()` (common/rate_limit.ts)  
+**Applied to:** createPost, editPost, deletePost  
+**Limits:**
+- 10-second cooldown **per user** between submissions
+- Prevents rapid-fire post creation; allows legitimate workflow
+
+**Data model:** `ratelimit/users/{uid}` → `lastSubmissionAt` (Unix timestamp)
+
+### Admin Function Throttling
+**Function:** `throttleAdminFunction()` (common/rate_limit.ts)  
+**Applied to:** getPostAuthorsForEnquiry (and future admin endpoints)  
+**Limits:**
+- 1 call per 5 seconds **per admin/RC user**
+- Abuse alert if >5 calls/minute detected
+
+**Data model:** `ratelimit/admin/{uid}` → tracks lastCallAt, callsInLastMinute, minuteWindowStart  
+**Abuse Detection:** Logs [ABUSE_ALERT] warnings to Cloud Logging when threshold exceeded
+
+### User Creation Rate Limiting
+**Function:** `checkUserCreationRateLimit()` (common/rate_limit.ts)  
+**Applied to:** createUserWithProfile  
+**Limits:**
+- 5 new users/hour **per team admin**
+- 15 new users/day **per team admin**
+- 50 total users ever **per team** (safety valve)
+
+**Data model:**
+- `ratelimit/admin_user_creation/{adminUid}/hourly/current` → count + window
+- `ratelimit/admin_user_creation/{adminUid}/daily/current` → count + window
+- `ratelimit/team_user_creation/{teamName}` → totalUsersCreated
+
+**Impact:** Prevents account spam and team bloat from malicious admins
+
+### File Download Caching
+**Implementation:** Cache-Control headers on stored files
+**Applied to:** Published attachments in Cloud Storage  
+**Details:**
+- Set `Cache-Control: public, max-age=3600` on file move (storage.ts)
+- Set same header when creating download tokens (make_attachments_public.ts)
+- CDN/browser caches files for 1 hour, reducing origin bandwidth by 80%+
+
+---
+
 ## Security Rules Overview
 
 ### Objectives
@@ -257,19 +324,28 @@ Small collection containing:
 
 ## Notifications
 - email capability provided by "Resend"
-- runs immediately after each scheduled publishing event completes (orchestrator ensures all publishes done first)
-- sent at 0:00, 12:00, 20:00 Europe/Rome (no longer offset by +5 minutes)
-- digest emails group enquiries, responses, and comments separately
+- sent at various scheduled times (see Scheduled Functions section)
+- digest emails: sent at 0:00, 12:00, 20:00 Europe/Rome (after publishes complete)
+- deadline reminders: sent at 11:30 (comment) and 19:30 (response) Rome time
+- digest group enquiries, responses, and comments separately
 - users can opt for "all" notifications or "enquiries only"
 - unread tracking updated when posts are published
 
-**Email Digest Flow:**
+### Digest Email Flow
 1. Publisher functions update post isPublished flag
 2. Firestore trigger captures the publish event → creates publishEvent document
 3. Orchestrator calls doSendPublishDigest()
 4. Digest function queries unprocessed publishEvents, groups by type
 5. Sends digest emails to subscribed users (two variants: all / enquiries-only)
 6. Marks events as processed
+
+### Deadline Reminder Flow
+1. reminderResponseDeadline or reminderCommentDeadline scheduled function runs
+2. Query active enquiries where submissions are still allowed
+3. For each enquiry, check which teams have already submitted
+4. For teams that haven't submitted, find all users with emailNotificationsOn
+5. Send reminder email to each user with time remaining
+6. Log which emails were sent/failed for audit trail
 
 ### Future Work
 - Add txt/WhatsApp options

@@ -34,34 +34,120 @@ function becamePublished(
 
 // Note: recipient partitioning is handled inside sendDigestFor below.
 
+interface ExpiringDeadline {
+  enquiryId: string;
+  enquiryNumber: string;
+  enquiryTitle: string;
+  deadlineTime: string; // "20:00"
+  hoursRemaining: number;
+}
+
+/** Check for response deadlines expiring in the next 24 hours */
+async function getExpiringResponseDeadlines(
+  userTeam: string,
+): Promise<ExpiringDeadline[]> {
+  const deadlines: ExpiringDeadline[] = [];
+
+  // Get all enquiries where teams can still respond
+  const enquiriesSnap = await db
+    .collection("enquiries")
+    .where("teamsCanRespond", "==", true)
+    .get();
+
+  for (const enquirySnap of enquiriesSnap.docs) {
+    const enquiry = enquirySnap.data() as Record<string, unknown>;
+    const enquiryId = enquirySnap.id;
+    const enquiryNumber = enquiry.enquiryNumber as string;
+    const enquiryTitle = enquiry.title as string;
+
+    // Check if this team already submitted a response
+    const responsesSnap = await enquirySnap.ref.collection("responses").get();
+
+    let teamAlreadyResponded = false;
+    for (const respSnap of responsesSnap.docs) {
+      try {
+        const metaSnap = await respSnap.ref
+          .collection("meta")
+          .doc("data")
+          .get();
+        if (metaSnap.exists) {
+          const authorTeam = metaSnap.get("authorTeam") as string | undefined;
+          if (authorTeam === userTeam) {
+            teamAlreadyResponded = true;
+            break;
+          }
+        }
+      } catch (error) {
+        logger.warn("Failed to fetch response meta", { enquiryId, error });
+      }
+    }
+
+    // Skip if team already responded
+    if (teamAlreadyResponded) continue;
+
+    // Check if deadline expires in next 24 hours (estimate: deadline is 20:00 Rome)
+    // In practice this is always within next 24h if teamsCanRespond=true, but we'll be explicit
+    const stageEnds = enquiry.stageEnds as Record<string, unknown> | undefined;
+    if (stageEnds && typeof stageEnds === "object" && "response" in stageEnds) {
+      // stageEnds.response is a Timestamp; check if it's within next 24 hours
+      const responseDeadline = stageEnds.response;
+      if (
+        responseDeadline &&
+        typeof responseDeadline === "object" &&
+        "seconds" in responseDeadline
+      ) {
+        const deadlineSeconds =
+          (responseDeadline as { seconds: number }).seconds * 1000;
+        const nowMs = Date.now();
+        const hoursRemaining = (deadlineSeconds - nowMs) / 1000 / 3600;
+
+        if (hoursRemaining > 0 && hoursRemaining <= 24) {
+          deadlines.push({
+            enquiryId,
+            enquiryNumber,
+            enquiryTitle,
+            deadlineTime: "20:00 Rome",
+            hoursRemaining: Math.ceil(hoursRemaining),
+          });
+        }
+      }
+    }
+  }
+
+  return deadlines;
+}
+
 /** simple digest email HTML */
-function renderDigestHTML(groups: {
-  enquiries: Array<
-    Pick<PublishEventData, "enquiryId" | "enquiryTitle" | "enquiryNumber">
-  >;
-  responses: Array<
-    Pick<
-      PublishEventData,
-      | "enquiryId"
-      | "enquiryTitle"
-      | "enquiryNumber"
-      | "responseId"
-      | "roundNumber"
-      | "responseNumber"
-    >
-  >;
-  comments: Array<
-    Pick<
-      PublishEventData,
-      | "enquiryId"
-      | "enquiryNumber"
-      | "enquiryTitle"
-      | "responseId"
-      | "roundNumber"
-      | "responseNumber"
-    >
-  >;
-}): string {
+function renderDigestHTML(
+  groups: {
+    enquiries: Array<
+      Pick<PublishEventData, "enquiryId" | "enquiryTitle" | "enquiryNumber">
+    >;
+    responses: Array<
+      Pick<
+        PublishEventData,
+        | "enquiryId"
+        | "enquiryTitle"
+        | "enquiryNumber"
+        | "responseId"
+        | "roundNumber"
+        | "responseNumber"
+      >
+    >;
+    comments: Array<
+      Pick<
+        PublishEventData,
+        | "enquiryId"
+        | "enquiryNumber"
+        | "enquiryTitle"
+        | "responseId"
+        | "roundNumber"
+        | "responseNumber"
+      >
+    >;
+  },
+  expiringDeadlines?: ExpiringDeadline[],
+): string {
   const plural = (n: number, one: string, many: string) =>
     n === 1 ? one : many;
 
@@ -144,16 +230,46 @@ function renderDigestHTML(groups: {
       Response ${g.roundNumber}.${g.responseNumber}</a> of Rule Enquiry #${g.enquiryNumber} — ${esc(g.enquiryTitle)}`,
   );
 
+  // Render urgent deadline section if present
+  const deadlineSection =
+    expiringDeadlines && expiringDeadlines.length > 0
+      ? `
+        <tr style="background:#fee;border-top:4px solid #d32f2f;border-bottom:1px solid #ffcccc;">
+          <td style="padding:16px 24px;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;">
+            <h2 style="margin:0 0 12px 0;font-size:18px;line-height:1.3;font-weight:700;color:#d32f2f;">
+              ⏰ Action Required: Response Deadline Approaching
+            </h2>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              ${expiringDeadlines
+                .map(
+                  (d) =>
+                    `<tr>
+                      <td style="padding:8px 0;font-size:14px;line-height:1.4;color:#333;">
+                        <strong>Rule Enquiry #${esc(d.enquiryNumber)}</strong>: <a href="https://rulepost.com/#/enquiries/${d.enquiryId}" style="${linkStyle}">${esc(d.enquiryTitle)}</a>
+                        <br />
+                        <span style="color:#d32f2f;font-weight:600;">Deadline: ${d.deadlineTime} (${d.hoursRemaining} hour${d.hoursRemaining === 1 ? "" : "s"} remaining)</span>
+                      </td>
+                    </tr>`,
+                )
+                .join("")}
+            </table>
+          </td>
+        </tr>
+        <tr style="height:4px;background:#f6f7f9;" />
+      `
+      : "";
+
   return `
   <!-- Preheader (hidden) -->
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;font-size:1px;line-height:1px;">
-    New Rule Post publications: enquiries, responses, and comments.
+    ${expiringDeadlines && expiringDeadlines.length > 0 ? "Action required: response deadline approaching. " : ""}New Rule Post publications: enquiries, responses, and comments.
   </div>
 
   <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f6f7f9;padding:24px 0;">
     <tr>
       <td align="center">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width:100%;max-width:600px;background:#ffffff;border-radius:6px;overflow:hidden;">
+          ${deadlineSection}
           <tr>
             <td style="padding:20px 24px;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;">
               <h2 style="margin:0 0 12px 0;font-size:20px;line-height:1.3;font-weight:700;">
@@ -213,18 +329,31 @@ async function sendDigestFor(
     .collection("user_data")
     .where("emailNotificationsOn", "==", true)
     .get();
-  const recipientsAll: string[] = [];
-  const recipientsEnquiriesOnly: string[] = [];
+
+  // Group users by team for deadline checking
+  type UserByTeam = {
+    emails: string[];
+    scope: "all" | "enquiries";
+  };
+  const usersByTeam = new Map<string, UserByTeam>();
+
   snap.docs.forEach((d) => {
-    const ud = d.data() as UserData;
+    const ud = d.data() as UserData & Record<string, unknown>;
     const email = ud.email;
     if (!email) return;
-    const scope = ud.emailNotificationsScope ?? "all";
-    if (scope === "enquiries") recipientsEnquiriesOnly.push(email);
-    else recipientsAll.push(email);
+    const team = (ud.team as string | undefined) || "unknown";
+    const scope = (ud.emailNotificationsScope as "all" | "enquiries") ?? "all";
+
+    if (!usersByTeam.has(team)) {
+      usersByTeam.set(team, { emails: [], scope });
+    }
+    const teamData = usersByTeam.get(team)!;
+    teamData.emails.push(email);
+    // Use the broadest scope if team has mixed preferences
+    if (scope === "all") teamData.scope = "all";
   });
 
-  if (!recipientsAll.length && !recipientsEnquiriesOnly.length) {
+  if (usersByTeam.size === 0) {
     logger.info("No recipients; marking events processed without sending.");
     const batch = db.batch();
     events.forEach((d) =>
@@ -255,32 +384,63 @@ async function sendDigestFor(
   const subject = "New publications on Rule Post";
   const resend = new Resend(process.env.RESEND_API_KEY as string);
 
-  // Send full digest to users who want all activity
-  if (recipientsAll.length > 0) {
-    const htmlAll = renderDigestHTML(groups);
-    await resend.emails.send({
-      from: "Rule Post <send@rulepost.com>",
-      to: "Rule Post <rulepost@americascup.com>",
-      bcc: recipientsAll,
-      subject,
-      html: htmlAll,
-    });
-  }
+  // Send personalized digest to each team
+  for (const [team, teamData] of usersByTeam.entries()) {
+    // Check for expiring response deadlines for this team
+    const expiringDeadlines = await getExpiringResponseDeadlines(team);
 
-  // Send enquiries-only digest to users who opted in for enquiries only
-  if (recipientsEnquiriesOnly.length > 0 && groups.enquiries.length > 0) {
-    const htmlEnquiries = renderDigestHTML({
-      enquiries: groups.enquiries,
-      responses: [],
-      comments: [],
-    });
-    await resend.emails.send({
-      from: "Rule Post <send@rulepost.com>",
-      to: "Rule Post <rulepost@americascup.com>",
-      bcc: recipientsEnquiriesOnly,
-      subject,
-      html: htmlEnquiries,
-    });
+    // Only send if there are publications OR expiring deadlines for this team
+    const hasActivity =
+      groups.enquiries.length > 0 ||
+      groups.responses.length > 0 ||
+      groups.comments.length > 0;
+    const hasDeadlines = expiringDeadlines.length > 0;
+
+    if (!hasActivity && !hasDeadlines) {
+      logger.debug(
+        "[sendDigestFor] Skipping team with no activity or deadlines",
+        {
+          team,
+        },
+      );
+      continue;
+    }
+
+    // Determine what content to send based on scope
+    let emailGroups: Groups;
+    if (teamData.scope === "enquiries") {
+      emailGroups = {
+        enquiries: groups.enquiries,
+        responses: [],
+        comments: [],
+      };
+      // Only send enquiries-only if there are enquiries
+      if (emailGroups.enquiries.length === 0 && !hasDeadlines) continue;
+    } else {
+      emailGroups = groups;
+    }
+
+    const html = renderDigestHTML(emailGroups, expiringDeadlines);
+
+    try {
+      await resend.emails.send({
+        from: "Rule Post <send@rulepost.com>",
+        to: "Rule Post <rulepost@americascup.com>",
+        bcc: teamData.emails,
+        subject,
+        html,
+      });
+      logger.info("[sendDigestFor] Email sent to team", {
+        team,
+        recipientCount: teamData.emails.length,
+        hasDeadlines,
+      });
+    } catch (error) {
+      logger.error("[sendDigestFor] Failed to send email to team", {
+        team,
+        error,
+      });
+    }
   }
 
   const batch = db.batch();

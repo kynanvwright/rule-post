@@ -337,25 +337,45 @@ Add to Firestore to track abuse:
 - Result: 80%+ bandwidth reduction for repeated downloads, ~$0 cost
 
 ### ✅ COMPLETED: Per-User Submission Rate Limiting
-- [x] Created `functions/src/common/rate_limit.ts` with sliding window counter logic
-  - 30 posts/minute limit
-  - 100 posts/hour limit
-  - Transactional Firestore counters
+- [x] Created `functions/src/common/rate_limit.ts` with 10-second cooldown logic
 - [x] Integrated into `functions/src/posts/create_post.ts` - checks before expensive operations
-- [x] Created admin functions in `functions/src/admin_funcs/rate_limit_admin.ts`
-  - `getRateLimitStatus` - view user's current counts + time until reset
-  - `resetRateLimit` - admin-only reset for testing
-- [x] Exported in `functions/src/index.ts`
-- Result: Users blocked after 30 posts/min or 100 posts/hour with descriptive errors
+- Result: Users blocked after 10 seconds with descriptive errors
+
+### ✅ COMPLETED: Admin/RC Endpoint Throttling
+- [x] Extended `functions/src/common/rate_limit.ts` with `throttleAdminFunction()`
+- [x] Integrated into `functions/src/admin_funcs/get_post_authors.ts`
+- [x] Enforces 1 call per 5 seconds per admin/RC user
+- [x] Logs abuse alerts when >5 calls/minute detected
+- Result: Prevents enumeration attacks, audit trail includes abuse alerts
+
+### ✅ COMPLETED: User Creation Rate Limiting
+- [x] Extended `functions/src/common/rate_limit.ts` with `checkUserCreationRateLimit()`
+- [x] Integrated into `functions/src/users/create_user.ts`
+- [x] Per-admin limits: 5 users/hour, 15 users/day
+- [x] Per-team safety valve: 50 total users ever created
+- Result: Prevents account spam and team bloat
 
 ### High-Impact, Medium-Effort  
-- [ ] Backend listing API for published posts (pagination, response size caps) (6-8 hours)
-- [ ] Per-team submission quotas (optional, given small team size; 500/hour) (2-3 hours)
+- [ ] Backend listing API for published posts (pagination, response size caps) (6-8 hours) - *Skipped: Direct Firestore queries work better for your architecture*
+- [ ] Per-team submission quotas (optional, given small team size) (2-3 hours)
 
 ### Medium-Impact, Low-Effort
-- [ ] Admin/RC endpoint throttling on `getPostAuthorsForEnquiry` (1 call/5sec per user) (2 hours)
-- [ ] User creation limits per team admin (5/hour, 15/day per team admin) (2 hours)
 - [ ] Email toggle rate limiting (5 calls/min per user) (1 hour)
+- [ ] **Email admin notifications for abuse alerts** (send email when >5 admin calls/min detected) (1-2 hours)
+
+### 🎉 BONUS FEATURE: Deadline Reminders (Just Completed!)
+- [x] Created `functions/src/scheduled_funcs/send_deadline_reminder.ts`
+- [x] `reminderResponseDeadline` - Runs at 19:30 Rome, sends reminder 30 min before 20:00 deadline
+- [x] `reminderCommentDeadline` - Runs at 11:30 Rome, sends reminder 30 min before 12:00 deadline
+- [x] Only emails teams that haven't submitted yet (skips if already responded/commented)
+- [x] Only sends to users with emailNotificationsOn = true
+- [x] Includes enquiry title, deadline, and clear call-to-action
+- Result: Proactive reminders help teams meet deadlines, reduces missed submissions
+
+### Lower Priority
+- [ ] IP reputation scoring / geographic blocking
+- [ ] Bot detection (Recaptcha v3)
+- [ ] Detailed audit logging dashboard
 
 ### Lower Priority
 - [ ] IP reputation scoring / geographic blocking
