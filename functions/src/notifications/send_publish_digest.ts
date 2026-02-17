@@ -86,7 +86,6 @@ async function getExpiringResponseDeadlines(
     if (teamAlreadyResponded) continue;
 
     // Check if deadline expires in next 24 hours (estimate: deadline is 20:00 Rome)
-    // In practice this is always within next 24h if teamsCanRespond=true, but we'll be explicit
     const stageEnds = enquiry.stageEnds as Record<string, unknown> | undefined;
     if (stageEnds && typeof stageEnds === "object" && "response" in stageEnds) {
       // stageEnds.response is a Timestamp; check if it's within next 24 hours
