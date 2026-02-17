@@ -17,11 +17,11 @@ flutter doctor -v || true
 
 # Install Firebase CLI
 echo "🔥 Installing Firebase CLI..."
-sudo npm install -g firebase-tools
+sudo env "PATH=$PATH" npm install -g firebase-tools
 
 # Install TypeScript globally
 echo "📘 Installing TypeScript..."
-sudo npm install -g typescript
+sudo env "PATH=$PATH" npm install -g typescript
 
 # Install project dependencies
 if [ -d "$WORKSPACE_DIR/functions" ]; then
