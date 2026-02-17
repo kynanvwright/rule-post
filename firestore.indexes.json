@@ -12,8 +12,7 @@
           "fieldPath": "commentNumber",
           "order": "ASCENDING"
         }
-      ],
-      "density": "SPARSE_ALL"
+      ]
     },
     {
       "collectionGroup": "comments",
@@ -27,8 +26,7 @@
           "fieldPath": "publishedAt",
           "order": "ASCENDING"
         }
-      ],
-      "density": "SPARSE_ALL"
+      ]
     },
     {
       "collectionGroup": "comments",
@@ -42,8 +40,7 @@
           "fieldPath": "publishedAt",
           "order": "DESCENDING"
         }
-      ],
-      "density": "SPARSE_ALL"
+      ]
     },
     {
       "collectionGroup": "comments",
@@ -61,8 +58,7 @@
           "fieldPath": "responseNumber",
           "order": "ASCENDING"
         }
-      ],
-      "density": "SPARSE_ALL"
+      ]
     },
     {
       "collectionGroup": "enquiries",
@@ -76,8 +72,7 @@
           "fieldPath": "createdAt",
           "order": "DESCENDING"
         }
-      ],
-      "density": "SPARSE_ALL"
+      ]
     },
     {
       "collectionGroup": "enquiries",
@@ -91,8 +86,7 @@
           "fieldPath": "enquiryNumber",
           "order": "DESCENDING"
         }
-      ],
-      "density": "SPARSE_ALL"
+      ]
     },
     {
       "collectionGroup": "enquiries",
@@ -110,8 +104,7 @@
           "fieldPath": "createdAt",
           "order": "DESCENDING"
         }
-      ],
-      "density": "SPARSE_ALL"
+      ]
     },
     {
       "collectionGroup": "enquiries",
@@ -129,8 +122,7 @@
           "fieldPath": "enquiryNumber",
           "order": "DESCENDING"
         }
-      ],
-      "density": "SPARSE_ALL"
+      ]
     },
     {
       "collectionGroup": "enquiries",
@@ -148,8 +140,7 @@
           "fieldPath": "publishedAt",
           "order": "DESCENDING"
         }
-      ],
-      "density": "SPARSE_ALL"
+      ]
     },
     {
       "collectionGroup": "enquiries",
@@ -175,8 +166,7 @@
           "fieldPath": "stageEnds",
           "order": "ASCENDING"
         }
-      ],
-      "density": "SPARSE_ALL"
+      ]
     },
     {
       "collectionGroup": "enquiries",
@@ -198,8 +188,7 @@
           "fieldPath": "stageEnds",
           "order": "ASCENDING"
         }
-      ],
-      "density": "SPARSE_ALL"
+      ]
     },
     {
       "collectionGroup": "enquiries",
@@ -213,8 +202,7 @@
           "fieldPath": "createdAt",
           "order": "DESCENDING"
         }
-      ],
-      "density": "SPARSE_ALL"
+      ]
     },
     {
       "collectionGroup": "enquiries",
@@ -228,8 +216,7 @@
           "fieldPath": "enquiryNumber",
           "order": "ASCENDING"
         }
-      ],
-      "density": "SPARSE_ALL"
+      ]
     },
     {
       "collectionGroup": "enquiries",
@@ -243,8 +230,7 @@
           "fieldPath": "enquiryNumber",
           "order": "DESCENDING"
         }
-      ],
-      "density": "SPARSE_ALL"
+      ]
     },
     {
       "collectionGroup": "enquiries",
@@ -258,8 +244,7 @@
           "fieldPath": "publishedAt",
           "order": "DESCENDING"
         }
-      ],
-      "density": "SPARSE_ALL"
+      ]
     },
     {
       "collectionGroup": "enquiries",
@@ -273,8 +258,7 @@
           "fieldPath": "title_lc",
           "order": "ASCENDING"
         }
-      ],
-      "density": "SPARSE_ALL"
+      ]
     },
     {
       "collectionGroup": "publishEvents",
@@ -288,8 +272,7 @@
           "fieldPath": "publishedAt",
           "order": "ASCENDING"
         }
-      ],
-      "density": "SPARSE_ALL"
+      ]
     },
     {
       "collectionGroup": "responses",
@@ -303,8 +286,7 @@
           "fieldPath": "publishedAt",
           "order": "DESCENDING"
         }
-      ],
-      "density": "SPARSE_ALL"
+      ]
     },
     {
       "collectionGroup": "responses",
@@ -318,8 +300,7 @@
           "fieldPath": "publishedAt",
           "order": "ASCENDING"
         }
-      ],
-      "density": "SPARSE_ALL"
+      ]
     },
     {
       "collectionGroup": "responses",
@@ -333,8 +314,7 @@
           "fieldPath": "publishedAt",
           "order": "DESCENDING"
         }
-      ],
-      "density": "SPARSE_ALL"
+      ]
     },
     {
       "collectionGroup": "responses",
@@ -352,8 +332,7 @@
           "fieldPath": "roundNumber",
           "order": "ASCENDING"
         }
-      ],
-      "density": "SPARSE_ALL"
+      ]
     },
     {
       "collectionGroup": "responses",
@@ -371,8 +350,7 @@
           "fieldPath": "responseNumber",
           "order": "ASCENDING"
         }
-      ],
-      "density": "SPARSE_ALL"
+      ]
     },
     {
       "collectionGroup": "responses",
@@ -390,8 +368,7 @@
           "fieldPath": "responseNumber",
           "order": "DESCENDING"
         }
-      ],
-      "density": "SPARSE_ALL"
+      ]
     }
   ],
   "fieldOverrides": []
