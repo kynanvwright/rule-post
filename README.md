@@ -180,7 +180,7 @@ firebase deploy --only functions:createPost
 
 ```bash
 # Download Firestore indexes from the console project
-firebase firestore:indexes --project rule-post > firestore.indexes.json
+firebase firestore:indexes --project rulepost-c52d6 > firestore.indexes.json
 
 # Lint and autofix TypeScript
 npx eslint "src/**/*.{js,ts,tsx}" --fix

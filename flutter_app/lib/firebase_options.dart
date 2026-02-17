@@ -56,8 +56,8 @@ class DefaultFirebaseOptions {
     apiKey: 'AIzaSyBZl3VE55Czil7bG-DDAYuNFAya9AsmVXg',
     appId: '1:64126229346:web:ef4dda7e42026fa030aa3b',
     messagingSenderId: '64126229346',
-    projectId: 'rule-post',
-    authDomain: 'rule-post.firebaseapp.com',
-    storageBucket: 'rule-post.firebasestorage.app',
+    projectId: 'rulepost-c52d6',
+    authDomain: 'rulepost-c52d6.firebaseapp.com',
+    storageBucket: 'rulepost-c52d6.firebasestorage.app',
   );
 }

@@ -42,7 +42,7 @@ jobs:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_RULE_POST }}
           channelId: live
-          projectId: rule-post
+          projectId: rulepost-c52d6
 
       # ── OPTIONAL: Deploy Cloud Functions (prod) ──────────────────────────
       - name: Install Firebase CLI
@@ -53,4 +53,4 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
         run: |
           npx firebase-tools@latest --version
-          npx firebase-tools@latest deploy --only functions --project rule-post --non-interactive
+          npx firebase-tools@latest deploy --only functions --project rulepost-c52d6 --non-interactive
