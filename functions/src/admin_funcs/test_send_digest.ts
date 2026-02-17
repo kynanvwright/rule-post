@@ -29,6 +29,7 @@ export const testSendDigest = onCall<TestSendDigestRequest>(
   {
     region: REGION,
     timeoutSeconds: 30,
+    secrets: ["RESEND_API_KEY"],
   },
   async (request) => {
     try {

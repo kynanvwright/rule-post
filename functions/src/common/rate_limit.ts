@@ -63,7 +63,7 @@ export async function throttleAdminFunction(
   functionName: string,
 ): Promise<{ allowed: boolean; abuseAlert: boolean }> {
   const db = getFirestore();
-  const throttleRef = db.doc(`ratelimit/admin/${userId}`);
+  const throttleRef = db.collection("ratelimit/admin").doc(userId);
   const now = Math.floor(Date.now() / 1000);
 
   let abuseAlert = false;
@@ -147,13 +147,17 @@ export async function checkUserCreationRateLimit(
   const now = Math.floor(Date.now() / 1000);
 
   // Check 1: Per-admin hourly limit (5 users/hour)
-  const adminHourRef = db.doc(
-    `ratelimit/admin_user_creation/${adminUid}/hourly/current`,
-  );
-  const adminDayRef = db.doc(
-    `ratelimit/admin_user_creation/${adminUid}/daily/current`,
-  );
-  const teamRef = db.doc(`ratelimit/team_user_creation/${teamName}`);
+  const adminHourRef = db
+    .collection("ratelimit/admin_user_creation")
+    .doc(adminUid)
+    .collection("hourly")
+    .doc("current");
+  const adminDayRef = db
+    .collection("ratelimit/admin_user_creation")
+    .doc(adminUid)
+    .collection("daily")
+    .doc("current");
+  const teamRef = db.collection("ratelimit/team_user_creation").doc(teamName);
 
   await db.runTransaction(async (tx) => {
     const [adminHourSnap, adminDaySnap, teamSnap] = await Promise.all([
