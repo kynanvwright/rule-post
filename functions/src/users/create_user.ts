@@ -101,9 +101,8 @@ export const createUserWithProfile = onCall(
 
     // 4) Generate password reset link (lets them set their own password)
     const link = await auth.generatePasswordResetLink(email, {
-      url: "https://rulepost.com", // post-completion redirect
-      handleCodeInApp: false, // set true if your app handles OOB codes
-      // dynamicLinkDomain: "example.page.link", // if using Firebase Dynamic Links
+      url: "https://rulepost-c52d6.web.app", // post-completion redirect
+      handleCodeInApp: false,
     });
     console.log("✅ Password reset link created");
 
