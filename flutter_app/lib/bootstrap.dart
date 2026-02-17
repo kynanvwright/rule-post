@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:rule_post/firebase_options.dart';
 import 'package:rule_post/debug/debug.dart';
 
-
 // Application bootstrap: initialize Firebase, App Check, Firestore persistence
 // For use in main.dart
 Future<void> bootstrap() async {
@@ -17,17 +16,16 @@ Future<void> bootstrap() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   await FirebaseAppCheck.instance.activate(
-    webProvider: ReCaptchaV3Provider('6LeP8ssrAAAAAHuCNAA-tIXVzahLuskzGP7K-Si0'),
-    // webProvider: ReCaptchaV3Provider(
-    //   const String.fromEnvironment('APP_CHECK_SITE_KEY', defaultValue: 'DEV_KEY_HERE'),
-    // ),
+    webProvider: ReCaptchaEnterpriseProvider(
+      '6LebMm4sAAAAAHMA_PhzwAOTmeTR0iAAOsjYxjzQ',
+    ),
   );
   await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
 
   // Firestore persistence
   try {
     FirebaseFirestore.instance.settings = const Settings(
-      persistenceEnabled: true,             
+      persistenceEnabled: true,
       cacheSizeBytes: 100 * 1024 * 1024,
     );
   } catch (e) {
