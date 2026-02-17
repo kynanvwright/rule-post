@@ -73,7 +73,7 @@ async function handleDeletion(args: {
         .doc(enquiryId)
         .collection("responses")
         .doc(responseId);
-      
+
       // Try to extract roundNumber and authorTeam from the snapshot if available
       let roundNumber: number | undefined;
       let authorTeam: string | undefined;
@@ -87,7 +87,10 @@ async function handleDeletion(args: {
       // If we couldn't get authorTeam from public doc, read the meta/data
       if (!authorTeam) {
         try {
-          const metaSnap = await responseRef.collection("meta").doc("data").get();
+          const metaSnap = await responseRef
+            .collection("meta")
+            .doc("data")
+            .get();
           if (metaSnap.exists) {
             authorTeam = metaSnap.get("authorTeam");
             if (!roundNumber) {
