@@ -5,7 +5,7 @@
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { logger } from "firebase-functions/v2";
 import { onDocumentUpdated } from "firebase-functions/v2/firestore";
-import { onSchedule } from "firebase-functions/v2/scheduler";
+// import { onSchedule } from "firebase-functions/v2/scheduler";
 import { Resend } from "resend";
 
 import {
@@ -400,6 +400,28 @@ export const onCommentIsPublishedUpdated = onDocumentUpdated(
 
 /* ───────────────────── scheduler (send digest) ───────────────────── */
 
+/** Helper function extracted for use by orchestrator */
+export async function doSendPublishDigest(): Promise<void> {
+  const now = Timestamp.now();
+  const snap = await db
+    .collection("publishEvents")
+    .where("processed", "==", false)
+    .where("publishedAt", "<=", now)
+    .orderBy("publishedAt", "asc")
+    .limit(500)
+    .get();
+
+  // type-annotate here so .data() is strongly typed above
+  const docs =
+    snap.docs as FirebaseFirestore.QueryDocumentSnapshot<PublishEventData>[];
+  await sendDigestFor(docs);
+  logger.info("Digest processed", { count: snap.size });
+}
+
+// ✅ Note: sendPublishDigest is no longer exported directly.
+// It is called by the orchestrator (orchestrate0000, orchestrate1200, orchestrate2000).
+// Legacy export commented out:
+/*
 export const sendPublishDigest = onSchedule(
   {
     // 00:05, 12:05, and 20:05 every day
@@ -409,19 +431,7 @@ export const sendPublishDigest = onSchedule(
     region: "europe-west6",
   },
   async (): Promise<void> => {
-    const now = Timestamp.now();
-    const snap = await db
-      .collection("publishEvents")
-      .where("processed", "==", false)
-      .where("publishedAt", "<=", now)
-      .orderBy("publishedAt", "asc")
-      .limit(500)
-      .get();
-
-    // type-annotate here so .data() is strongly typed above
-    const docs =
-      snap.docs as FirebaseFirestore.QueryDocumentSnapshot<PublishEventData>[];
-    await sendDigestFor(docs);
-    logger.info("Digest processed", { count: snap.size });
+    await doSendPublishDigest();
   },
 );
+*/

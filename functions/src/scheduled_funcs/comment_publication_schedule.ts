@@ -1,35 +1,11 @@
 import { getFirestore } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
-import { onSchedule } from "firebase-functions/v2/scheduler";
 import { DateTime } from "luxon";
 
-import { SCHED_REGION_ROME, ROME_TZ, TIMEOUT_SECONDS } from "../common/config";
+import { ROME_TZ } from "../common/config";
 import { isWorkingDay } from "../working_day";
 
 const db = getFirestore();
-
-// Runs hourly and ensures `app_data/date_times.nextCommentPublicationTime` is kept up-to-date.
-export const commentPublicationScheduleRefresher = onSchedule(
-  {
-    region: SCHED_REGION_ROME,
-    schedule: "1 0,12 * * *",
-    timeZone: ROME_TZ,
-    timeoutSeconds: TIMEOUT_SECONDS,
-  },
-  async (): Promise<void> => {
-    const nowRome = DateTime.now().setZone(ROME_TZ);
-    const next = calculateNextCommentPublicationTime(nowRome);
-
-    await db
-      .collection("app_data")
-      .doc("date_times")
-      .set({ nextCommentPublicationTime: next.toJSDate() }, { merge: true });
-
-    logger.info(
-      `[commentPublicationScheduleRefresher] nowRome=${nowRome.toISO()} next=${next.toISO()}`,
-    );
-  },
-);
 
 /**
  * Find the next publish slot (00:00 or 12:00 Rome time) that is strictly after now
@@ -59,3 +35,35 @@ function calculateNextCommentPublicationTime(nowRome: DateTime): DateTime {
   while (!isWorkingDay(next)) next = next.plus({ days: 1 }).startOf("day");
   return next.set({ hour: 12, minute: 0, second: 0, millisecond: 0 });
 }
+
+/** Helper function extracted for use by orchestrator */
+export async function doCommentPublicationScheduleRefresh(): Promise<void> {
+  const nowRome = DateTime.now().setZone(ROME_TZ);
+  const next = calculateNextCommentPublicationTime(nowRome);
+
+  await db
+    .collection("app_data")
+    .doc("date_times")
+    .set({ nextCommentPublicationTime: next.toJSDate() }, { merge: true });
+
+  logger.info(
+    `[doCommentPublicationScheduleRefresh] nowRome=${nowRome.toISO()} next=${next.toISO()}`,
+  );
+}
+
+// ✅ Note: commentPublicationScheduleRefresher is no longer exported directly.
+// It is called by the orchestrator (orchestrate0000).
+// Legacy export commented out:
+/*
+export const commentPublicationScheduleRefresher = onSchedule(
+  {
+    region: SCHED_REGION_ROME,
+    schedule: "1 0,12 * * *",
+    timeZone: ROME_TZ,
+    timeoutSeconds: TIMEOUT_SECONDS,
+  },
+  async (): Promise<void> => {
+    await doCommentPublicationScheduleRefresh();
+  },
+);
+*/
