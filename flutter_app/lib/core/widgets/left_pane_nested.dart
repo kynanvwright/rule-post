@@ -77,11 +77,10 @@ class LeftPaneHeader extends ConsumerWidget {
   }
 }
 
-
 /// ─────────────────────────────────────────────────────────────────────────
 /// LeftPaneNested: Shows enquiries and responses, used for navigation
 /// ─────────────────────────────────────────────────────────────────────────
-class LeftPaneNested extends ConsumerStatefulWidget{
+class LeftPaneNested extends ConsumerStatefulWidget {
   const LeftPaneNested({super.key, required this.state});
   final GoRouterState state;
 
@@ -89,7 +88,8 @@ class LeftPaneNested extends ConsumerStatefulWidget{
   ConsumerState<LeftPaneNested> createState() => _LeftPaneNestedState();
 }
 
-class _LeftPaneNestedState extends ConsumerState<LeftPaneNested> with StateLogger<LeftPaneNested> {
+class _LeftPaneNestedState extends ConsumerState<LeftPaneNested>
+    with StateLogger<LeftPaneNested> {
   String? get _enquiryId => widget.state.pathParameters['enquiryId'];
   String? get _responseId => widget.state.pathParameters['responseId'];
 
@@ -107,7 +107,7 @@ class _LeftPaneNestedState extends ConsumerState<LeftPaneNested> with StateLogge
 /// Enquiries list (within the LeftPaneNested) with expandable responses
 /// ─────────────────────────────────────────────────────────────────────────
 
-class _EnquiriesTree extends ConsumerWidget with BuildLogger{
+class _EnquiriesTree extends ConsumerWidget with BuildLogger {
   const _EnquiriesTree({
     required this.initiallyOpenEnquiryId,
     required this.initiallyOpenResponseId,
@@ -121,7 +121,7 @@ class _EnquiriesTree extends ConsumerWidget with BuildLogger{
     logBuild();
     final filter = ref.watch(enquiryFilterProvider);
     final itemsAsync = ref.watch(
-      combinedEnquiriesProvider((statusFilter: filter.status))
+      combinedEnquiriesProvider((statusFilter: filter.status)),
     );
 
     // If this is the very first load (no stale data yet), show your full-page loader:
@@ -175,7 +175,9 @@ class _EnquiriesTree extends ConsumerWidget with BuildLogger{
               initiallyExpanded: isOpen,
               maintainState: false,
               backgroundColor: isOpen
-                  ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.2)
+                  ? Theme.of(
+                      context,
+                    ).colorScheme.primaryContainer.withValues(alpha: 0.2)
                   : null,
               onExpansionChanged: (expanded) {
                 if (expanded && id != initiallyOpenEnquiryId) {
@@ -184,7 +186,7 @@ class _EnquiriesTree extends ConsumerWidget with BuildLogger{
                 }
               },
               title: _RowTile(
-                label: 'RE #$n - $title',
+                label: 'RE${n.toString().padLeft(3, '0')} - $title',
                 isUnread: UnreadDot(id, expanded: (isOpen && isPublished)),
                 selected: isOpen && initiallyOpenResponseId == null,
                 showSubtitle: isPublished == false,
@@ -207,14 +209,15 @@ class _EnquiriesTree extends ConsumerWidget with BuildLogger{
         // Subtle top loading bar while fresh data is fetched
         if (isReloading)
           Positioned(
-            top: 0, left: 0, right: 0,
+            top: 0,
+            left: 0,
+            right: 0,
             child: const LinearProgressIndicator(),
           ),
       ],
     );
   }
 }
-
 
 /// ─────────────────────────────────────────────────────────────────────────
 /// Responses which expand under an enquiry (within LeftPaneNested)
@@ -291,19 +294,24 @@ class _ResponsesBranch extends StatelessWidget with BuildLogger {
                 ),
               );
             }).toList(),
-         ),
+          ),
         );
       },
     );
   }
 }
 
-
 /// ─────────────────────────────────────────────────────────────────────────
 /// Row tile shared style
 /// ─────────────────────────────────────────────────────────────────────────
 class _RowTile extends StatelessWidget {
-  const _RowTile({required this.label, this.selected = false, this.showSubtitle = false, this.isUnread = const SizedBox.shrink(), this.onTap});
+  const _RowTile({
+    required this.label,
+    this.selected = false,
+    this.showSubtitle = false,
+    this.isUnread = const SizedBox.shrink(),
+    this.onTap,
+  });
   final String label;
   final bool selected;
   final bool showSubtitle;
@@ -346,17 +354,18 @@ class _RowTile extends StatelessWidget {
   }
 }
 
-
 // used when there are no responses under an enquiry, and that enquiry is expanded
 Widget leafInfo(String text, BuildContext context) => Padding(
   padding: const EdgeInsets.only(
-    // left: 24, 
-    bottom: 8
-    ),
+    // left: 24,
+    bottom: 8,
+  ),
   child: Text(
     text,
     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-      color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+      color: Theme.of(
+        context,
+      ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
     ),
   ),
 );

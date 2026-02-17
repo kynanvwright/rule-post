@@ -8,7 +8,6 @@ import 'package:rule_post/core/buttons/delete_button.dart';
 import 'package:rule_post/navigation/nav.dart';
 import 'package:rule_post/riverpod/unread_post_provider.dart';
 
-
 // Used to show posts that the user hasn't read
 //  Allows navigation to those posts
 //  Allows all to be marked as read
@@ -57,7 +56,7 @@ class NotificationsMenuButton extends ConsumerWidget {
         },
         menuChildren: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(8,8,8,4),
+            padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
             child: Center(
               child: Text(
                 'Unread Posts',
@@ -69,8 +68,8 @@ class NotificationsMenuButton extends ConsumerWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(8,4,8,8),
-            child: Center( 
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+            child: Center(
               child: DeleteButton(
                 labelText: 'Mark all as read',
                 icon: Icons.mark_email_read_outlined,
@@ -80,9 +79,9 @@ class NotificationsMenuButton extends ConsumerWidget {
                 onPressedButtonText: 'Continue',
                 onConfirmDelete: () async {
                   final collectionRef = FirebaseFirestore.instance
-                    .collection('user_data')
-                    .doc(uid)
-                    .collection('unreadPosts');
+                      .collection('user_data')
+                      .doc(uid)
+                      .collection('unreadPosts');
                   final snap = await collectionRef.get();
                   for (final doc in snap.docs) {
                     await doc.reference.delete();
@@ -99,11 +98,9 @@ class NotificationsMenuButton extends ConsumerWidget {
           ),
         ],
       ),
-      
     );
   }
 }
-
 
 // List of unread posts, lives in the NotificationsMenuButton dropdown
 class UnreadMenu extends ConsumerWidget {
@@ -124,7 +121,11 @@ class UnreadMenu extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final itemsAsync = ref.watch(unreadPostsStreamProvider);
 
-    Widget scrollableMenu(List<Widget> children, {double? maxWidth, double? maxHeight}) {
+    Widget scrollableMenu(
+      List<Widget> children, {
+      double? maxWidth,
+      double? maxHeight,
+    }) {
       return ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: maxWidth ?? 400,
@@ -133,7 +134,8 @@ class UnreadMenu extends ConsumerWidget {
         child: Scrollbar(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(vertical: 4),
-            child: IntrinsicWidth( // makes width wrap content up to maxWidth
+            child: IntrinsicWidth(
+              // makes width wrap content up to maxWidth
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -148,13 +150,21 @@ class UnreadMenu extends ConsumerWidget {
     return itemsAsync.when<Widget>(
       loading: () => const Padding(
         padding: EdgeInsets.all(12),
-        child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+        child: SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
       ),
       error: (err, st) => Padding(
         padding: const EdgeInsets.all(8),
         child: ListTile(
           leading: const Icon(Icons.error_outline),
-          title: Text('Failed to load: $err', maxLines: 2, overflow: TextOverflow.ellipsis),
+          title: Text(
+            'Failed to load: $err',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
           dense: true,
         ),
       ),
@@ -174,32 +184,38 @@ class UnreadMenu extends ConsumerWidget {
         final children = <Widget>[];
 
         for (final orderedKey in orderedKeys) {
-
           final postData = items[orderedKey];
           final alias = postData?['postAlias'] ?? '';
           final isUnread = postData?['isUnread'] == true;
-          final isClickable = (postData?['isUnread'] == true) || (postData?['postType'] == 'response');
+          final isClickable =
+              (postData?['isUnread'] == true) ||
+              (postData?['postType'] == 'response');
           String menuText;
           VoidCallback? onTapNavigation;
 
           if (postData?['postType'] == 'enquiry') {
             if (isUnread) {
-                menuText = alias;
-                onTapNavigation = () => onSelect(orderedKey, );
+              menuText = alias;
+              onTapNavigation = () => onSelect(orderedKey);
             } else {
-                menuText = '$alias:';
-              }
+              menuText = '$alias:';
+            }
           } else if (postData?['postType'] == 'response') {
             if (isUnread) {
-                menuText = '  $alias';
+              menuText = '  $alias';
             } else {
               final childrenCount = items.values
-                .where((e) => e['postType'] == 'comment' && e['parentId'] == orderedKey)
-                .length;
-                menuText = childrenCount == 0 ?
-                  '  $alias' : childrenCount == 1 ?
-                  '  $alias ($childrenCount new comment)' :
-                  '  $alias ($childrenCount new comments)';              
+                  .where(
+                    (e) =>
+                        e['postType'] == 'comment' &&
+                        e['parentId'] == orderedKey,
+                  )
+                  .length;
+              menuText = childrenCount == 0
+                  ? '  $alias'
+                  : childrenCount == 1
+                  ? '  $alias ($childrenCount new comment)'
+                  : '  $alias ($childrenCount new comments)';
             }
             onTapNavigation = () => onSelect(postData?['parentId'], orderedKey);
           } else {
@@ -237,12 +253,14 @@ class UnreadMenu extends ConsumerWidget {
           );
         }
 
-        return Material(type: MaterialType.transparency, child: scrollableMenu(children));
+        return Material(
+          type: MaterialType.transparency,
+          child: scrollableMenu(children),
+        );
       },
     );
   }
 }
-
 
 extension SafeGet on Map<String, dynamic> {
   String s(String key, [String def = '']) {
@@ -261,9 +279,9 @@ extension SafeGet on Map<String, dynamic> {
       // Normalise: trim, convert Unicode minus to ASCII, strip thousands commas
       final t = v
           .trim()
-          .replaceAll('\u2212', '-')   // Unicode minus → '-'
-          .replaceAll('\u2013', '-')   // en dash just in case
-          .replaceAll(',', '');        // remove separators if any
+          .replaceAll('\u2212', '-') // Unicode minus → '-'
+          .replaceAll('\u2013', '-') // en dash just in case
+          .replaceAll(',', ''); // remove separators if any
 
       // Only accept clean integers
       final m = RegExp(r'^[+-]?\d+$').firstMatch(t);
@@ -274,20 +292,18 @@ extension SafeGet on Map<String, dynamic> {
   }
 }
 
-
-/// Extracts the enquiry number from "RE #{enquiryNumber} - {title}".
+/// Extracts the enquiry number from "RE001 - {title}".
 /// Accepts optional whitespace and sign; normalises Unicode minus.
 int? extractEnquiryNumberFromAlias(String alias) {
   final norm = alias
       .trim()
-      .replaceAll('\u2212', '-')  // Unicode minus → ASCII
+      .replaceAll('\u2212', '-') // Unicode minus → ASCII
       .replaceAll('\u2013', '-'); // en dash → ASCII
 
-  final re = RegExp(r'^RE\s*#\s*([+-]?\d+)\s*-', caseSensitive: false);
+  final re = RegExp(r'^RE\s*#?\s*(\d+)\s*-', caseSensitive: false);
   final m = re.firstMatch(norm);
   return m == null ? null : int.tryParse(m.group(1)!);
 }
-
 
 // Used to sort the unread posts in the UnreadMenu
 List<String> generateOrderedKeys(Map<String, Map<String, dynamic>> items) {
@@ -295,34 +311,44 @@ List<String> generateOrderedKeys(Map<String, Map<String, dynamic>> items) {
   final all = items.entries.toList();
 
   // Enquiries first (missing/ill-typed fields handled via helpers)
-  final enquiries = all
-      .where((e) => e.value.s('postType') == 'enquiry')
-      .toList()
-    ..sort((a, b) {
-      final an = extractEnquiryNumberFromAlias(a.value.s('postAlias'))
-          ?? a.value.i('enquiryNumber', 1 << 30); // fallback if alias is malformed
-      final bn = extractEnquiryNumberFromAlias(b.value.s('postAlias'))
-          ?? b.value.i('enquiryNumber', 1 << 30);
+  final enquiries =
+      all.where((e) => e.value.s('postType') == 'enquiry').toList()
+        ..sort((a, b) {
+          final an =
+              extractEnquiryNumberFromAlias(a.value.s('postAlias')) ??
+              a.value.i(
+                'enquiryNumber',
+                1 << 30,
+              ); // fallback if alias is malformed
+          final bn =
+              extractEnquiryNumberFromAlias(b.value.s('postAlias')) ??
+              b.value.i('enquiryNumber', 1 << 30);
 
-    final c = an.compareTo(bn);
-    // multiply by -1 for descending sort
-    return (-1) * (c != 0 ? c : a.key.compareTo(b.key));
-    });
+          final c = an.compareTo(bn);
+          // multiply by -1 for descending sort
+          return (-1) * (c != 0 ? c : a.key.compareTo(b.key));
+        });
 
   for (final enquiry in enquiries) {
     ordered.add(enquiry.key);
 
-    if (enquiry.value['isUnread'] == false || enquiry.value['isUnread'] == null) {
+    if (enquiry.value['isUnread'] == false ||
+        enquiry.value['isUnread'] == null) {
       // Children responses under each enquiry
-      final responses = all
-          .where((e) =>
-              e.value.s('postType') == 'response' &&
-              e.value.s('parentId') == enquiry.key)
-          .toList()
-        ..sort((a, b) {
-          final c = a.value.s('postAlias').compareTo(b.value.s('postAlias'));
-          return c != 0 ? c : a.key.compareTo(b.key);
-        });
+      final responses =
+          all
+              .where(
+                (e) =>
+                    e.value.s('postType') == 'response' &&
+                    e.value.s('parentId') == enquiry.key,
+              )
+              .toList()
+            ..sort((a, b) {
+              final c = a.value
+                  .s('postAlias')
+                  .compareTo(b.value.s('postAlias'));
+              return c != 0 ? c : a.key.compareTo(b.key);
+            });
 
       for (final response in responses) {
         ordered.add(response.key);

@@ -3,7 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:rule_post/content/widgets/author_tag.dart' show formatAuthorSuffix;
+import 'package:rule_post/content/widgets/author_tag.dart'
+    show formatAuthorSuffix;
 import 'package:rule_post/content/widgets/children_section.dart';
 import 'package:rule_post/content/widgets/detail_scaffold.dart';
 import 'package:rule_post/content/widgets/status_chip.dart';
@@ -20,9 +21,8 @@ import 'package:rule_post/riverpod/doc_providers.dart';
 import 'package:rule_post/riverpod/read_receipts.dart';
 import 'package:rule_post/riverpod/user_detail.dart';
 
-
 /// -------------------- ENQUIRY DETAIL --------------------
-class EnquiryDetailPage extends ConsumerStatefulWidget  {
+class EnquiryDetailPage extends ConsumerStatefulWidget {
   const EnquiryDetailPage({super.key, required this.enquiryId});
   final String enquiryId;
 
@@ -39,6 +39,7 @@ class _EnquiryDetailPageState extends ConsumerState<EnquiryDetailPage> {
       markEnquiryRead?.call(widget.enquiryId);
     });
   }
+
   @override
   Widget build(BuildContext context) {
     final docAsync = ref.watch(enquiryDocProvider(widget.enquiryId));
@@ -61,7 +62,9 @@ class _EnquiryDetailPageState extends ConsumerState<EnquiryDetailPage> {
         final title = (d['title'] ?? 'Untitled').toString();
         final enquiryNumber = (d['enquiryNumber'] ?? '—').toString();
         final postText = (d['postText'] ?? '').toString().trim();
-        final attachments = (d['attachments'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
+        final attachments =
+            (d['attachments'] as List?)?.cast<Map<String, dynamic>>() ??
+            const [];
         final isOpen = d['isOpen'] ?? false;
         final isPublished = d['isPublished'] ?? false;
         final teamsCanRespond = d['teamsCanRespond'] ?? false;
@@ -72,11 +75,19 @@ class _EnquiryDetailPageState extends ConsumerState<EnquiryDetailPage> {
 
         final isAdmin = userRole == 'admin';
         final isRC = userTeam == 'RC';
-        final lockedResponses = !isPublished || (isRC && teamsCanRespond) || (!isRC && (!isOpen || !teamsCanRespond));
-        final lockedResponseReason = !lockedResponses ? '' :
-          !isPublished ? "Can't respond to unpublished enquiry" :
-          isRC ? 'Competitor response window currently open' :
-          !d['isOpen'] ? 'Enquiry closed' : 'Responses currently closed';
+        final lockedResponses =
+            !isPublished ||
+            (isRC && teamsCanRespond) ||
+            (!isRC && (!isOpen || !teamsCanRespond));
+        final lockedResponseReason = !lockedResponses
+            ? ''
+            : !isPublished
+            ? "Can't respond to unpublished enquiry"
+            : isRC
+            ? 'Competitor response window currently open'
+            : !d['isOpen']
+            ? 'Enquiry closed'
+            : 'Responses currently closed';
 
         debug.d("attachments: $attachments");
 
@@ -88,32 +99,44 @@ class _EnquiryDetailPageState extends ConsumerState<EnquiryDetailPage> {
 
         return DetailScaffold(
           headerLines: ['title${formatAuthorSuffix(enquiryAuthorTeam)}'],
-          subHeaderLines: ['Rule Enquiry #$enquiryNumber'],
-          headerButton: isPublished ? 
-            null : 
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              EditPostButton(
-                type: PostType.enquiry,
-                initialTitle: title,
-                initialText: postText,
-                initialAttachments: attachments,
-                postId: widget.enquiryId,
-                isPublished: isPublished,
-              ),
-              const SizedBox(width: 8),
-              DeletePostButton(
-                type: PostType.enquiry,
-                postId: widget.enquiryId,
-              ),
-            ],
-          ),
+          subHeaderLines: [
+            'Rule Enquiry ${enquiryNumber.toString().padLeft(3, '0')}',
+          ],
+          headerButton: isPublished
+              ? null
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    EditPostButton(
+                      type: PostType.enquiry,
+                      initialTitle: title,
+                      initialText: postText,
+                      initialAttachments: attachments,
+                      postId: widget.enquiryId,
+                      isPublished: isPublished,
+                    ),
+                    const SizedBox(width: 8),
+                    DeletePostButton(
+                      type: PostType.enquiry,
+                      postId: widget.enquiryId,
+                    ),
+                  ],
+                ),
           meta: Wrap(
-            spacing: 8, runSpacing: 8, children: [
-              if (d.containsKey('isOpen') && !isOpen && d.containsKey('enquiryConclusion')) StatusChip(enquiryConclusionLabels[d['enquiryConclusion']] ?? 'Closed', color: Colors.red),
-              if (d.containsKey('isPublished') && !isPublished) StatusChip('Unpublished', color: Colors.orange),
-              if (d.containsKey('fromRC') && fromRC) StatusChip('Rules Committee Enquiry', color: Colors.blue),
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (d.containsKey('isOpen') &&
+                  !isOpen &&
+                  d.containsKey('enquiryConclusion'))
+                StatusChip(
+                  enquiryConclusionLabels[d['enquiryConclusion']] ?? 'Closed',
+                  color: Colors.red,
+                ),
+              if (d.containsKey('isPublished') && !isPublished)
+                StatusChip('Unpublished', color: Colors.orange),
+              if (d.containsKey('fromRC') && fromRC)
+                StatusChip('Rules Committee Enquiry', color: Colors.blue),
             ],
           ),
           stageMap: {
@@ -125,17 +148,19 @@ class _EnquiryDetailPageState extends ConsumerState<EnquiryDetailPage> {
             'stageEnds': stageEnds,
           },
           commentary: postText.isEmpty ? null : MarkdownDisplay(postText),
-          attachments: attachments.map((m) =>
-            FancyAttachmentTile.fromMap(m, previewHeight: MediaQuery.of(context).size.height * 0.6),
-          ).toList(),
+          attachments: attachments
+              .map(
+                (m) => FancyAttachmentTile.fromMap(
+                  m,
+                  previewHeight: MediaQuery.of(context).size.height * 0.6,
+                ),
+              )
+              .toList(),
           footer: ChildrenSection.responses(
             enquiryId: widget.enquiryId,
             lockedResponses: lockedResponses,
             lockedReason: lockedResponseReason,
-            authors: authorsAsync.maybeWhen(
-              data: (a) => a,
-              orElse: () => null,
-            ),
+            authors: authorsAsync.maybeWhen(data: (a) => a, orElse: () => null),
           ),
           adminPanel: (isRC || isAdmin)
               ? AdminCard(
