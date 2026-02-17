@@ -7,7 +7,7 @@ import { logger } from "firebase-functions";
 import { HttpsError } from "firebase-functions/v2/https";
 
 const SUBMISSION_COOLDOWN_SECONDS = 10;
-const ADMIN_THROTTLE_SECONDS = 5; // Admin calls must be 5+ seconds apart
+const ADMIN_THROTTLE_SECONDS = 2; // Admin calls must be 2+ seconds apart
 
 /**
  * Check if user has exceeded cooldown before creating a post.
