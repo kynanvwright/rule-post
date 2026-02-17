@@ -4,6 +4,8 @@ import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { Resend } from "resend";
 
+import { checkUserCreationRateLimit } from "../common/rate_limit";
+
 const auth = getAuth(); // ✅ this returns an Auth instance (not callable)
 const db = getFirestore(); // ✅ Firestore instance
 
@@ -27,7 +29,11 @@ export const createUserWithProfile = onCall(
       throw new HttpsError("invalid-argument", "Missing email");
     }
 
-    // 2) Create the Auth user
+    // 2) Rate limit: Check per-admin and per-team user creation limits
+    const teamName = req.auth?.token.team as string;
+    await checkUserCreationRateLimit(uid, teamName);
+
+    // 3) Create the Auth user
     let userRecord;
     try {
       userRecord = await auth.createUser({ email });
@@ -56,7 +62,7 @@ export const createUserWithProfile = onCall(
       throw new HttpsError("internal", "Failed to create auth user.");
     }
 
-    // 3) Create Firestore profile doc
+    // 4) Create Firestore profile doc
     try {
       await db
         .collection("user_data")
@@ -90,7 +96,7 @@ export const createUserWithProfile = onCall(
       );
     }
 
-    // 4) Generate password reset link (lets them set their own password)
+    // 5) Generate password reset link (lets them set their own password)
     const link = await auth.generatePasswordResetLink(email, {
       url: "https://rulepost.com", // post-completion redirect
       handleCodeInApp: false, // set true if your app handles OOB codes
@@ -98,7 +104,7 @@ export const createUserWithProfile = onCall(
     });
     console.log("✅ Password reset link created");
 
-    // 5) Send email via Resend
+    // 6) Send email via Resend
     const recipientName = getNameFromEmail(email);
     await resend.emails.send({
       from: "Rule Post <send@rulepost.com>",

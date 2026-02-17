@@ -1,13 +1,14 @@
 // ──────────────────────────────────────────────────────────────────────────────
 // File: src/admin_funcs/get_post_authors.ts
 // Purpose: Reveal author team identities for posts within an enquiry (admin/RC only)
-// Security: Backend-mediated; logs all calls for audit trail
+// Security: Backend-mediated; logs all calls for audit trail; throttled to prevent enumeration
 // ──────────────────────────────────────────────────────────────────────────────
 import { getFirestore } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 
 import { REGION, TIMEOUT_SECONDS } from "../common/config";
+import { throttleAdminFunction } from "../common/rate_limit";
 
 const db = getFirestore();
 
@@ -58,6 +59,14 @@ export const getPostAuthorsForEnquiry = onCall<{
         "Only admins and Rules Committee can view post authors.",
       );
     }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // 1.5) Throttle: 1 call per 5 seconds per user (prevent enumeration attacks)
+    // ──────────────────────────────────────────────────────────────────────
+    const { abuseAlert } = await throttleAdminFunction(
+      callerUid,
+      "getPostAuthorsForEnquiry",
+    );
 
     // ──────────────────────────────────────────────────────────────────────
     // 2) Input validation
@@ -251,6 +260,7 @@ export const getPostAuthorsForEnquiry = onCall<{
       enquiryId: trimmedId,
       authorCount: Object.keys(authorMap).length,
       totalPostsProcessed,
+      abuseAlert,
       timestamp: new Date().toISOString(),
     });
 
