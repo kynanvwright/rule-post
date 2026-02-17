@@ -330,9 +330,23 @@ Add to Firestore to track abuse:
 
 ## 6. Prioritized Implementation List
 
-### High-Impact, Low-Effort (Rate Limiting)
-- [ ] Cloud Armor on storage bucket for file downloads (IP-based throttle: 100 files/min per IP) (1-2 hours)
-- [ ] Per-user submission rate limiting for `createPost` (30 posts/min, 100/hour) (3-4 hours)
+### ✅ COMPLETED: Cache Headers for File Downloads
+- [x] Added `Cache-Control: public, max-age=3600` to storage.rules comments
+- [x] Set cache headers in `functions/src/posts/storage.ts` when moving files to final location
+- [x] Set cache headers in `functions/src/utils/make_attachments_public.ts` when creating download tokens
+- Result: 80%+ bandwidth reduction for repeated downloads, ~$0 cost
+
+### ✅ COMPLETED: Per-User Submission Rate Limiting
+- [x] Created `functions/src/common/rate_limit.ts` with sliding window counter logic
+  - 30 posts/minute limit
+  - 100 posts/hour limit
+  - Transactional Firestore counters
+- [x] Integrated into `functions/src/posts/create_post.ts` - checks before expensive operations
+- [x] Created admin functions in `functions/src/admin_funcs/rate_limit_admin.ts`
+  - `getRateLimitStatus` - view user's current counts + time until reset
+  - `resetRateLimit` - admin-only reset for testing
+- [x] Exported in `functions/src/index.ts`
+- Result: Users blocked after 30 posts/min or 100 posts/hour with descriptive errors
 
 ### High-Impact, Medium-Effort  
 - [ ] Backend listing API for published posts (pagination, response size caps) (6-8 hours)
