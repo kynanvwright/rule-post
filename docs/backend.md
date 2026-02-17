@@ -76,22 +76,87 @@ The backend relies on Firebase services:
 #### markPostUnread
 - allows an admin to mark a post as unread to test the "unread post" mechanisms
 
-## Scheduled
+## Scheduled (via Orchestrator)
 
-#### enquiryPublisher
-- publishes an enquiry, making it visible to all (along with any attachments)
-- opens permission for team responses
+✅ **New Architecture (Phase 1):** All scheduled publications are now coordinated through an orchestrator pattern to eliminate race conditions and ensure consistent ordering.
 
-#### teamResponsePublisher
-- publishes all team responses, making them visible to all (along with any attachments)
-- opens permission for team comments and RC response
+Instead of independent scheduled functions running at fixed times, the system uses three orchestrator functions that call publishers **sequentially**:
 
-#### commentPublisher
-- publishes comments, making them visible to all
+### orchestrate0000 (0:00 Europe/Rome)
+Runs every day at 0:00 Rome time:
+1. Publishes unpublished enquiries
+2. Publishes pending comments
+3. Publishes RC responses (when stage window closed)
+4. Updates comment publication schedule
+5. Sends digest emails to users
 
-#### committeeResponsePublisher
-- publishes the RC response, making it visible to all (along with any attachments)
-- ends the round, closing comment permissions and opening responses for teams
+### orchestrate1200 (12:00 Europe/Rome)
+Runs every day at 12:00 Rome time:
+1. Publishes unpublished enquiries
+2. Publishes pending comments
+3. Sends digest emails to users
+
+### orchestrate2000 (20:00 Europe/Rome)
+Runs every day at 20:00 Rome time (response submission deadline):
+1. Publishes team (competitor) responses
+2. Sends digest emails to users
+
+#### Helper Functions (called by orchestrators)
+
+##### enquiry_publisher → doEnquiryPublish()
+- Helper function that publishes unpublished enquiries
+- Opens permission for team responses
+- **Scheduling:** Called by orchestrate0000 and orchestrate1200
+- **Standalone export:** Commented out (use orchestrator instead)
+
+##### team_response_publisher → doTeamResponsePublish()
+- Helper function that publishes team responses after deadline
+- Opens permission for team comments and RC response
+- **Scheduling:** Called by orchestrate2000
+- **Standalone export:** Commented out (use orchestrator instead)
+
+##### comment_publisher → doCommentPublish()
+- Helper function that publishes pending comments
+- Only runs on working days
+- **Scheduling:** Called by orchestrate0000 and orchestrate1200
+- **Standalone export:** Commented out (use orchestrator instead)
+
+##### committee_response_publisher → doCommitteeResponsePublish()
+- Helper function that publishes RC responses
+- Ends a round by closing comment permissions and opening responses
+- Only runs on working days
+- **Scheduling:** Called by orchestrate0000
+- **Standalone export:** Commented out (use orchestrator instead)
+
+##### comment_publication_schedule → doCommentPublicationScheduleRefresh()
+- Helper function that updates the next comment publication time
+- Stores result in `app_data/date_times.nextCommentPublicationTime`
+- **Scheduling:** Called by orchestrate0000
+- **Standalone export:** Commented out (use orchestrator instead)
+
+##### send_publish_digest → doSendPublishDigest()
+- Helper function that sends email digests to subscribed users
+- Queries publishEvents collection and sends digest emails
+- **Scheduling:** Called by orchestrate0000, orchestrate1200, orchestrate2000
+- **Standalone export:** Commented out (use orchestrator instead)
+- **No time offset:** Previously ran at 0:05/12:05/20:05; now runs immediately after publishes complete
+
+## Orchestration Details
+
+**Why orchestrators?**
+- Eliminates race conditions from concurrent scheduled functions
+- Ensures all publishes complete before digest emails are sent
+- Guarantees consistent execution order (no time offsets needed)
+- Prevents duplicate emails or incomplete digests
+
+**Submission Deadlines (not blocked by system):**
+- Enquiries: No deadline; can submit anytime
+- Responses: Deadline 20:00 Europe/Rome; system respects submissions up to the deadline
+- Comments: Deadline 12:00 Europe/Rome; system respects submissions up to the deadline
+
+Deadlines are **not enforced by locks**. The system uses window permissions (teamsCanRespond, teamsCanComment) to control when submissions are accepted. The orchestrator publishes at the deadline time; submissions before are accepted, after are rejected by permissions.
+
+---
 
 ## Event-triggered
 
@@ -192,7 +257,19 @@ Small collection containing:
 
 ## Notifications
 - email capability provided by "Resend"
-- runs 5 minutes after each scheduled publishing event
+- runs immediately after each scheduled publishing event completes (orchestrator ensures all publishes done first)
+- sent at 0:00, 12:00, 20:00 Europe/Rome (no longer offset by +5 minutes)
+- digest emails group enquiries, responses, and comments separately
+- users can opt for "all" notifications or "enquiries only"
+- unread tracking updated when posts are published
+
+**Email Digest Flow:**
+1. Publisher functions update post isPublished flag
+2. Firestore trigger captures the publish event → creates publishEvent document
+3. Orchestrator calls doSendPublishDigest()
+4. Digest function queries unprocessed publishEvents, groups by type
+5. Sends digest emails to subscribed users (two variants: all / enquiries-only)
+6. Marks events as processed
 
 ### Future Work
 - Add txt/WhatsApp options
