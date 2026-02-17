@@ -20,7 +20,11 @@ export async function checkAndIncrementRateLimit(
   userId: string,
 ): Promise<void> {
   const db = getFirestore();
-  const rateLimitRef = db.doc(`ratelimit/users/${userId}`);
+  const rateLimitRef = db
+    .collection("ratelimit")
+    .doc("users")
+    .collection("cooldowns")
+    .doc(userId);
   const now = Math.floor(Date.now() / 1000); // Unix seconds
 
   // Transactional check-and-set
@@ -63,7 +67,11 @@ export async function throttleAdminFunction(
   functionName: string,
 ): Promise<{ allowed: boolean; abuseAlert: boolean }> {
   const db = getFirestore();
-  const throttleRef = db.collection("ratelimit/admin").doc(userId);
+  const throttleRef = db
+    .collection("ratelimit")
+    .doc("admin")
+    .collection("users")
+    .doc(userId);
   const now = Math.floor(Date.now() / 1000);
 
   let abuseAlert = false;
@@ -148,16 +156,24 @@ export async function checkUserCreationRateLimit(
 
   // Check 1: Per-admin hourly limit (5 users/hour)
   const adminHourRef = db
-    .collection("ratelimit/admin_user_creation")
+    .collection("ratelimit")
+    .doc("admin_user_creation")
+    .collection("admins")
     .doc(adminUid)
     .collection("hourly")
     .doc("current");
   const adminDayRef = db
-    .collection("ratelimit/admin_user_creation")
+    .collection("ratelimit")
+    .doc("admin_user_creation")
+    .collection("admins")
     .doc(adminUid)
     .collection("daily")
     .doc("current");
-  const teamRef = db.collection("ratelimit/team_user_creation").doc(teamName);
+  const teamRef = db
+    .collection("ratelimit")
+    .doc("team_user_creation")
+    .collection("teams")
+    .doc(teamName);
 
   await db.runTransaction(async (tx) => {
     const [adminHourSnap, adminDaySnap, teamSnap] = await Promise.all([
