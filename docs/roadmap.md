@@ -7,15 +7,11 @@ To record ideas for future development and document observed bugs.
 ## Bugs
 - Emails
     - check the rules to see if emails should send at 1200 NZT on a monday (0000 Europe/Rome)
-    - sent emails are bouncing
+    - sent emails are bouncing (provisional fix implemented, waiting to check results)
 - Performance
     - on an initial website visit, everything is quite slow to load. This improves later due to caching
 - Multiple sessions
     - when you have multiple tabs open, behaviour can be inconsistent
-- Response Guards
-    - when responses are deleted, stale response guard documents can remain in the database
-    - prevents new responses from the same team in the same round with error "ALREADY_EXISTS: Document already exists"
-    - guard cleanup in `deleted_post_actions.ts` may fail silently if the `latestResponseId` field isn't properly set on the guard
 
 ## Future Work
 

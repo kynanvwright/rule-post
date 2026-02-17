@@ -64,14 +64,85 @@ async function handleDeletion(args: {
     const snap = await q.get();
     if (!snap.empty) await snap.docs[0].ref.delete();
 
-    // delete relevant guards on response authors
-    const guardPath = `enquiries/${enquiryId}/meta/response_guards/guards/`;
-    const guardQuery = db
-      .collection(guardPath)
-      .where("latestResponseId", "==", responseId)
-      .limit(1); // since we expect only one
-    const guardSnap = await guardQuery.get();
-    if (!guardSnap.empty) await guardSnap.docs[0].ref.delete();
+    // Delete response guard by primary key instead of latestResponseId field.
+    // This is safer: the guard's natural ID is ${authorTeam}_${roundNumber}.
+    // We need to extract these from the deleted response document.
+    try {
+      const responseRef = db
+        .collection("enquiries")
+        .doc(enquiryId)
+        .collection("responses")
+        .doc(responseId);
+      
+      // Try to extract roundNumber and authorTeam from the snapshot if available
+      let roundNumber: number | undefined;
+      let authorTeam: string | undefined;
+
+      if (data) {
+        // Use pre-delete snapshot data passed from the event
+        roundNumber = Number(data.roundNumber ?? 0);
+        authorTeam = data.fromRC ? "RC" : undefined; // public doc doesn't have team
+      }
+
+      // If we couldn't get authorTeam from public doc, read the meta/data
+      if (!authorTeam) {
+        try {
+          const metaSnap = await responseRef.collection("meta").doc("data").get();
+          if (metaSnap.exists) {
+            authorTeam = metaSnap.get("authorTeam");
+            if (!roundNumber) {
+              roundNumber = Number(data?.roundNumber ?? 0);
+            }
+          }
+        } catch (metaError) {
+          console.warn("Failed to read response meta during guard cleanup", {
+            enquiryId,
+            responseId,
+            error: String(metaError),
+          });
+        }
+      }
+
+      // Delete guard by primary key if we have the necessary info
+      if (authorTeam && roundNumber !== undefined) {
+        const guardId = `${authorTeam}_${roundNumber}`;
+        const guardRef = db
+          .collection(`enquiries/${enquiryId}/meta/response_guards/guards`)
+          .doc(guardId);
+        const guardSnap = await guardRef.get();
+        if (guardSnap.exists) {
+          await guardRef.delete();
+          console.log("✅ Guard deleted by primary key", {
+            enquiryId,
+            responseId,
+            guardId,
+          });
+        } else {
+          console.warn("Guard not found (may already be deleted)", {
+            enquiryId,
+            responseId,
+            guardId,
+          });
+        }
+      } else {
+        console.error(
+          "Cannot delete guard: missing roundNumber or authorTeam",
+          {
+            enquiryId,
+            responseId,
+            authorTeam,
+            roundNumber,
+          },
+        );
+      }
+    } catch (guardError) {
+      console.error("Unexpected error during guard cleanup", {
+        enquiryId,
+        responseId,
+        error: String(guardError),
+      });
+      // Don't rethrow; guard cleanup failure should not block other cleanups
+    }
 
     // delete files attached to post
     const path = `enquiries/${enquiryId}/responses/${responseId}/`;
