@@ -231,12 +231,6 @@ class ChildrenSection extends ConsumerWidget {
                     ? null
                     : (title.length > 140 ? '${title.substring(0, 140)}…' : title);
                 final commentCount = docData['commentCount'] ?? 0;
-                final trailingText = Text( 
-                  fromRC==false 
-                    ? commentCount == 1
-                      ? '$commentCount comment  '
-                      : '$commentCount comments'
-                    : 'Rules Committee');
 
                 tile = ListTile(
                   title: Row(
@@ -249,10 +243,36 @@ class ChildrenSection extends ConsumerWidget {
                     ],
                   ),
                   subtitle: titleSnippet == null ? null : Text(titleSnippet),
-                  trailing: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 140),
-                    child: trailingText,
-                  ),
+                  trailing: !isPublished
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          EditPostButton(
+                            type: PostType.response,
+                            postId: responseId,
+                            initialTitle: title,
+                            initialText: text,
+                            parentIds: [enquiryId],
+                            isPublished: isPublished,
+                          ),
+                          const SizedBox(width: 4),
+                          DeletePostButton(
+                            type: PostType.response,
+                            postId: responseId,
+                            parentIds: [enquiryId],
+                          ),
+                        ],
+                      )
+                    : ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 140),
+                        child: Text(
+                          fromRC
+                            ? 'Rules Committee'
+                            : commentCount == 1
+                              ? '$commentCount comment  '
+                              : '$commentCount comments',
+                        ),
+                      ),
                   onTap: () => Nav.goResponse(context, enquiryId, responseId),
                 );
               } else if (segments.contains('comments')) {
