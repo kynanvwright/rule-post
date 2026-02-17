@@ -22,12 +22,13 @@
     "firebase-functions": "^6.6.0",
     "ioredis": "^5.8.0",
     "luxon": "^3.7.2",
+    "nodemailer": "^8.0.1",
     "rate-limit-redis": "^4.2.2",
-    "redis": "^5.8.2",
-    "resend": "^6.1.0"
+    "redis": "^5.8.2"
   },
   "devDependencies": {
     "@types/luxon": "^3.7.1",
+    "@types/nodemailer": "^7.0.10",
     "@types/react": "^19.1.15",
     "@types/react-dom": "^19.1.9",
     "@typescript-eslint/eslint-plugin": "^8.44.0",

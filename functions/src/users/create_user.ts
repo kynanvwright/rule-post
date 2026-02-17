@@ -1,8 +1,7 @@
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
-// import { defineSecret } from "firebase-functions/params";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { Resend } from "resend";
+import { createTransport } from "nodemailer";
 
 const auth = getAuth(); // ✅ this returns an Auth instance (not callable)
 const db = getFirestore(); // ✅ Firestore instance
@@ -10,9 +9,19 @@ const db = getFirestore(); // ✅ Firestore instance
 type CreateUserPayload = { email: string };
 
 export const createUserWithProfile = onCall(
-  { cors: true, enforceAppCheck: true, secrets: ["RESEND_API_KEY"] },
+  {
+    cors: true,
+    enforceAppCheck: true,
+    secrets: ["GMAIL_USER", "GMAIL_APP_PASSWORD"],
+  },
   async (req) => {
-    const resend = new Resend(process.env.RESEND_API_KEY as string);
+    const transporter = createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.GMAIL_USER as string,
+        pass: process.env.GMAIL_APP_PASSWORD as string,
+      },
+    });
     // 1) Auth + role
     const uid = req.auth?.uid;
     if (!uid) throw new HttpsError("unauthenticated", "You must be signed in.");
@@ -98,10 +107,10 @@ export const createUserWithProfile = onCall(
     });
     console.log("✅ Password reset link created");
 
-    // 5) Send email via Resend
+    // 5) Send email via Gmail SMTP
     const recipientName = getNameFromEmail(email);
-    await resend.emails.send({
-      from: "Rule Post <send@rulepost.com>",
+    await transporter.sendMail({
+      from: `"Rule Post" <${process.env.GMAIL_USER}>`,
       to: email,
       subject: "Set up your Rule Post account",
       html: `

@@ -6,7 +6,7 @@ import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { logger } from "firebase-functions/v2";
 import { onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { Resend } from "resend";
+import { createTransport } from "nodemailer";
 
 import {
   BasePublishable,
@@ -253,15 +253,22 @@ async function sendDigestFor(
   }
 
   const subject = "New publications on Rule Post";
-  const resend = new Resend(process.env.RESEND_API_KEY as string);
+  const transporter = createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.GMAIL_USER as string,
+      pass: process.env.GMAIL_APP_PASSWORD as string,
+    },
+  });
+  const fromAddress = `"Rule Post" <${process.env.GMAIL_USER}>`;
 
   // Send full digest to users who want all activity
   if (recipientsAll.length > 0) {
     const htmlAll = renderDigestHTML(groups);
-    await resend.emails.send({
-      from: "Rule Post <send@rulepost.com>",
-      to: "Rule Post <rulepost@americascup.com>",
-      bcc: recipientsAll,
+    await transporter.sendMail({
+      from: fromAddress,
+      to: fromAddress,
+      bcc: recipientsAll.join(", "),
       subject,
       html: htmlAll,
     });
@@ -274,10 +281,10 @@ async function sendDigestFor(
       responses: [],
       comments: [],
     });
-    await resend.emails.send({
-      from: "Rule Post <send@rulepost.com>",
-      to: "Rule Post <rulepost@americascup.com>",
-      bcc: recipientsEnquiriesOnly,
+    await transporter.sendMail({
+      from: fromAddress,
+      to: fromAddress,
+      bcc: recipientsEnquiriesOnly.join(", "),
       subject,
       html: htmlEnquiries,
     });
@@ -405,7 +412,7 @@ export const sendPublishDigest = onSchedule(
     // 00:05, 12:05, and 20:05 every day
     schedule: "5 0,12,20 * * *",
     timeZone: "Europe/Rome",
-    secrets: ["RESEND_API_KEY"],
+    secrets: ["GMAIL_USER", "GMAIL_APP_PASSWORD"],
     region: "europe-west6",
   },
   async (): Promise<void> => {
