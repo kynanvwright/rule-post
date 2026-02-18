@@ -7,6 +7,8 @@ To record ideas for future development and document observed bugs.
 ## Bugs
 - Emails
     - sent emails are bouncing (provisional fix implemented, waiting to check results)
+- Pdf previewer
+    - inconsistently fails and falls back to download, sometimes works on a second attempt
 - Performance
     - on an initial website visit, everything is quite slow to load. This improves later due to caching
 - Multiple sessions
