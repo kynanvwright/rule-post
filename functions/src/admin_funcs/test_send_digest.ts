@@ -5,7 +5,7 @@
 // ──────────────────────────────────────────────────────────────────────────────
 import { logger } from "firebase-functions";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
-import { Resend } from "resend";
+import { createTransport } from "nodemailer";
 
 import { REGION } from "../common/config";
 
@@ -29,7 +29,7 @@ export const testSendDigest = onCall<TestSendDigestRequest>(
   {
     region: REGION,
     timeoutSeconds: 30,
-    secrets: ["RESEND_API_KEY"],
+    secrets: ["GMAIL_USER", "GMAIL_APP_PASSWORD"],
   },
   async (request) => {
     try {
@@ -124,10 +124,17 @@ export const testSendDigest = onCall<TestSendDigestRequest>(
       </html>
 `;
 
-      // Send with Resend
-      const resend = new Resend(process.env.RESEND_API_KEY as string);
-      await resend.emails.send({
-        from: "Rule Post <send@rulepost.com>",
+      // Send with Gmail SMTP
+      const transporter = createTransport({
+        service: "gmail",
+        auth: {
+          user: process.env.GMAIL_USER as string,
+          pass: process.env.GMAIL_APP_PASSWORD as string,
+        },
+      });
+      const fromAddress = `"Rule Post" <${process.env.GMAIL_USER}>`;
+      await transporter.sendMail({
+        from: fromAddress,
         to: recipientEmail,
         subject: "Rule Post – Test Digest Email",
         html,
