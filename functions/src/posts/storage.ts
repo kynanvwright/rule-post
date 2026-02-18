@@ -69,12 +69,15 @@ export async function moveValidatedAttachments(options: {
       const dest = bucket.file(destPath);
 
       // Copy with contentType metadata when available
-      await src.copy(
-        dest,
-        v.contentType
-          ? { metadata: { contentType: v.contentType } }
-          : undefined,
-      );
+      // Set Cache-Control header for published files (1 hour, public)
+      await src.copy(dest);
+
+      // Set metadata after copy (contentType + cache control)
+      await dest.setMetadata({
+        contentType: v.contentType || "application/octet-stream",
+        cacheControl: "public, max-age=3600", // Cache for 1 hour
+      });
+
       await src.delete();
 
       moved.push({ finalPath: destPath });

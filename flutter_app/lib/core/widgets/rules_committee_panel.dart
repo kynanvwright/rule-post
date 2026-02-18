@@ -102,6 +102,23 @@ class AdminAction {
       runWithArgs: (args) async { changeStageLength(context, enquiryId, args); }
     );   
   }
+
+  // [TEST] Send a sample digest email to preview deadline reminders
+  factory AdminAction.testSendDigest({
+    required BuildContext context,
+    required String? userEmail,
+  }) => AdminAction(
+    label: '[TEST] Send Preview Email',
+    icon: Icons.mail_outline,
+    tooltip: 'Send a sample digest email with deadline reminder preview (admin-only)',
+    enabled: userEmail != null && userEmail.isNotEmpty,
+    runWithArgs: (_) async {
+      if (userEmail != null) {
+        // ignore: use_build_context_synchronously
+        await testSendDigest(context, recipientEmail: userEmail);
+      }
+    },
+  );
 }
 
 

@@ -12,6 +12,7 @@ import { runCreatePostTx, postDocRef } from "./tx";
 import { coerceAndValidateInput, validateAttachments } from "./validate";
 import { REGION, MEMORY, TIMEOUT_SECONDS } from "../common/config";
 import { assert } from "../common/errors";
+import { checkAndIncrementRateLimit } from "../common/rate_limit";
 
 import type { CreatePostData } from "../common/types";
 
@@ -41,6 +42,9 @@ export const createPost = onCall<CreatePostData>(
       authorTeam,
       uid: authorUid,
     });
+
+    // Rate limit: Check cooldown before expensive operations
+    await checkAndIncrementRateLimit(authorUid);
 
     // Pre-create doc ref to know postPath for storage placement
     const tempDocRef = postDocRef(db, data.postType, data.parentIds);

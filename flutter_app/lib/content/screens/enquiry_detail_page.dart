@@ -1,5 +1,6 @@
 // flutter_app/lib/content/screens/enquiry_detail_page.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -167,6 +168,10 @@ class _EnquiryDetailPageState extends ConsumerState<EnquiryDetailPage> {
                   titleColour: Colors.red,
                   boldTitle: true,
                   actions: [
+                    // AdminAction.testSendDigest(
+                    //   context: context,
+                    //   userEmail: FirebaseAuth.instance.currentUser?.email,
+                    // ),
                     AdminAction.changeStageLength(
                       enquiryId: widget.enquiryId,
                       loadCurrent: () => getStageLength(widget.enquiryId),

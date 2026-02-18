@@ -8,14 +8,17 @@ import 'package:rule_post/content/widgets/children_section.dart';
 import 'package:rule_post/content/widgets/detail_scaffold.dart';
 import 'package:rule_post/content/widgets/fancy_attachment_tile.dart';
 import 'package:rule_post/content/widgets/parse_hex_colour.dart';
+import 'package:rule_post/content/widgets/section_card.dart';
 import 'package:rule_post/content/widgets/status_chip.dart';
 import 'package:rule_post/core/buttons/edit_post_button.dart';
 import 'package:rule_post/core/buttons/delete_post_button.dart';
+import 'package:rule_post/core/buttons/new_post_button.dart';
 import 'package:rule_post/core/models/post_types.dart';
 import 'package:rule_post/core/widgets/markdown_display.dart';
 import 'package:rule_post/debug/debug.dart' as debug;
 import 'package:rule_post/riverpod/admin_providers.dart';
 import 'package:rule_post/riverpod/doc_providers.dart';
+import 'package:rule_post/riverpod/draft_provider.dart';
 import 'package:rule_post/riverpod/read_receipts.dart';
 import 'package:rule_post/riverpod/user_detail.dart';
 
@@ -111,6 +114,7 @@ class _ResponseDetailPageState extends ConsumerState<ResponseDetailPage> {
           final currentRound =
               enquiryData['roundNumber'] == enquiryData['roundNumber'];
           final teamsCanComment = enquiryData['teamsCanComment'] ?? false;
+          final teamsCanRespond = enquiryData['teamsCanRespond'] ?? false;
           final isRC = userTeam == 'RC';
 
           // Extract response author from cache (safely handle all async states)
@@ -146,32 +150,25 @@ class _ResponseDetailPageState extends ConsumerState<ResponseDetailPage> {
             subHeaderLines: [
               'Rule Enquiry ${enquiryNumber.toString().padLeft(3, '0')}',
             ],
-            headerButton: isPublished
-                ? null
-                : Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      EditPostButton(
-                        type: PostType.response,
-                        initialTitle: summary,
-                        initialText: text,
-                        initialAttachments: attachments,
-                        postId: widget.responseId,
-                        parentIds: [widget.enquiryId],
-                        isPublished: isPublished,
-                        initialCloseEnquiryOnPublish:
-                            responseData['closeEnquiryOnPublish'] ?? false,
-                        initialEnquiryConclusion:
-                            responseData['enquiryConclusion']?.toString(),
-                      ),
-                      const SizedBox(width: 8),
-                      DeletePostButton(
-                        type: PostType.response,
-                        postId: widget.responseId,
-                        parentIds: [widget.enquiryId],
-                      ),
-                    ],
-                  ),
+            headerButton: _buildHeaderButton(
+              context: context,
+              ref: ref,
+              isPublished: isPublished,
+              fromRC: fromRC,
+              isOpen: isOpen,
+              teamsCanRespond: teamsCanRespond,
+              isRC: isRC,
+              userTeam: userTeam,
+              enquiryId: widget.enquiryId,
+              responseId: widget.responseId,
+              summary: summary,
+              text: text,
+              attachments: attachments,
+              initialCloseEnquiryOnPublish:
+                  responseData['closeEnquiryOnPublish'] ?? false,
+              initialEnquiryConclusion: responseData['enquiryConclusion']
+                  ?.toString(),
+            ),
             headerColour: teamColourFaded,
             meta: Wrap(
               spacing: 8,
@@ -216,21 +213,144 @@ class _ResponseDetailPageState extends ConsumerState<ResponseDetailPage> {
                 )
                 .toList(), // consider making platform dependent
             // CHILDREN: Comments list + New child
-            footer: fromRC
-                ? null
-                : ChildrenSection.comments(
-                    enquiryId: widget.enquiryId,
-                    responseId: widget.responseId,
-                    lockedComments: lockedComments,
-                    lockedReason: lockedCommentReason,
-                    authors: authorsAsync.maybeWhen(
-                      data: (a) => a,
-                      orElse: () => null,
+            footer: SingleChildScrollView(
+              child: Column(
+                children: [
+                  // Submit Response card (shows when teams can respond, regardless of response type)
+                  if (isPublished && isOpen && teamsCanRespond && !isRC)
+                    _buildSubmitResponseCard(
+                      ref: ref,
+                      enquiryId: widget.enquiryId,
+                      userTeam: userTeam,
                     ),
-                  ),
+                  // Comments section (only for non-RC responses)
+                  if (!fromRC)
+                    ChildrenSection.comments(
+                      enquiryId: widget.enquiryId,
+                      responseId: widget.responseId,
+                      lockedComments: lockedComments,
+                      lockedReason: lockedCommentReason,
+                      authors: authorsAsync.maybeWhen(
+                        data: (a) => a,
+                        orElse: () => null,
+                      ),
+                    ),
+                ],
+              ),
+            ),
           );
         },
       ),
+    );
+  }
+
+  /// Builds the header button for the response detail page.
+  /// Shows edit/delete for unpublished responses only.
+  static Widget? _buildHeaderButton({
+    required BuildContext context,
+    required WidgetRef ref,
+    required bool isPublished,
+    required bool fromRC,
+    required bool isOpen,
+    required bool teamsCanRespond,
+    required bool isRC,
+    required String? userTeam,
+    required String enquiryId,
+    required String responseId,
+    required String summary,
+    required String text,
+    required List<Map<String, dynamic>> attachments,
+    required bool initialCloseEnquiryOnPublish,
+    required String? initialEnquiryConclusion,
+  }) {
+    // Show edit/delete for unpublished responses only
+    if (!isPublished) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          EditPostButton(
+            type: PostType.response,
+            initialTitle: summary,
+            initialText: text,
+            initialAttachments: attachments,
+            postId: responseId,
+            parentIds: [enquiryId],
+            isPublished: isPublished,
+            initialCloseEnquiryOnPublish: initialCloseEnquiryOnPublish,
+            initialEnquiryConclusion: initialEnquiryConclusion,
+          ),
+          const SizedBox(width: 8),
+          DeletePostButton(
+            type: PostType.response,
+            postId: responseId,
+            parentIds: [enquiryId],
+          ),
+        ],
+      );
+    }
+
+    return null;
+  }
+
+  /// Builds a card with the "Submit Response?" prompt and button.
+  /// Only shown for published RC responses when teams can respond.
+  static Widget _buildSubmitResponseCard({
+    required WidgetRef ref,
+    required String enquiryId,
+    required String? userTeam,
+  }) {
+    return SectionCard(
+      title: 'Submit Response?',
+      padding: const EdgeInsets.all(16),
+      // child:
+      // Column(
+      //   crossAxisAlignment: CrossAxisAlignment.start,
+      //   children: [
+      //     const Text(
+      //       'Your team may now submit a response to the Rules Committee.',
+      //       style: TextStyle(fontSize: 14),
+      //     ),
+      //     const SizedBox(height: 16),
+      //     Center(
+      child: _SubmitResponseButton(enquiryId: enquiryId, userTeam: userTeam),
+      // ),
+      // ],
+      // ),
+    );
+  }
+}
+
+/// A "Submit Response" button that appears on RC responses.
+/// Shows the new response dialog when clicked, or a locked state if draft exists.
+class _SubmitResponseButton extends ConsumerWidget {
+  const _SubmitResponseButton({
+    required this.enquiryId,
+    required this.userTeam,
+  });
+
+  final String enquiryId;
+  final String? userTeam;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (userTeam == null) return const SizedBox.shrink();
+
+    // Check if user already has a response draft
+    final hasDraft = ref
+        .watch(
+          hasResponseDraftProvider((enquiryId: enquiryId, teamId: userTeam!)),
+        )
+        .valueOrNull;
+    final isLockedNow = hasDraft == true;
+    final lockedReason = isLockedNow
+        ? 'Your team already has a response draft for this enquiry.'
+        : '';
+
+    return NewPostButton(
+      type: PostType.response,
+      parentIds: [enquiryId],
+      isLocked: isLockedNow,
+      lockedReason: lockedReason,
     );
   }
 }

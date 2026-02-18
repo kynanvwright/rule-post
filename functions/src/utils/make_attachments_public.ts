@@ -30,8 +30,10 @@ async function getOrCreateDownloadToken(
     return existing.split(",")[0].trim();
   }
   const token = randomUUID();
+  // Set download token + cache headers for published files
   await file.setMetadata({
     metadata: { firebaseStorageDownloadTokens: token },
+    cacheControl: "public, max-age=3600", // Cache for 1 hour
   });
   return token;
 }

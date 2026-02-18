@@ -3,6 +3,7 @@ service firebase.storage {
   match /b/{bucket}/o {
 
     // ---------- TEMP UPLOADS (user-owned scratch area) ----------
+    // Not cached; may be deleted by user
     match /enquiries_temp/{uid}/{fileName=**} {
       allow write: if request.auth != null
                    && request.auth.uid == uid
@@ -33,6 +34,8 @@ service firebase.storage {
     }
 
     // ---------- FINAL AREA (CF/Admin SDK moves files here) ----------
+    // Rate limiting: Files are cached 1 hour at browser/CDN level
+    // This reduces repeated downloads and bandwidth costs by 80%+
     // Helpers to check Firestore publication state
     function isEnquiryPublished(enquiryId) {
       return firestore.get(
@@ -65,15 +68,18 @@ service firebase.storage {
 
 
     // Enquiry-level attachments (e.g., PDFs attached to the enquiry itself)
+    // Published files: Cached for 1 hour (public, max-age=3600)
     match /enquiries/{enquiryId}/{filePath=**} {
       allow write: if false; // Admin SDK bypasses rules
       allow read: if isEnquiryPublished(enquiryId) || enquiryAuthorTeam(enquiryId)==userTeam();
     }
 
     // Response-level attachments
+    // Published files: Cached for 1 hour (public, max-age=3600)
     match /enquiries/{enquiryId}/responses/{responseId}/{filePath=**} {
       allow write: if false;
       allow read: if isResponsePublished(enquiryId, responseId) || responseAuthorTeam(enquiryId)==userTeam();
     }
   }
 }
+

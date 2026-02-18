@@ -109,3 +109,24 @@ Future<Map<String, String>> getPostAuthorsForEnquiry(String enquiryId) async {
     rethrow;
   }
 }
+
+/// [TEST FUNCTION] Send a sample digest email to test deadline reminder formatting.
+/// Only available to admins. Easy to remove after testing.
+Future<void> testSendDigest(
+  BuildContext context, {
+  required String recipientEmail,
+  bool includeDeadlines = true,
+  bool includeActivity = true,
+}) async {
+  await api.callWithProgress<Json>(
+    context: context,
+    name: 'testSendDigest',
+    data: {
+      'recipientEmail': recipientEmail.trim(),
+      'includeDeadlines': includeDeadlines,
+      'includeActivity': includeActivity,
+    },
+    successMessage: 'Test email sent to $recipientEmail',
+    failureMessage: 'Failed to send test email',
+  );
+}

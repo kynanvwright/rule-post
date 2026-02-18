@@ -6,8 +6,9 @@ To record ideas for future development and document observed bugs.
 
 ## Bugs
 - Emails
-    - check the rules to see if emails should send at 1200 NZT on a monday (0000 Europe/Rome)
-    - sent emails are bouncing
+    - sent emails are bouncing (provisional fix implemented, waiting to check results)
+- Pdf previewer
+    - inconsistently fails and falls back to download, sometimes works on a second attempt
 - Performance
     - on an initial website visit, everything is quite slow to load. This improves later due to caching
 - Multiple sessions
@@ -18,26 +19,12 @@ To record ideas for future development and document observed bugs.
 - Rate limiting
     - we need to restrict downloads and any functions that can be triggered by unauthenticated users, otherwise the website is susceptible to attack
     - also consider limiting to authenticated users, and emailing admins with details when rates are hit
-- Emails
-    - notify teams when an enquiry round is ending and they haven't submitted
-- Login
-    - make sure Google/Bitwarden can autofill credentials
-- Data structure
-    - many fields are currently duplicated
-    - have a more relational database, with single sources of truth
-        - save storage
-        - prevent values from only being updated in some places
-- Submission timing
-    - currently submissions are locked and unlocked by a series of scheduled functions
-    - we have a lot of different functions running around the same times
-    - these have no proper order, it's just that submissions are locked after drafts are published
-    - we should create a proper flow which is race-safe and makes sure things are done in the proper order
 - Unused code
     - check through cloud functions and other widgets etc to ensure they're still in use
 - Review 'publishEvents' collection
     - should these be deleted instead of marked as processed?
-- Response submission
-    - users reported confusion when attempting to do a round 2 submission. Consider whether we should add a response button on the RC reponse itself, so they don't have to navigate up to the enquiry first.
+- Create an admin-only test page:
+    - attempt to trigger a variety of backend functions that should fail, even if the frontend guards are bypassed
 
 ## General thoughts
 - How do deadlines work if the RC responds late?
