@@ -19,6 +19,7 @@ if (!getApps().length) {
 export { blockAllSelfRegistration } from "./users/new_users";
 export { createUserWithProfile } from "./users/create_user";
 export { deleteUser } from "./users/delete_user";
+export { sendPasswordReset } from "./users/send_password_reset";
 export { syncCustomClaims } from "./users/claims_sync";
 
 /** ─────────────────────────────── Posts ─────────────────────────────── */

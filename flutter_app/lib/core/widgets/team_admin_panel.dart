@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:rule_post/api/user_apis.dart';
-import 'package:rule_post/core/models/types.dart' show CreateMemberInput, TeamUser;
-import 'package:rule_post/riverpod/team_members_provider.dart' show teamMembersProvider;
-
+import 'package:rule_post/core/models/types.dart'
+    show CreateMemberInput, TeamUser;
+import 'package:rule_post/riverpod/team_members_provider.dart'
+    show teamMembersProvider;
 
 // Panel for the designated team admin to manage team members
 class TeamAdminPanel extends ConsumerWidget {
@@ -73,7 +74,6 @@ class TeamAdminPanel extends ConsumerWidget {
   }
 }
 
-
 // Shows which users belong to the tead admin's team
 class _MembersList extends ConsumerWidget {
   const _MembersList(this.members);
@@ -84,23 +84,52 @@ class _MembersList extends ConsumerWidget {
     return Column(
       children: members.map((m) {
         return ListTile(
-          leading: CircleAvatar(
-            child: Text(_initials(m.displayName)),
-          ),
+          leading: CircleAvatar(child: Text(_initials(m.displayName))),
           title: Text(m.displayName),
           subtitle: Text(m.email),
-          trailing: IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: () async {
-              await deleteUserByEmail(context, m.email);
-              // await ref.read(teamMembersProvider.notifier).fetch();
-            },
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.lock_reset),
+                tooltip: 'Send password reset email',
+                onPressed: () async {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      title: const Text('Reset password'),
+                      content: Text(
+                        'Send a password reset email to ${m.email}?',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel'),
+                        ),
+                        FilledButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Send'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirmed != true || !context.mounted) return;
+                  await sendPasswordResetEmail(context, m.email);
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete),
+                tooltip: 'Delete team member',
+                onPressed: () async {
+                  await deleteUserByEmail(context, m.email);
+                },
+              ),
+            ],
           ),
         );
       }).toList(),
     );
   }
-
 
   String _initials(String name) {
     final parts = name.trim().split(RegExp(r'\s+'));
@@ -145,7 +174,10 @@ class _AddMemberDialogState extends State<_AddMemberDialog> {
             children: [
               TextFormField(
                 controller: _email,
-                decoration: const InputDecoration(labelText: 'Email', hintText: 'user@company.com'),
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  hintText: 'user@company.com',
+                ),
                 keyboardType: TextInputType.emailAddress,
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Email required';
@@ -166,17 +198,24 @@ class _AddMemberDialogState extends State<_AddMemberDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
         FilledButton(
           onPressed: () {
             if (!_formKeyB.currentState!.validate()) return;
             Navigator.pop(
               context,
-              CreateMemberInput(email: _email.text.trim(), context: context, isAdmin: _isAdmin),
+              CreateMemberInput(
+                email: _email.text.trim(),
+                context: context,
+                isAdmin: _isAdmin,
+              ),
             );
           },
           child: const Text('Create'),
-        )
+        ),
       ],
     );
   }
