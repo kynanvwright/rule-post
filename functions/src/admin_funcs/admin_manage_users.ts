@@ -161,6 +161,17 @@ export const adminToggleUserLock = onCall(
     await auth.updateUser(uid, { disabled });
     logger.info(`✅ User ${disabled ? "locked" : "unlocked"}`, { uid });
 
+    // Persist to Firestore so client-side streams reflect the change
+    try {
+      await db.collection("user_data").doc(uid).update({ disabled });
+    } catch (e: unknown) {
+      const msg =
+        typeof e === "object" && e !== null && "message" in e
+          ? String((e as { message?: unknown }).message)
+          : String(e);
+      logger.warn("Firestore disabled-flag update failed", { uid, error: msg });
+    }
+
     return { ok: true, uid, disabled };
   },
 );

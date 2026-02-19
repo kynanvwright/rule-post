@@ -20,6 +20,7 @@ export { blockAllSelfRegistration } from "./users/new_users";
 export { createUserWithProfile } from "./users/create_user";
 export { deleteUser } from "./users/delete_user";
 export { sendPasswordReset } from "./users/send_password_reset";
+export { toggleUserLock } from "./users/toggle_user_lock";
 export { syncCustomClaims } from "./users/claims_sync";
 
 /** ─────────────────────────────── Posts ─────────────────────────────── */

@@ -84,8 +84,27 @@ class _MembersList extends ConsumerWidget {
     return Column(
       children: members.map((m) {
         return ListTile(
-          leading: CircleAvatar(child: Text(_initials(m.displayName))),
-          title: Text(m.displayName),
+          leading: CircleAvatar(
+            backgroundColor: m.disabled
+                ? Colors.grey.shade400
+                : Theme.of(context).colorScheme.primaryContainer,
+            child: Text(
+              _initials(m.displayName),
+              style: TextStyle(color: m.disabled ? Colors.white : null),
+            ),
+          ),
+          title: Row(
+            children: [
+              Flexible(child: Text(m.displayName)),
+              if (m.disabled) ...[
+                const SizedBox(width: 6),
+                Tooltip(
+                  message: 'Account locked',
+                  child: Icon(Icons.lock, size: 18, color: Colors.red.shade400),
+                ),
+              ],
+            ],
+          ),
           subtitle: Text(m.email),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
@@ -118,7 +137,44 @@ class _MembersList extends ConsumerWidget {
                 },
               ),
               IconButton(
-                icon: const Icon(Icons.delete),
+                icon: Icon(
+                  m.disabled ? Icons.lock_open : Icons.lock,
+                  color: m.disabled ? Colors.green : Colors.orange,
+                ),
+                tooltip: m.disabled ? 'Unlock user' : 'Lock user',
+                onPressed: () async {
+                  final newState = !m.disabled;
+                  final action = newState ? 'Lock' : 'Unlock';
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      title: Text('$action user'),
+                      content: Text(
+                        '$action ${m.email}?\n\n'
+                        '${newState ? "They will not be able to sign in." : "They will be able to sign in again."}',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel'),
+                        ),
+                        FilledButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: Text(action),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirmed != true || !context.mounted) return;
+                  await toggleUserLock(
+                    context,
+                    email: m.email,
+                    disabled: newState,
+                  );
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete, color: Colors.red),
                 tooltip: 'Delete team member',
                 onPressed: () async {
                   await deleteUserByEmail(context, m.email);

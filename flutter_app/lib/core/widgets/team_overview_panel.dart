@@ -7,6 +7,7 @@ import 'package:rule_post/api/admin_apis.dart'
         adminDeleteUser,
         adminToggleUserLock,
         adminDeleteTeam;
+import 'package:rule_post/api/user_apis.dart' show sendPasswordResetEmail;
 
 /// A member within a team, as returned by adminListAllTeams.
 class _TeamMember {
@@ -171,6 +172,29 @@ class _TeamOverviewPanelState extends State<TeamOverviewPanel> {
     await _loadTeams();
   }
 
+  // ── Send password reset email ──
+  Future<void> _confirmResetPassword(_TeamMember member) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Reset password'),
+        content: Text('Send a password reset email to ${member.email}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Send'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await sendPasswordResetEmail(context, member.email);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading && _teams == null) {
@@ -227,6 +251,7 @@ class _TeamOverviewPanelState extends State<TeamOverviewPanel> {
             members: members,
             onDeleteUser: _confirmDeleteUser,
             onToggleLock: _toggleLock,
+            onResetPassword: _confirmResetPassword,
             onDeleteTeam: () => _confirmDeleteTeam(team, members.length),
           );
         }),
@@ -242,6 +267,7 @@ class _TeamTile extends StatelessWidget {
     required this.members,
     required this.onDeleteUser,
     required this.onToggleLock,
+    required this.onResetPassword,
     required this.onDeleteTeam,
   });
 
@@ -249,6 +275,7 @@ class _TeamTile extends StatelessWidget {
   final List<_TeamMember> members;
   final void Function(_TeamMember) onDeleteUser;
   final void Function(_TeamMember) onToggleLock;
+  final void Function(_TeamMember) onResetPassword;
   final VoidCallback onDeleteTeam;
 
   @override
@@ -293,6 +320,7 @@ class _TeamTile extends StatelessWidget {
                 member: m,
                 onDelete: () => onDeleteUser(m),
                 onToggleLock: () => onToggleLock(m),
+                onResetPassword: () => onResetPassword(m),
               ),
             )
             .toList(),
@@ -307,11 +335,13 @@ class _MemberRow extends StatelessWidget {
     required this.member,
     required this.onDelete,
     required this.onToggleLock,
+    required this.onResetPassword,
   });
 
   final _TeamMember member;
   final VoidCallback onDelete;
   final VoidCallback onToggleLock;
+  final VoidCallback onResetPassword;
 
   @override
   Widget build(BuildContext context) {
@@ -356,6 +386,11 @@ class _MemberRow extends StatelessWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          IconButton(
+            icon: const Icon(Icons.lock_reset),
+            tooltip: 'Send password reset email',
+            onPressed: onResetPassword,
+          ),
           IconButton(
             icon: Icon(
               member.disabled ? Icons.lock_open : Icons.lock,

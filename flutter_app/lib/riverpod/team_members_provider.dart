@@ -5,7 +5,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:rule_post/core/models/types.dart' show TeamUser;
 import 'package:rule_post/riverpod/user_detail.dart';
 
-
 // retrieve the users with the same team as the current user
 final teamMembersProvider = StreamProvider.autoDispose<List<TeamUser>>((ref) {
   final team = ref.watch(teamProvider);
@@ -20,18 +19,24 @@ final teamMembersProvider = StreamProvider.autoDispose<List<TeamUser>>((ref) {
       final email = (data['email'] as String?) ?? '';
       final displayName =
           (data['displayName'] as String?)?.trim().isNotEmpty == true
-              ? (data['displayName'] as String)
-              : (email.isNotEmpty ? getNameFromEmail(email) : 'Unknown');
+          ? (data['displayName'] as String)
+          : (email.isNotEmpty ? getNameFromEmail(email) : 'Unknown');
+
+      final uid = (data['uid'] as String?) ?? '';
+      final disabled = (data['disabled'] as bool?) ?? false;
 
       return TeamUser(
+        uid: uid,
         email: email,
         displayName: displayName,
+        disabled: disabled,
       );
-    }).toList()
-      ..sort((a, b) => a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()));
+    }).toList()..sort(
+      (a, b) =>
+          a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()),
+    );
   });
 });
-
 
 // stream for the provider
 Stream<List<Map<String, dynamic>>> streamUsersByTeam(String team) {
@@ -41,15 +46,13 @@ Stream<List<Map<String, dynamic>>> streamUsersByTeam(String team) {
       .collection('user_data')
       .where('team', isEqualTo: team)
       .snapshots()
-      .map((snap) => snap.docs.map((d) {
-            final data = d.data();
-            return {
-              'uid': d.id,
-              ...data,
-            };
-          }).toList());
+      .map(
+        (snap) => snap.docs.map((d) {
+          final data = d.data();
+          return {'uid': d.id, ...data};
+        }).toList(),
+      );
 }
-
 
 // helper to extract a display name from the email address
 String getNameFromEmail(String email) {
@@ -58,9 +61,11 @@ String getNameFromEmail(String email) {
 
   if (dotParts.length > 1) {
     return dotParts
-        .map((part) => part.isNotEmpty
-            ? part[0].toUpperCase() + part.substring(1).toLowerCase()
-            : "")
+        .map(
+          (part) => part.isNotEmpty
+              ? part[0].toUpperCase() + part.substring(1).toLowerCase()
+              : "",
+        )
         .join(' ');
   }
 
@@ -68,4 +73,3 @@ String getNameFromEmail(String email) {
       ? localPart[0].toUpperCase() + localPart.substring(1).toLowerCase()
       : "";
 }
-
