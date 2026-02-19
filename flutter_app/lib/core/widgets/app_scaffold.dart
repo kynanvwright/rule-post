@@ -113,7 +113,7 @@ class AppScaffold extends StatelessWidget with BuildLogger {
                             ),
                           ),
                           // Optional footer
-                          if (footer != null) footer!,
+                          ?footer,
                         ],
                       ),
                     ),

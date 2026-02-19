@@ -51,6 +51,7 @@ export {
 export { changeStageLength } from "./admin_funcs/change_stage_length";
 export { closeEnquiry } from "./admin_funcs/close_enquiry";
 export { getPostAuthorsForEnquiry } from "./admin_funcs/get_post_authors";
+export { inviteTeamAdmin } from "./admin_funcs/invite_team_admin";
 // export { markPostUnread } from "./admin_funcs/mark_post_unread";
 export { responseInstantPublisher } from "./admin_funcs/response_instant_publisher";
 export { testSendDigest } from "./admin_funcs/test_send_digest";

@@ -3,12 +3,10 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-
 /// Emits on login, logout, and token refreshes
 final firebaseUserProvider = StreamProvider<User?>(
   (ref) => FirebaseAuth.instance.idTokenChanges(),
 );
-
 
 // Reads the current user's custom claims from their ID token
 // - claims are a Map ({} when signed out or no claims)
@@ -21,7 +19,8 @@ final allClaimsProvider = StreamProvider<Map<String, Object?>>((ref) async* {
     }
     // Force fresh token so custom claims are up-to-date
     await user.getIdToken(true);
-    final token = await user.getIdTokenResult(); // no force; stream covers refreshes
+    final token = await user
+        .getIdTokenResult(); // no force; stream covers refreshes
     // Ensure a fresh, mutable map
     yield (token.claims ?? const <String, Object?>{});
   }
@@ -42,12 +41,10 @@ extension ClaimReader on Map<String, Object?> {
   }
 }
 
-
 /// If you *just* updated claims server-side and need an immediate refresh:
 Future<void> forceRefreshClaims() async {
   await FirebaseAuth.instance.currentUser?.getIdToken(true);
 }
-
 
 // Various derived user detail providers:
 
@@ -56,33 +53,31 @@ final isLoggedInProvider = Provider<bool>((ref) {
   return user != null;
 });
 
-
-
 final roleProvider = Provider<String?>(
-  (ref) => ref.watch(allClaimsProvider).maybeWhen(
-        data: (c) => c['role'] as String?,
-        orElse: () => null,
-      ),
+  (ref) => ref
+      .watch(allClaimsProvider)
+      .maybeWhen(data: (c) => c['role'] as String?, orElse: () => null),
 );
-
 
 final teamProvider = Provider<String?>(
-  (ref) => ref.watch(allClaimsProvider).maybeWhen(
-        data: (c) => c['team'] as String?,
-        orElse: () => null,
-      ),
+  (ref) => ref
+      .watch(allClaimsProvider)
+      .maybeWhen(data: (c) => c['team'] as String?, orElse: () => null),
 );
 
-
 final isTeamAdminProvider = Provider<bool>((ref) {
-  final claims = ref.watch(allClaimsProvider).maybeWhen(
-    data: (m) => m,
-    orElse: () => const <String, Object?>{},
-  );
+  final claims = ref
+      .watch(allClaimsProvider)
+      .maybeWhen(data: (m) => m, orElse: () => const <String, Object?>{});
   return claims.getBool('teamAdmin', fallback: false) ||
-         claims.getString('role') == 'teamAdmin';
+      claims.getString('role') == 'teamAdmin';
 });
 
+// True only for the site-level super admin (role=admin)
+final isSiteAdminProvider = Provider<bool>((ref) {
+  final role = ref.watch(roleProvider);
+  return role == 'admin';
+});
 
 final emailNotificationsOnProvider = Provider<bool>((ref) {
   final claimsAsync = ref.watch(allClaimsProvider);
