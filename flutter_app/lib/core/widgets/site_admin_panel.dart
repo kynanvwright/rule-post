@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:rule_post/api/admin_apis.dart' show inviteTeamAdmin;
+import 'package:rule_post/core/widgets/team_overview_panel.dart';
 
 /// Panel visible only to the site admin (role=admin).
 /// Allows inviting a new team admin for a specified team.
@@ -11,29 +12,32 @@ class SiteAdminPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Invite a new team admin to the site. '
-              'They will receive an email to set their password and will be able '
-              'to add/remove members for their team.',
-            ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: () async {
-                await _openInviteDialog(context);
-              },
-              icon: const Icon(Icons.admin_panel_settings),
-              label: const Text('Invite team admin'),
-            ),
-          ],
-        ),
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Invite a new team admin to the site. '
+            'They will receive an email to set their password and will be able '
+            'to add/remove members for their team.',
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: () async {
+              await _openInviteDialog(context);
+            },
+            icon: const Icon(Icons.admin_panel_settings),
+            label: const Text('Invite team admin'),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Teams & Members',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          const SizedBox(height: 8),
+          const TeamOverviewPanel(),
+        ],
       ),
     );
   }

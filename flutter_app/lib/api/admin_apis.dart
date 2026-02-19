@@ -144,3 +144,48 @@ Future<void> inviteTeamAdmin(
     failureMessage: 'Failed to invite team admin.',
   );
 }
+
+// ─────────────────── Site Admin: Team & User Management ───────────────────
+
+// Fetches all teams and their members (site admin only)
+Future<Json> adminListAllTeams() async {
+  return await api.call<Json>('adminListAllTeams', {});
+}
+
+// Deletes a user by UID (site admin only)
+Future<void> adminDeleteUser(BuildContext context, String uid) async {
+  await api.callWithProgress<Json>(
+    context: context,
+    name: 'adminDeleteUser',
+    data: {'uid': uid},
+    successMessage: 'User deleted.',
+    failureMessage: 'Failed to delete user.',
+  );
+}
+
+// Locks or unlocks a user (site admin only)
+Future<void> adminToggleUserLock(
+  BuildContext context, {
+  required String uid,
+  required bool disabled,
+}) async {
+  final action = disabled ? 'locked' : 'unlocked';
+  await api.callWithProgress<Json>(
+    context: context,
+    name: 'adminToggleUserLock',
+    data: {'uid': uid, 'disabled': disabled},
+    successMessage: 'User $action.',
+    failureMessage: 'Failed to $action user.',
+  );
+}
+
+// Deletes all members of a team (site admin only)
+Future<void> adminDeleteTeam(BuildContext context, String team) async {
+  await api.callWithProgress<Json>(
+    context: context,
+    name: 'adminDeleteTeam',
+    data: {'team': team},
+    successMessage: 'Team $team deleted.',
+    failureMessage: 'Failed to delete team.',
+  );
+}
