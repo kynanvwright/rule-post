@@ -177,6 +177,30 @@ class _MembersList extends ConsumerWidget {
                 icon: const Icon(Icons.delete, color: Colors.red),
                 tooltip: 'Delete team member',
                 onPressed: () async {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      title: const Text('Delete user'),
+                      content: Text(
+                        'Permanently delete ${m.email}?\n\n'
+                        'This cannot be undone.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel'),
+                        ),
+                        FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Colors.red,
+                          ),
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Delete'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirmed != true || !context.mounted) return;
                   await deleteUserByEmail(context, m.email);
                 },
               ),
