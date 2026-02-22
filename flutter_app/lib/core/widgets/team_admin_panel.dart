@@ -115,18 +115,18 @@ class _MembersList extends ConsumerWidget {
                 onPressed: () async {
                   final confirmed = await showDialog<bool>(
                     context: context,
-                    builder: (_) => AlertDialog(
+                    builder: (dialogCtx) => AlertDialog(
                       title: const Text('Reset password'),
                       content: Text(
                         'Send a password reset email to ${m.email}?',
                       ),
                       actions: [
                         TextButton(
-                          onPressed: () => Navigator.pop(context, false),
+                          onPressed: () => Navigator.pop(dialogCtx, false),
                           child: const Text('Cancel'),
                         ),
                         FilledButton(
-                          onPressed: () => Navigator.pop(context, true),
+                          onPressed: () => Navigator.pop(dialogCtx, true),
                           child: const Text('Send'),
                         ),
                       ],
@@ -147,7 +147,7 @@ class _MembersList extends ConsumerWidget {
                   final action = newState ? 'Lock' : 'Unlock';
                   final confirmed = await showDialog<bool>(
                     context: context,
-                    builder: (_) => AlertDialog(
+                    builder: (dialogCtx) => AlertDialog(
                       title: Text('$action user'),
                       content: Text(
                         '$action ${m.email}?\n\n'
@@ -155,11 +155,11 @@ class _MembersList extends ConsumerWidget {
                       ),
                       actions: [
                         TextButton(
-                          onPressed: () => Navigator.pop(context, false),
+                          onPressed: () => Navigator.pop(dialogCtx, false),
                           child: const Text('Cancel'),
                         ),
                         FilledButton(
-                          onPressed: () => Navigator.pop(context, true),
+                          onPressed: () => Navigator.pop(dialogCtx, true),
                           child: Text(action),
                         ),
                       ],
@@ -179,7 +179,7 @@ class _MembersList extends ConsumerWidget {
                 onPressed: () async {
                   final confirmed = await showDialog<bool>(
                     context: context,
-                    builder: (_) => AlertDialog(
+                    builder: (dialogCtx) => AlertDialog(
                       title: const Text('Delete user'),
                       content: Text(
                         'Permanently delete ${m.email}?\n\n'
@@ -187,14 +187,14 @@ class _MembersList extends ConsumerWidget {
                       ),
                       actions: [
                         TextButton(
-                          onPressed: () => Navigator.pop(context, false),
+                          onPressed: () => Navigator.pop(dialogCtx, false),
                           child: const Text('Cancel'),
                         ),
                         FilledButton(
                           style: FilledButton.styleFrom(
                             backgroundColor: Colors.red,
                           ),
-                          onPressed: () => Navigator.pop(context, true),
+                          onPressed: () => Navigator.pop(dialogCtx, true),
                           child: const Text('Delete'),
                         ),
                       ],

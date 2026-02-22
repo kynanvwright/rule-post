@@ -91,7 +91,7 @@ class _TeamOverviewPanelState extends State<TeamOverviewPanel> {
   Future<void> _confirmDeleteUser(_TeamMember member) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: const Text('Delete user'),
         content: Text(
           'Permanently delete ${member.email}?\n\n'
@@ -99,20 +99,24 @@ class _TeamOverviewPanelState extends State<TeamOverviewPanel> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(dialogCtx, false),
             child: const Text('Cancel'),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(dialogCtx, true),
             child: const Text('Delete'),
           ),
         ],
       ),
     );
     if (confirmed != true || !mounted) return;
-    await adminDeleteUser(context, member.uid);
-    await _loadTeams();
+    try {
+      await adminDeleteUser(context, member.uid);
+    } catch (_) {
+      /* progress dialog already showed the error */
+    }
+    if (mounted) await _loadTeams();
   }
 
   // ── Lock / unlock user ──
@@ -121,7 +125,7 @@ class _TeamOverviewPanelState extends State<TeamOverviewPanel> {
     final action = newState ? 'Lock' : 'Unlock';
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: Text('$action user'),
         content: Text(
           '$action ${member.email}?\n\n'
@@ -129,26 +133,30 @@ class _TeamOverviewPanelState extends State<TeamOverviewPanel> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(dialogCtx, false),
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(dialogCtx, true),
             child: Text(action),
           ),
         ],
       ),
     );
     if (confirmed != true || !mounted) return;
-    await adminToggleUserLock(context, uid: member.uid, disabled: newState);
-    await _loadTeams();
+    try {
+      await adminToggleUserLock(context, uid: member.uid, disabled: newState);
+    } catch (_) {
+      /* progress dialog already showed the error */
+    }
+    if (mounted) await _loadTeams();
   }
 
   // ── Delete team ──
   Future<void> _confirmDeleteTeam(String team, int memberCount) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: const Text('Delete entire team'),
         content: Text(
           'Permanently delete team $team and all $memberCount member(s)?\n\n'
@@ -156,43 +164,51 @@ class _TeamOverviewPanelState extends State<TeamOverviewPanel> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(dialogCtx, false),
             child: const Text('Cancel'),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(dialogCtx, true),
             child: const Text('Delete team'),
           ),
         ],
       ),
     );
     if (confirmed != true || !mounted) return;
-    await adminDeleteTeam(context, team);
-    await _loadTeams();
+    try {
+      await adminDeleteTeam(context, team);
+    } catch (_) {
+      /* progress dialog already showed the error */
+    }
+    if (mounted) await _loadTeams();
   }
 
   // ── Send password reset email ──
   Future<void> _confirmResetPassword(_TeamMember member) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: const Text('Reset password'),
         content: Text('Send a password reset email to ${member.email}?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(dialogCtx, false),
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(dialogCtx, true),
             child: const Text('Send'),
           ),
         ],
       ),
     );
     if (confirmed != true || !mounted) return;
-    await sendPasswordResetEmail(context, member.email);
+    try {
+      await sendPasswordResetEmail(context, member.email);
+    } catch (_) {
+      /* progress dialog already showed the error */
+    }
   }
 
   @override
@@ -306,11 +322,12 @@ class _TeamTile extends StatelessWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            IconButton(
-              icon: const Icon(Icons.delete_forever, color: Colors.red),
-              tooltip: 'Delete entire team',
-              onPressed: onDeleteTeam,
-            ),
+            if (team != 'RC')
+              IconButton(
+                icon: const Icon(Icons.delete_forever, color: Colors.red),
+                tooltip: 'Delete entire team',
+                onPressed: onDeleteTeam,
+              ),
             const Icon(Icons.expand_more),
           ],
         ),

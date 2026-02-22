@@ -2,7 +2,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 
-
 // button to delete data using the frontend
 class DeleteButton extends StatefulWidget {
   const DeleteButton({
@@ -27,7 +26,6 @@ class DeleteButton extends StatefulWidget {
   @override
   State<DeleteButton> createState() => _DeleteButtonState();
 }
-
 
 class _DeleteButtonState extends State<DeleteButton> {
   final GlobalKey<TooltipState> _tooltipKey = GlobalKey<TooltipState>();
@@ -54,14 +52,14 @@ class _DeleteButtonState extends State<DeleteButton> {
         onPressed: () async {
           final ok = await showDialog<bool>(
             context: context,
-            builder: (_) => AlertDialog(
+            builder: (dialogCtx) => AlertDialog(
               title: Text(widget.onPressedTitle),
               content: widget.onPressedText.isNotEmpty
-                ? Text(widget.onPressedText)
-                : null,
+                  ? Text(widget.onPressedText)
+                  : null,
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context, false),
+                  onPressed: () => Navigator.pop(dialogCtx, false),
                   child: const Text('Cancel'),
                 ),
                 FilledButton(
@@ -69,7 +67,7 @@ class _DeleteButtonState extends State<DeleteButton> {
                     backgroundColor: WidgetStatePropertyAll(scheme.error),
                     foregroundColor: WidgetStatePropertyAll(scheme.onError),
                   ),
-                  onPressed: () => Navigator.pop(context, true),
+                  onPressed: () => Navigator.pop(dialogCtx, true),
                   child: Text(widget.onPressedButtonText),
                 ),
               ],

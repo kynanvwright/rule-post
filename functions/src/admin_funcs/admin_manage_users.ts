@@ -188,6 +188,12 @@ export const adminDeleteTeam = onCall(
     if (!team || typeof team !== "string") {
       throw new HttpsError("invalid-argument", "Missing team.");
     }
+    if (team === "RC") {
+      throw new HttpsError(
+        "failed-precondition",
+        "The RC team cannot be deleted.",
+      );
+    }
 
     logger.info("adminDeleteTeam", { team });
 
