@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:rule_post/core/models/attachments.dart';
 import 'package:rule_post/core/models/post_types.dart';
 
-
 // Immutable structure used to pass data to backend functions for creating/editing posts.
 @immutable
 final class PostPayload {
@@ -54,20 +53,18 @@ final class PostPayload {
 
     // List<String> normaliser: null -> [], trim & drop empties, freeze
     List<String> cleanStrings(List<String>? xs) => List<String>.unmodifiable(
-          (xs ?? const <String>[])
-              .map((s) => s.trim())
-              .where((s) => s.isNotEmpty),
-        );
+      (xs ?? const <String>[]).map((s) => s.trim()).where((s) => s.isNotEmpty),
+    );
 
     // List<TempAttachment> normaliser: null -> [], freeze
     List<TempAttachment> cleanAttachments(List<TempAttachment>? xs) =>
         List<TempAttachment>.unmodifiable(xs ?? const <TempAttachment>[]);
 
-    final normTitle   = norm(title);
-    final normText    = norm(postText);
-    final normPostId  = norm(postId);
+    final normTitle = norm(title);
+    final normText = norm(postText);
+    final normPostId = norm(postId);
     final safeParents = cleanStrings(parentIds);
-    final safeAtts    = cleanAttachments(attachments);
+    final safeAtts = cleanAttachments(attachments);
     final safeEditAtts = editAttachments ?? EditAttachmentMap();
 
     final isEdit = normPostId != null;
@@ -77,7 +74,8 @@ final class PostPayload {
     switch (postType) {
       case PostType.enquiry:
         if (!isEdit) {
-          if (normTitle == null) throw ArgumentError('Enquiry requires a title.');
+          if (normTitle == null)
+            throw ArgumentError('Enquiry requires a title.');
           if (!hasText && safeAtts.isEmpty) {
             throw ArgumentError('Enquiry requires text or attachments.');
           }
@@ -98,9 +96,11 @@ final class PostPayload {
 
       case PostType.response:
         if (safeParents.length != 1) {
-          throw ArgumentError('Response requires exactly one parentId (enquiryId).');
+          throw ArgumentError(
+            'Response requires exactly one parentId (enquiryId).',
+          );
         }
-        if (!isEdit && !hasText && safeParents.isEmpty) {
+        if (!isEdit && !hasText && safeAtts.isEmpty) {
           throw ArgumentError('Response requires text or attachments.');
         }
         break;
@@ -130,7 +130,6 @@ final class PostPayload {
     );
   }
 
-
   Map<String, Object?> toJson() {
     final isEdit = postId != null;
 
@@ -147,13 +146,15 @@ final class PostPayload {
 
       if (isEdit) 'postId': postId,
       if (isPublished != null) 'isPublished': isPublished,
-      
+
       // Only include closeEnquiryOnPublish for response posts
       if (postType == PostType.response && closeEnquiryOnPublish)
         'closeEnquiryOnPublish': closeEnquiryOnPublish,
-      
+
       // Only include enquiryConclusion for response posts when closing
-      if (postType == PostType.response && closeEnquiryOnPublish && enquiryConclusion != null)
+      if (postType == PostType.response &&
+          closeEnquiryOnPublish &&
+          enquiryConclusion != null)
         'enquiryConclusion': enquiryConclusion,
     };
 
@@ -162,15 +163,17 @@ final class PostPayload {
     // - Edit: include only if we're explicitly adding attachments
     if (!isEdit) {
       if (attachments.isNotEmpty) {
-        json['attachments'] =
-            attachments.map((a) => a.toMap()).toList(growable: false);
+        json['attachments'] = attachments
+            .map((a) => a.toMap())
+            .toList(growable: false);
       }
     } else {
       json['editAttachments'] = editAttachments.toJson();
 
       if (editAttachments.add && attachments.isNotEmpty) {
-        json['attachments'] =
-            attachments.map((a) => a.toMap()).toList(growable: false);
+        json['attachments'] = attachments
+            .map((a) => a.toMap())
+            .toList(growable: false);
       }
     }
     return json;

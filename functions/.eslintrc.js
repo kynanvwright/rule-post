@@ -36,6 +36,7 @@ module.exports = {
   ignorePatterns: [
     "/lib/**/*", // build output
     "/generated/**/*", // generated code
+    "/scripts/**/*", // one-off setup scripts
   ],
   rules: {
     // —— Your style choices ——

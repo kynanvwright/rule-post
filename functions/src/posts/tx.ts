@@ -12,7 +12,6 @@ import {
 import { HttpsError } from "firebase-functions/v2/https";
 
 import { resolvePostColour } from "./colour";
-import { isNotFoundError } from "../common/errors";
 
 import type { AuthorInfo, CreatePostData, TxResult } from "../common/types";
 
@@ -158,29 +157,29 @@ export async function runCreatePostTx(
           }
         }
 
-        // Uniqueness guard
+        // Uniqueness guard – tx.create() will cause the transaction to
+        // fail at commit time if the guard doc already exists, so we read
+        // first to give a clear error message.
         const guardRef = enquiryRef
           .collection("meta")
           .doc("response_guards")
           .collection("guards")
           .doc(`${author.team}_${publicDoc.roundNumber}`);
-        try {
-          tx.create(guardRef, {
-            authorTeam: author.team,
-            roundNumber: publicDoc.roundNumber,
-            createdAt: now,
-            latestResponseId: postId,
-          });
-        } catch (e: unknown) {
-          if (isNotFoundError(e)) {
-            throw new HttpsError(
-              "already-exists",
-              `Your team has already submitted a response for round ${publicDoc.roundNumber}.\n
-              This error may falsely trigger if a post was deleted, if so, delete the relevant response guard.`,
-            );
-          }
-          throw e; // rethrow anything unexpected
+        const guardSnap = await tx.get(guardRef);
+        if (guardSnap.exists) {
+          throw new HttpsError(
+            "already-exists",
+            "Your team has already submitted a response for round " +
+              publicDoc.roundNumber +
+              ". This error may falsely trigger if a post was deleted; if so, delete the relevant response guard.",
+          );
         }
+        tx.create(guardRef, {
+          authorTeam: author.team,
+          roundNumber: publicDoc.roundNumber,
+          createdAt: now,
+          latestResponseId: postId,
+        });
       }
 
       if (postType === "comment") {

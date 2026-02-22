@@ -14,6 +14,8 @@ import { HttpsError } from "firebase-functions/v2/https";
  * Resolve the colour for a post given the author's team.
  * - RC gets the "grey" from app_data/colour_wheel.
  * - Other teams use the provided teamColourMap.
+ * - If a team is missing from the map (e.g. newly added), falls back to a
+ *   deterministic palette pick so the post can still be created.
  */
 export async function resolvePostColour(
   tx: Transaction,
@@ -34,10 +36,31 @@ export async function resolvePostColour(
   }
 
   const c = teamColourMap[authorTeam];
-  if (!c) {
-    throw new HttpsError("failed-precondition", "Team colour not found.");
+  if (c) return c;
+
+  // Fallback: team not yet in the colour map (new team, or map was empty).
+  // Pick a deterministic colour from the palette so the post can still be
+  // created. The colour will be properly assigned when the enquiry's
+  // teamColourMap is next regenerated.
+  const wheelRef = db.collection("app_data").doc("colour_wheel");
+  const wheelSnap = await tx.get(wheelRef);
+  const palette = wheelSnap.exists
+    ? (wheelSnap.get("base") as string[] | undefined)
+    : undefined;
+
+  if (Array.isArray(palette) && palette.length > 0) {
+    // Simple hash to pick a stable index
+    let h = 0;
+    for (let i = 0; i < authorTeam.length; i++) {
+      h = (h * 31 + authorTeam.charCodeAt(i)) >>> 0;
+    }
+    return palette[h % palette.length];
   }
-  return c;
+
+  throw new HttpsError(
+    "failed-precondition",
+    "Team colour not found and colour wheel palette is not configured.",
+  );
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

@@ -2,6 +2,16 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 
+import 'package:rule_post/core/models/firebase_exception_mapper.dart';
+
+/// Extract a user-friendly message from a caught error, or null to fall back
+/// to the default failureMessage.
+String? _userFacingError(Object? error) {
+  if (error is AppException && error.message != null) {
+    return error.message;
+  }
+  return null;
+}
 
 /// Shows a progress dialog that:
 ///  - cycles through [steps] every [stepInterval]
@@ -11,7 +21,11 @@ import 'package:flutter/material.dart';
 Future<T> showProgressFlow<T>({
   required BuildContext context,
   required Future<T> Function() action,
-  List<String> steps = const ['Checking user authentication…','Preparing data…','Saving to database…'],
+  List<String> steps = const [
+    'Checking user authentication…',
+    'Preparing data…',
+    'Saving to database…',
+  ],
   Duration stepInterval = const Duration(seconds: 2),
 
   // NEW: optional builder for dynamic success text
@@ -54,13 +68,21 @@ Future<T> showProgressFlow<T>({
               title: Row(
                 children: [
                   if (running)
-                    const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5))
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2.5),
+                    )
                   else if (error == null)
                     const Icon(Icons.check_circle, size: 20)
                   else
                     const Icon(Icons.error_outline, size: 20),
                   const SizedBox(width: 8),
-                  Text(running ? 'Working…' : (error == null ? successTitle : failureTitle)),
+                  Text(
+                    running
+                        ? 'Working…'
+                        : (error == null ? successTitle : failureTitle),
+                  ),
                 ],
               ),
               content: Column(
@@ -73,9 +95,13 @@ Future<T> showProgressFlow<T>({
                       running
                           ? currentText
                           : (error == null
-                              ? (computedSuccessText ?? successMessage)
-                              : computedFailureText ?? failureMessage),
-                      key: ValueKey('${running}_${currentText}_${error != null}'),
+                                ? (computedSuccessText ?? successMessage)
+                                : _userFacingError(error) ??
+                                      computedFailureText ??
+                                      failureMessage),
+                      key: ValueKey(
+                        '${running}_${currentText}_${error != null}',
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
