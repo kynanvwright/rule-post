@@ -7,6 +7,7 @@ import { onDocumentDeleted } from "firebase-functions/v2/firestore";
 
 import { REGION } from "../common/config";
 import { db } from "../common/db";
+import { deepDeleteDoc } from "../utils/deep_delete_doc";
 import { deleteUnreadForAllUsers } from "../utils/unread_post_generator";
 
 /** Shared cleanup so logic stays DRY */
@@ -51,6 +52,10 @@ async function handleDeletion(args: {
 
     // delete unreadPost records
     await deleteUnreadForAllUsers(enquiryId, "enquiry");
+
+    // delete any remaining subcollections (meta, responses, etc.)
+    const enquiryRef = db.collection("enquiries").doc(enquiryId);
+    await deepDeleteDoc(enquiryRef);
   } else if (kind === "response" && responseId) {
     // Delete draft record of the post
     await deleteDraftDoc(responseId);
@@ -154,6 +159,14 @@ async function handleDeletion(args: {
     // delete unreadPost records
     await deleteUnreadForAllUsers(responseId, "response");
     // Add some logic to deal with response numbering
+
+    // delete any remaining subcollections (meta, comments, etc.)
+    const responseRef = db
+      .collection("enquiries")
+      .doc(enquiryId)
+      .collection("responses")
+      .doc(responseId);
+    await deepDeleteDoc(responseRef);
   } else if (kind === "comment" && commentId) {
     // Delete draft record of the post
     await deleteDraftDoc(commentId);
@@ -174,6 +187,16 @@ async function handleDeletion(args: {
     // delete unreadPost records
     await deleteUnreadForAllUsers(commentId, "comment");
     // Add some logic to deal with comment numbering
+
+    // delete any remaining subcollections (meta, etc.)
+    const commentRef = db
+      .collection("enquiries")
+      .doc(enquiryId)
+      .collection("responses")
+      .doc(responseId!)
+      .collection("comments")
+      .doc(commentId);
+    await deepDeleteDoc(commentRef);
   }
 
   console.log("Deleted", { kind, enquiryId, responseId, commentId, data });
