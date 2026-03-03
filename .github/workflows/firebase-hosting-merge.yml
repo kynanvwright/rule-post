@@ -3,6 +3,9 @@ on:
   push:
     branches: [ main ]
 
+env:
+  HOSTING_SUSPENDED: "true"
+
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
@@ -17,6 +20,7 @@ jobs:
 
       # ⬇️ Build Flutter web (ensure firebase.json -> "public": "flutter_app/build/web")
       - name: Build Flutter web
+        if: env.HOSTING_SUSPENDED != 'true'
         working-directory: ./flutter_app
         run: |
           flutter pub get
@@ -37,12 +41,58 @@ jobs:
 
       # Hosting (prod)
       - name: Deploy Hosting (live channel)
+        if: env.HOSTING_SUSPENDED != 'true'
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_RULE_POST }}
           channelId: live
           projectId: rule-post
+
+      - name: Deploy suspended site message
+        if: env.HOSTING_SUSPENDED == 'true'
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
+        run: |
+          mkdir -p suspended-site
+          cat > suspended-site/index.html <<'HTML'
+          <!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <title>Rule Post has moved</title>
+            <meta http-equiv="refresh" content="5; url=https://rulepost.acofficials.org/" />
+            <style>
+              body { font-family: Arial, sans-serif; margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f8fafc; color: #0f172a; }
+              main { max-width: 680px; padding: 24px; text-align: center; }
+              a { color: #0f172a; font-weight: 600; }
+            </style>
+          </head>
+          <body>
+            <main>
+              <h1>Website moved</h1>
+              <p>Sorry, this website has been taken down and replaced by one at <a href="https://rulepost.acofficials.org/">https://rulepost.acofficials.org/</a>.</p>
+              <p>You will be redirected automatically in 5 seconds.</p>
+            </main>
+          </body>
+          </html>
+          HTML
+
+          cat > firebase.suspended.json <<'JSON'
+          {
+            "hosting": {
+              "public": "suspended-site",
+              "ignore": [
+                "firebase.suspended.json",
+                "**/.*",
+                "**/node_modules/**"
+              ]
+            }
+          }
+          JSON
+
+          npx firebase-tools@latest deploy --only hosting --project rule-post --config firebase.suspended.json --non-interactive
 
       # ── OPTIONAL: Deploy Cloud Functions (prod) ──────────────────────────
       - name: Install Firebase CLI
