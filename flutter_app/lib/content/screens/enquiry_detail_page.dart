@@ -99,7 +99,7 @@ class _EnquiryDetailPageState extends ConsumerState<EnquiryDetailPage> {
         );
 
         return DetailScaffold(
-          headerLines: ['title${formatAuthorSuffix(enquiryAuthorTeam)}'],
+          headerLines: ['$title${formatAuthorSuffix(enquiryAuthorTeam)}'],
           subHeaderLines: [
             'Rule Enquiry ${enquiryNumber.toString().padLeft(3, '0')}',
           ],
