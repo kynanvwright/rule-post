@@ -30,6 +30,7 @@ export const orchestrate0000 = onSchedule(
     schedule: "0 0 * * *",
     timeZone: ROME_TZ,
     timeoutSeconds: TIMEOUT_SECONDS,
+    secrets: ["GMAIL_USER", "GMAIL_APP_PASSWORD"],
   },
   async (): Promise<void> => {
     const startTime = Date.now();
@@ -81,6 +82,7 @@ export const orchestrate1200 = onSchedule(
     schedule: "0 12 * * *",
     timeZone: ROME_TZ,
     timeoutSeconds: TIMEOUT_SECONDS,
+    secrets: ["GMAIL_USER", "GMAIL_APP_PASSWORD"],
   },
   async (): Promise<void> => {
     const startTime = Date.now();
@@ -126,6 +128,7 @@ export const orchestrate2000 = onSchedule(
     schedule: "0 20 * * *",
     timeZone: ROME_TZ,
     timeoutSeconds: TIMEOUT_SECONDS,
+    secrets: ["GMAIL_USER", "GMAIL_APP_PASSWORD"],
   },
   async (): Promise<void> => {
     const startTime = Date.now();
