@@ -38,26 +38,23 @@ service firebase.storage {
     // This reduces repeated downloads and bandwidth costs by 80%+
     // Helpers to check Firestore publication state
     function isEnquiryPublished(enquiryId) {
-      return firestore.get(
-        /databases/(default)/documents/enquiries/$(enquiryId)
-      ).data.isPublished == true;
+      let doc = firestore.get(/databases/(default)/documents/enquiries/$(enquiryId));
+      return doc != null && doc.data.get('isPublished', false) == true;
     }
 
     function isResponsePublished(eid, rid) {
-      return firestore.get(
-        /databases/(default)/documents/enquiries/$(eid)/responses/$(rid)
-      ).data.isPublished == true;
+      let doc = firestore.get(/databases/(default)/documents/enquiries/$(eid)/responses/$(rid));
+      return doc != null && doc.data.get('isPublished', false) == true;
     }
     
     function enquiryAuthorTeam(enquiryId) {
-      return firestore.get(
-        /databases/(default)/documents/enquiries/$(enquiryId)/meta/data).data.authorTeam;
+      let doc = firestore.get(/databases/(default)/documents/enquiries/$(enquiryId)/meta/data);
+      return doc != null ? doc.data.get('authorTeam', '') : '';
     }
 
     function responseAuthorTeam(eid, rid) {
-      return firestore.get(
-        /databases/(default)/documents/enquiries/$(eid)/responses/$(rid)
-      	).data.authorTeam;
+      let doc = firestore.get(/databases/(default)/documents/enquiries/$(eid)/responses/$(rid)/meta/data);
+      return doc != null ? doc.data.get('authorTeam', '') : '';
     }
     
     function userTeam() {
@@ -66,19 +63,23 @@ service firebase.storage {
         : null;
     }
 
+    function isSiteAdmin() {
+      return request.auth != null && request.auth.token.role == 'admin';
+    }
+
 
     // Enquiry-level attachments (e.g., PDFs attached to the enquiry itself)
     // Published files: Cached for 1 hour (public, max-age=3600)
     match /enquiries/{enquiryId}/{filePath=**} {
       allow write: if false; // Admin SDK bypasses rules
-      allow read: if isEnquiryPublished(enquiryId) || enquiryAuthorTeam(enquiryId)==userTeam();
+      allow read: if isEnquiryPublished(enquiryId) || enquiryAuthorTeam(enquiryId)==userTeam() || isSiteAdmin();
     }
 
     // Response-level attachments
     // Published files: Cached for 1 hour (public, max-age=3600)
     match /enquiries/{enquiryId}/responses/{responseId}/{filePath=**} {
       allow write: if false;
-      allow read: if isResponsePublished(enquiryId, responseId) || responseAuthorTeam(enquiryId)==userTeam();
+      allow read: if isResponsePublished(enquiryId, responseId) || responseAuthorTeam(enquiryId, responseId)==userTeam() || isSiteAdmin();
     }
   }
 }
