@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 
 // special tile for comments, which can be expanded/collapsed if the text is long
@@ -172,12 +173,23 @@ class _ListTileCollapsibleTextState extends State<ListTileCollapsibleText>
           overflow: overflow,
         );
       }
-      // For expanded view, render markdown
+      // For expanded view, render markdown. Use onTapLink and disable
+      // selectable mode so link taps are received by the gesture recognizers.
       return MarkdownBody(
         data: text,
-        selectable: true,
+        selectable: false,
         shrinkWrap: true,
         styleSheet: _buildMarkdownStyle(baseStyle),
+        onTapLink: (textLabel, href, title) async {
+          if (href == null) return;
+          final uri = Uri.tryParse(href);
+          if (uri == null) return;
+          try {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          } catch (_) {
+            // ignore failures for now
+          }
+        },
       );
     }
 
@@ -216,6 +228,7 @@ class _ListTileCollapsibleTextState extends State<ListTileCollapsibleText>
       RegExp(r'^\s*[-*+]\s'),       // - lists
       RegExp(r'^\s*\d+\.\s'),       // 1. numbered lists
       RegExp(r'>.+'),               // > blockquotes
+      RegExp(r'https?:\/\/\S+'), // bare URLs like https://example.com
     ];
 
     return markdownPatterns.any((pattern) => pattern.hasMatch(text));

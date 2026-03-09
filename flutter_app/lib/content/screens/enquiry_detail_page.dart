@@ -88,7 +88,7 @@ class _EnquiryDetailPageState extends ConsumerState<EnquiryDetailPage> {
         );
 
         return DetailScaffold(
-          headerLines: ['title${formatAuthorSuffix(enquiryAuthorTeam)}'],
+          headerLines: ['$title${formatAuthorSuffix(enquiryAuthorTeam)}'],
           subHeaderLines: ['Rule Enquiry #$enquiryNumber'],
           headerButton: isPublished ? 
             null : 

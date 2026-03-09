@@ -1,6 +1,7 @@
 // flutter_app/lib/core/widgets/markdown_display.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// A widget that displays text as rendered markdown.
 /// Supports: **bold**, _italic_, `code`, # Headers, - lists, and links.
@@ -48,14 +49,28 @@ class MarkdownDisplay extends StatelessWidget {
       }
     }
 
-    // Use MarkdownBody for markdown content
+    // Use MarkdownBody for markdown content. Provide an onTapLink handler
+    // so links are actionable. We open links externally via url_launcher.
     return SingleChildScrollView(
       physics: const NeverScrollableScrollPhysics(),
       child: MarkdownBody(
         data: text,
-        selectable: selectable,
+        // When rendering markdown we disable the package's selectable mode
+        // because SelectableSpans prevent gesture recognizers on links
+        // from firing. Plain non-markdown text remains selectable above.
+        selectable: false,
         shrinkWrap: true,
         styleSheet: _buildStyleSheet(context),
+        onTapLink: (textLabel, href, title) async {
+          if (href == null) return;
+          final uri = Uri.tryParse(href);
+          if (uri == null) return;
+          try {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          } catch (_) {
+            // ignore failures - caller can add error reporting if desired
+          }
+        },
       ),
     );
   }
@@ -133,6 +148,7 @@ class MarkdownDisplay extends StatelessWidget {
       RegExp(r'^\s*[-*+]\s'),       // - lists
       RegExp(r'^\s*\d+\.\s'),       // 1. numbered lists
       RegExp(r'>.+'),               // > blockquotes
+      RegExp(r'https?:\/\/\S+'), // bare URLs like https://example.com
     ];
 
     return markdownPatterns.any((pattern) => pattern.hasMatch(text));
