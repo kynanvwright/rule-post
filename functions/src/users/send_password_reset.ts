@@ -8,8 +8,7 @@ type ResetPayload = { email: string };
 
 /**
  * Allows a team admin to send a password-reset email to one of their
- * team members.  The caller must hold the `teamAdmin` custom claim and
- * the target user must belong to the same team.
+ * team members, or a site admin to reset any user's password.
  */
 export const sendPasswordReset = onCall(
   {
@@ -24,9 +23,13 @@ export const sendPasswordReset = onCall(
       throw new HttpsError("unauthenticated", "You must be signed in.");
     }
 
+    const isSiteAdmin = req.auth?.token.role === "admin";
     const isTeamAdmin = req.auth?.token.teamAdmin;
-    if (!isTeamAdmin) {
-      throw new HttpsError("permission-denied", "Team admin only.");
+    if (!isSiteAdmin && !isTeamAdmin) {
+      throw new HttpsError(
+        "permission-denied",
+        "Team admin or site admin only.",
+      );
     }
 
     const { email } = req.data as ResetPayload;
@@ -44,13 +47,16 @@ export const sendPasswordReset = onCall(
       throw new HttpsError("not-found", "No user found with that email.");
     }
 
-    const callerTeam = req.auth?.token.team as string | undefined;
-    const targetClaims = targetUser.customClaims ?? {};
-    if (callerTeam && targetClaims.team !== callerTeam) {
-      throw new HttpsError(
-        "permission-denied",
-        "You can only reset passwords for members of your own team.",
-      );
+    // Site admins may reset any user; team admins only their own team
+    if (!isSiteAdmin) {
+      const callerTeam = req.auth?.token.team as string | undefined;
+      const targetClaims = targetUser.customClaims ?? {};
+      if (callerTeam && targetClaims.team !== callerTeam) {
+        throw new HttpsError(
+          "permission-denied",
+          "You can only reset passwords for members of your own team.",
+        );
+      }
     }
 
     // ── 3. Generate the password-reset link
