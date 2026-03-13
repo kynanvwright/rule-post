@@ -258,7 +258,13 @@ function renderDigestHTML(
       `
       : "";
 
-  return `
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;">
   <!-- Preheader (hidden) -->
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;font-size:1px;line-height:1px;">
     ${expiringDeadlines && expiringDeadlines.length > 0 ? "Action required: response deadline approaching. " : ""}New Rule Post publications: enquiries, responses, and comments.
@@ -314,7 +320,8 @@ function renderDigestHTML(
       </td>
     </tr>
   </table>
-  `;
+</body>
+</html>`;
 }
 
 /** send one digest to all recipients, then mark events processed */
@@ -337,10 +344,10 @@ async function sendDigestFor(
   const usersByTeam = new Map<string, UserByTeam>();
 
   snap.docs.forEach((d) => {
-    const ud = d.data() as UserData & Record<string, unknown>;
+    const ud = d.data() as UserData;
     const email = ud.email;
     if (!email) return;
-    const team = (ud.team as string | undefined) || "unknown";
+    const team = ud.team || "unknown";
     const scope = (ud.emailNotificationsScope as "all" | "enquiries") ?? "all";
 
     if (!usersByTeam.has(team)) {
@@ -390,6 +397,19 @@ async function sendDigestFor(
   });
   const fromAddress = `"Rule Post" <${process.env.GMAIL_USER}>`;
 
+  // Verify SMTP credentials before attempting to send
+  try {
+    await transporter.verify();
+  } catch (verifyErr) {
+    logger.error(
+      "[sendDigestFor] SMTP verification failed — aborting digest. Events will NOT be marked processed.",
+      { error: verifyErr },
+    );
+    return;
+  }
+
+  let anyTeamSucceeded = false;
+
   // Send personalized digest to each team
   for (const [team, teamData] of usersByTeam.entries()) {
     // Check for expiring response deadlines for this team
@@ -436,6 +456,7 @@ async function sendDigestFor(
         subject,
         html,
       });
+      anyTeamSucceeded = true;
       logger.info("[sendDigestFor] Email sent to team", {
         team,
         recipientCount: teamData.emails.length,
@@ -447,6 +468,13 @@ async function sendDigestFor(
         error,
       });
     }
+  }
+
+  if (!anyTeamSucceeded) {
+    logger.error(
+      "[sendDigestFor] All email sends failed — events will NOT be marked processed for retry.",
+    );
+    return;
   }
 
   const batch = db.batch();

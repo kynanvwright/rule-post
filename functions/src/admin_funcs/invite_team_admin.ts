@@ -119,29 +119,49 @@ export const inviteTeamAdmin = onCall(
     });
 
     const link = await auth.generatePasswordResetLink(trimmedEmail, {
-      url: "https://rulepost-c52d6.web.app",
+      url: "https://rulepost.acofficials.org",
       handleCodeInApp: false,
     });
     console.log("✅ Password reset link created");
 
     // 6) Send welcome email
     const recipientName = getNameFromEmail(trimmedEmail);
-    await transporter.sendMail({
-      from: `"Rule Post" <${process.env.GMAIL_USER}>`,
-      to: trimmedEmail,
-      subject: "You've been invited as a Team Admin on Rule Post",
-      html: `
-        <p>Hi ${recipientName},</p>
-        <p>You've been invited as a <strong>Team Admin</strong> for team <strong>${trimmedTeam}</strong> on Rule Post, the website for rule enquiries in the 38th America's Cup.</p>
-        <p>As team admin you can add and remove members for your team.</p>
-        <p>Click the button below to set your password and get started:</p>
-        <p><a href="${link}" style="display:inline-block;padding:10px 16px;border-radius:6px;text-decoration:none;">Set your password</a></p>
-        <p>If you didn't expect this, you can ignore this email.</p>
-      `,
-    });
-    console.log("✅ Welcome email sent to team admin");
+    let emailSent = true;
+    try {
+      await transporter.sendMail({
+        from: `"Rule Post" <${process.env.GMAIL_USER}>`,
+        to: trimmedEmail,
+        subject: "You've been invited as a Team Admin on Rule Post",
+        html: `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;">
+  <p>Hi ${recipientName},</p>
+  <p>You've been invited as a <strong>Team Admin</strong> for team <strong>${trimmedTeam}</strong> on Rule Post, the website for rule enquiries in the 38th America's Cup.</p>
+  <p>As team admin you can add and remove members for your team.</p>
+  <p>Click the button below to set your password and get started:</p>
+  <p><a href="${link}" style="display:inline-block;padding:10px 16px;border-radius:6px;text-decoration:none;">Set your password</a></p>
+  <p>If you didn't expect this, you can ignore this email.</p>
+</body>
+</html>`,
+      });
+      console.log("✅ Welcome email sent to team admin");
+    } catch (emailErr) {
+      // User was already created — don't throw. Return success with a warning
+      // so the site admin knows to use "Send Password Reset" to resend.
+      console.error(
+        "❌ Failed to send welcome email (team admin was created):",
+        emailErr,
+      );
+      emailSent = false;
+    }
 
-    return { uid: userRecord.uid, email: userRecord.email, team: trimmedTeam };
+    return {
+      uid: userRecord.uid,
+      email: userRecord.email,
+      team: trimmedTeam,
+      emailSent,
+    };
   },
 );
 

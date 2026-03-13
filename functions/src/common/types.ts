@@ -142,6 +142,7 @@ export interface UserData {
   /** 'all' = all activity; 'enquiries' = only enquiries */
   emailNotificationsScope?: "all" | "enquiries";
   email?: string;
+  team?: string;
 }
 
 export interface PublishResult {

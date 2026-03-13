@@ -49,7 +49,7 @@ Most users can browse content while logged out. **Posting and notification setti
 
 * **Notifications & unread tracking**
 
-  * Email notifications via Resend
+  * Email notifications via Gmail SMTP (Nodemailer)
   * Per-user unread tracking with visual indicators
 
 * **Usability**

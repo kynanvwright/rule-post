@@ -48,7 +48,7 @@ The backend relies on Firebase services:
 
 #### createUserWithProfile
 - create a user for your team
-- sends a password reset email via "Resend"
+- sends a password reset email via Gmail SMTP (Nodemailer)
 
 #### deleteUser
 - delete a user from your team
@@ -323,7 +323,7 @@ Rate limiting is implemented across multiple endpoints to prevent abuse, reduce 
 ---
 
 ## Notifications
-- email capability provided by "Resend"
+- email capability provided by Gmail SMTP (Nodemailer)
 - sent at various scheduled times (see Scheduled Functions section)
 - digest emails: sent at 0:00, 12:00, 20:00 Europe/Rome (after publishes complete)
 - deadline reminders: sent at 11:30 (comment) and 19:30 (response) Rome time

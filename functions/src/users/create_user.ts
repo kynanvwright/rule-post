@@ -107,27 +107,42 @@ export const createUserWithProfile = onCall(
 
     // 5) Generate password reset link (lets them set their own password)
     const link = await auth.generatePasswordResetLink(email, {
-      url: "https://rulepost-c52d6.web.app", // post-completion redirect
+      url: "https://rulepost.acofficials.org",
       handleCodeInApp: false,
     });
     console.log("✅ Password reset link created");
 
     // 6) Send email via Gmail SMTP
     const recipientName = getNameFromEmail(email);
-    await transporter.sendMail({
-      from: `"Rule Post" <${process.env.GMAIL_USER}>`,
-      to: email,
-      subject: "Set up your Rule Post account",
-      html: `
-        <p>Hi ${recipientName},</p>
-        <p>You’ve been invited to Rule Post, the website for rule enquiries in the 38th America's Cup. Click the button below to set your password and finish setup.</p>
-        <p><a href="${link}" style="display:inline-block;padding:10px 16px;border-radius:6px;text-decoration:none;">Set your password</a></p>
-        <p>If you didn’t expect this, you can ignore this email.</p>
-      `,
-    });
-    console.log("✅ Welcome email sent");
+    let emailSent = true;
+    try {
+      await transporter.sendMail({
+        from: `"Rule Post" <${process.env.GMAIL_USER}>`,
+        to: email,
+        subject: "Set up your Rule Post account",
+        html: `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;">
+  <p>Hi ${recipientName},</p>
+  <p>You've been invited to Rule Post, the website for rule enquiries in the 38th America's Cup. Click the button below to set your password and finish setup.</p>
+  <p><a href="${link}" style="display:inline-block;padding:10px 16px;border-radius:6px;text-decoration:none;">Set your password</a></p>
+  <p>If you didn't expect this, you can ignore this email.</p>
+</body>
+</html>`,
+      });
+      console.log("✅ Welcome email sent");
+    } catch (emailErr) {
+      // User was already created — don't throw. Return success with a warning
+      // so the admin knows to use "Send Password Reset" to resend.
+      console.error(
+        "❌ Failed to send welcome email (user was created):",
+        emailErr,
+      );
+      emailSent = false;
+    }
 
-    return { uid: userRecord.uid, email: userRecord.email };
+    return { uid: userRecord.uid, email: userRecord.email, emailSent };
   },
 );
 

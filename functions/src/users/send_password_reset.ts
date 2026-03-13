@@ -76,17 +76,29 @@ export const sendPasswordReset = onCall(
     });
 
     const recipientName = getNameFromEmail(targetEmail);
-    await transporter.sendMail({
-      from: `"Rule Post" <${process.env.GMAIL_USER}>`,
-      to: targetEmail,
-      subject: "Reset your Rule Post password",
-      html: `
-        <p>Hi ${recipientName},</p>
-        <p>Your team admin has requested a password reset for your Rule Post account. Click the button below to set a new password.</p>
-        <p><a href="${link}" style="display:inline-block;padding:10px 16px;border-radius:6px;background:#1a73e8;color:#fff;text-decoration:none;">Reset your password</a></p>
-        <p>If you didn't expect this, you can ignore this email.</p>
-      `,
-    });
+    try {
+      await transporter.sendMail({
+        from: `"Rule Post" <${process.env.GMAIL_USER}>`,
+        to: targetEmail,
+        subject: "Reset your Rule Post password",
+        html: `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;">
+  <p>Hi ${recipientName},</p>
+  <p>Your team admin has requested a password reset for your Rule Post account. Click the button below to set a new password.</p>
+  <p><a href="${link}" style="display:inline-block;padding:10px 16px;border-radius:6px;background:#1a73e8;color:#fff;text-decoration:none;">Reset your password</a></p>
+  <p>If you didn't expect this, you can ignore this email.</p>
+</body>
+</html>`,
+      });
+    } catch (emailErr) {
+      console.error("❌ Failed to send password reset email:", emailErr);
+      throw new HttpsError(
+        "internal",
+        "Password reset link was generated but the email could not be sent. Please try again.",
+      );
+    }
     console.log("✅ Password reset email sent to", targetEmail);
 
     return { email: targetEmail };
