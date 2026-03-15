@@ -4,14 +4,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-
 // special tile for comments, which can be expanded/collapsed if the text is long
 class ListTileCollapsibleText extends StatefulWidget {
   const ListTileCollapsibleText(
     this.text, {
     super.key,
     this.maxLines = 3,
-    this.contentPadding = const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    this.contentPadding = const EdgeInsets.symmetric(
+      horizontal: 16,
+      vertical: 12,
+    ),
     this.tileColor,
     this.sideWidget,
   });
@@ -23,7 +25,8 @@ class ListTileCollapsibleText extends StatefulWidget {
   final Widget? sideWidget;
 
   @override
-  State<ListTileCollapsibleText> createState() => _ListTileCollapsibleTextState();
+  State<ListTileCollapsibleText> createState() =>
+      _ListTileCollapsibleTextState();
 }
 
 class _ListTileCollapsibleTextState extends State<ListTileCollapsibleText>
@@ -62,10 +65,13 @@ class _ListTileCollapsibleTextState extends State<ListTileCollapsibleText>
         return Material(
           color: widget.tileColor ?? Colors.transparent,
           child: InkWell(
-            onTap: _overflows ? () => setState(() => _expanded = !_expanded) : null,
+            onTap: _overflows
+                ? () => setState(() => _expanded = !_expanded)
+                : null,
             overlayColor: WidgetStateProperty.resolveWith((states) {
               final base = theme.colorScheme.onSurface;
-              if (states.contains(WidgetState.pressed) || states.contains(WidgetState.focused)) {
+              if (states.contains(WidgetState.pressed) ||
+                  states.contains(WidgetState.focused)) {
                 return base.withValues(alpha: 0.12);
               }
               if (states.contains(WidgetState.hovered)) {
@@ -89,7 +95,9 @@ class _ListTileCollapsibleTextState extends State<ListTileCollapsibleText>
                             widget.text,
                             textStyle,
                             _expanded ? null : widget.maxLines,
-                            _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                            _expanded
+                                ? TextOverflow.visible
+                                : TextOverflow.ellipsis,
                           ),
                         ),
                       ),
@@ -131,7 +139,11 @@ class _ListTileCollapsibleTextState extends State<ListTileCollapsibleText>
                             child: AnimatedRotation(
                               duration: const Duration(milliseconds: 160),
                               turns: _expanded ? 0.5 : 0.0,
-                              child: Icon(Icons.expand_more, size: 24, color: iconColor),
+                              child: Icon(
+                                Icons.expand_more,
+                                size: 24,
+                                color: iconColor,
+                              ),
                             ),
                           ),
                         ),
@@ -173,9 +185,9 @@ class _ListTileCollapsibleTextState extends State<ListTileCollapsibleText>
           overflow: overflow,
         );
       }
-      // For expanded view, render markdown. Use onTapLink and disable
-      // selectable mode so link taps are received by the gesture recognizers.
-      return MarkdownBody(
+      // For expanded view, keep markdown link taps working and add text
+      // selection around the rendered content so users can copy text.
+      final markdown = MarkdownBody(
         data: text,
         selectable: false,
         shrinkWrap: true,
@@ -191,15 +203,12 @@ class _ListTileCollapsibleTextState extends State<ListTileCollapsibleText>
           }
         },
       );
+
+      return SelectionArea(child: markdown);
     }
 
     // No markdown, render as plain text
-    return Text(
-      text,
-      style: baseStyle,
-      maxLines: maxLines,
-      overflow: overflow,
-    );
+    return Text(text, style: baseStyle, maxLines: maxLines, overflow: overflow);
   }
 
   /// Build markdown style sheet matching the tile's text style
@@ -218,23 +227,22 @@ class _ListTileCollapsibleTextState extends State<ListTileCollapsibleText>
   /// Check if text contains markdown syntax
   static bool _containsMarkdown(String text) {
     final markdownPatterns = [
-      RegExp(r'\*\*\*.+?\*\*\*'),   // ***bold+italic***
-      RegExp(r'\*\*.+?\*\*'),       // **bold**
-      RegExp(r'__.+?__'),           // __bold__
-      RegExp(r'\*.+?\*'),           // *italic*
-      RegExp(r'_.+?_'),             // _italic_
-      RegExp(r'`[^`]+`'),           // `code`
-      RegExp(r'^#+\s'),             // # Headers
-      RegExp(r'^\s*[-*+]\s'),       // - lists
-      RegExp(r'^\s*\d+\.\s'),       // 1. numbered lists
-      RegExp(r'>.+'),               // > blockquotes
+      RegExp(r'\*\*\*.+?\*\*\*'), // ***bold+italic***
+      RegExp(r'\*\*.+?\*\*'), // **bold**
+      RegExp(r'__.+?__'), // __bold__
+      RegExp(r'\*.+?\*'), // *italic*
+      RegExp(r'_.+?_'), // _italic_
+      RegExp(r'`[^`]+`'), // `code`
+      RegExp(r'^#+\s'), // # Headers
+      RegExp(r'^\s*[-*+]\s'), // - lists
+      RegExp(r'^\s*\d+\.\s'), // 1. numbered lists
+      RegExp(r'>.+'), // > blockquotes
       RegExp(r'https?:\/\/\S+'), // bare URLs like https://example.com
     ];
 
     return markdownPatterns.any((pattern) => pattern.hasMatch(text));
   }
 }
-
 
 String _fmt(DateTime? dt) {
   if (dt == null) return '';
@@ -243,15 +251,23 @@ String _fmt(DateTime? dt) {
       '${_month(dt.month)} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
 }
 
-
 String _month(int m) {
   const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
   return months[m - 1];
 }
-
 
 DateTime? _asLocal(dynamic v) {
   if (v == null) return null;
@@ -271,17 +287,13 @@ DateTime? _asLocal(dynamic v) {
   return asUtc.toLocal(); // ← device/browser local time zone
 }
 
-
 Widget publishedAtSideWidget(dynamic publishedAt) {
   final dt = _asLocal(publishedAt);
   if (dt == null) return const SizedBox.shrink();
 
   return Text(
     _fmt(dt),
-    style: const TextStyle(
-      fontSize: 12,
-      color: Colors.grey,
-    ),
+    style: const TextStyle(fontSize: 12, color: Colors.grey),
     textAlign: TextAlign.right,
   );
 }

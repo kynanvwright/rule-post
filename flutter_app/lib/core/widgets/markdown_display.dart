@@ -5,7 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 /// A widget that displays text as rendered markdown.
 /// Supports: **bold**, _italic_, `code`, # Headers, - lists, and links.
-/// 
+///
 /// This widget is used throughout the app to render rich text content
 /// that was entered by users as markdown.
 class MarkdownDisplay extends StatelessWidget {
@@ -36,10 +36,7 @@ class MarkdownDisplay extends StatelessWidget {
     // This handles the common case of plain text content
     if (!_containsMarkdown(text)) {
       if (selectable) {
-        return SelectableText(
-          text,
-          maxLines: maxLines,
-        );
+        return SelectableText(text, maxLines: maxLines);
       } else {
         return Text(
           text,
@@ -51,27 +48,28 @@ class MarkdownDisplay extends StatelessWidget {
 
     // Use MarkdownBody for markdown content. Provide an onTapLink handler
     // so links are actionable. We open links externally via url_launcher.
+    final markdown = MarkdownBody(
+      data: text,
+      // Keep MarkdownBody itself non-selectable so link gesture recognizers
+      // continue to fire, then opt into copy support with SelectionArea.
+      selectable: false,
+      shrinkWrap: true,
+      styleSheet: _buildStyleSheet(context),
+      onTapLink: (textLabel, href, title) async {
+        if (href == null) return;
+        final uri = Uri.tryParse(href);
+        if (uri == null) return;
+        try {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } catch (_) {
+          // ignore failures - caller can add error reporting if desired
+        }
+      },
+    );
+
     return SingleChildScrollView(
       physics: const NeverScrollableScrollPhysics(),
-      child: MarkdownBody(
-        data: text,
-        // When rendering markdown we disable the package's selectable mode
-        // because SelectableSpans prevent gesture recognizers on links
-        // from firing. Plain non-markdown text remains selectable above.
-        selectable: false,
-        shrinkWrap: true,
-        styleSheet: _buildStyleSheet(context),
-        onTapLink: (textLabel, href, title) async {
-          if (href == null) return;
-          final uri = Uri.tryParse(href);
-          if (uri == null) return;
-          try {
-            await launchUrl(uri, mode: LaunchMode.externalApplication);
-          } catch (_) {
-            // ignore failures - caller can add error reporting if desired
-          }
-        },
-      ),
+      child: selectable ? SelectionArea(child: markdown) : markdown,
     );
   }
 
@@ -82,21 +80,29 @@ class MarkdownDisplay extends StatelessWidget {
 
     return MarkdownStyleSheet(
       p: textTheme.bodyMedium ?? const TextStyle(),
-      h1: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold) ??
+      h1:
+          textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold) ??
           const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-      h2: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold) ??
+      h2:
+          textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold) ??
           const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-      h3: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold) ??
+      h3:
+          textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold) ??
           const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-      h4: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold) ??
+      h4:
+          textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold) ??
           const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-      h5: textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold) ??
+      h5:
+          textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold) ??
           const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-      h6: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold) ??
+      h6:
+          textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold) ??
           const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-      em: textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic) ??
+      em:
+          textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic) ??
           const TextStyle(fontStyle: FontStyle.italic),
-      strong: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold) ??
+      strong:
+          textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold) ??
           const TextStyle(fontWeight: FontWeight.bold),
       code: TextStyle(
         fontFamily: 'monospace',
@@ -116,15 +122,16 @@ class MarkdownDisplay extends StatelessWidget {
       blockquoteDecoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerLow,
         border: Border(
-          left: BorderSide(
-            color: theme.colorScheme.outlineVariant,
-            width: 4,
-          ),
+          left: BorderSide(color: theme.colorScheme.outlineVariant, width: 4),
         ),
       ),
-      blockquotePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      blockquotePadding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 8,
+      ),
       listBullet: textTheme.bodyMedium ?? const TextStyle(),
-      a: textTheme.bodyMedium?.copyWith(
+      a:
+          textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.primary,
             decoration: TextDecoration.underline,
           ) ??
@@ -138,16 +145,16 @@ class MarkdownDisplay extends StatelessWidget {
   /// Quick check if text contains markdown syntax
   static bool _containsMarkdown(String text) {
     final markdownPatterns = [
-      RegExp(r'\*\*\*.+?\*\*\*'),   // ***bold+italic***
-      RegExp(r'\*\*.+?\*\*'),       // **bold**
-      RegExp(r'__.+?__'),           // __bold__
-      RegExp(r'\*.+?\*'),           // *italic*
-      RegExp(r'_.+?_'),             // _italic_
-      RegExp(r'`[^`]+`'),           // `code`
-      RegExp(r'^#+\s'),             // # Headers
-      RegExp(r'^\s*[-*+]\s'),       // - lists
-      RegExp(r'^\s*\d+\.\s'),       // 1. numbered lists
-      RegExp(r'>.+'),               // > blockquotes
+      RegExp(r'\*\*\*.+?\*\*\*'), // ***bold+italic***
+      RegExp(r'\*\*.+?\*\*'), // **bold**
+      RegExp(r'__.+?__'), // __bold__
+      RegExp(r'\*.+?\*'), // *italic*
+      RegExp(r'_.+?_'), // _italic_
+      RegExp(r'`[^`]+`'), // `code`
+      RegExp(r'^#+\s'), // # Headers
+      RegExp(r'^\s*[-*+]\s'), // - lists
+      RegExp(r'^\s*\d+\.\s'), // 1. numbered lists
+      RegExp(r'>.+'), // > blockquotes
       RegExp(r'https?:\/\/\S+'), // bare URLs like https://example.com
     ];
 
