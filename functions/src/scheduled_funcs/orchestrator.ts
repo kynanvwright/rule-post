@@ -154,3 +154,23 @@ export const orchestrate2000 = onSchedule(
     }
   },
 );
+
+/**
+ * Frequent digest catch-up.
+ *
+ * Runs every 2 minutes to pick up publishEvents that may arrive shortly after
+ * scheduled publish cycles due to Firestore trigger timing.
+ */
+export const orchestrateDigestCatchup = onSchedule(
+  {
+    region: SCHED_REGION_ROME,
+    schedule: "*/2 * * * *",
+    timeZone: ROME_TZ,
+    timeoutSeconds: TIMEOUT_SECONDS,
+    secrets: ["GMAIL_USER", "GMAIL_APP_PASSWORD"],
+  },
+  async (): Promise<void> => {
+    await doSendPublishDigest();
+    logger.info("[orchestrateDigestCatchup] ✅ sendPublishDigest complete");
+  },
+);

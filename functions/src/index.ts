@@ -46,6 +46,7 @@ export {
   orchestrate0000,
   orchestrate1200,
   orchestrate2000,
+  orchestrateDigestCatchup,
 } from "./scheduled_funcs/orchestrator";
 
 /** ─────────────────────────────── Admin ─────────────────────────────── */
