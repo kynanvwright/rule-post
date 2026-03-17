@@ -196,6 +196,10 @@ function renderDigestHTML(
   // shared inline styles for links and small/muted text
   const linkStyle = "color:#007bff;text-decoration:underline;";
   const muted = "color:#666;";
+  const formatEnquiryNumber = (raw: string | number | undefined): string => {
+    const n = String(raw ?? "").trim();
+    return /^\d+$/.test(n) ? n.padStart(3, "0") : n;
+  };
 
   // table row builder (avoids <ul> quirks in Outlook)
   const sectionTable = <T>(
@@ -225,8 +229,8 @@ function renderDigestHTML(
   const commentItems = groupedComments.map(
     (g) =>
       `${g.count} ${plural(g.count, "comment", "comments")} on 
-      <a href="https://rulepost.com/#/enquiries/${g.enquiryId}/responses/${g.responseId}" style="${linkStyle}">
-      Response ${g.roundNumber}.${g.responseNumber}</a> of Rule Enquiry #${g.enquiryNumber} — ${esc(g.enquiryTitle)}`,
+      <a href="https://rulepost.acofficials.org/#/enquiries/${g.enquiryId}/responses/${g.responseId}" style="${linkStyle}">
+      Response ${g.roundNumber}.${g.responseNumber}</a> of Rule Enquiry ${formatEnquiryNumber(g.enquiryNumber)} — ${esc(g.enquiryTitle)}`,
   );
 
   // Render urgent deadline section if present
@@ -244,7 +248,7 @@ function renderDigestHTML(
                   (d) =>
                     `<tr>
                       <td style="padding:8px 0;font-size:14px;line-height:1.4;color:#333;">
-                        <strong>Rule Enquiry #${esc(d.enquiryNumber)}</strong>: <a href="https://rulepost.com/#/enquiries/${d.enquiryId}" style="${linkStyle}">${esc(d.enquiryTitle)}</a>
+                        <strong>Rule Enquiry ${esc(formatEnquiryNumber(d.enquiryNumber))}</strong>: <a href="https://rulepost.acofficials.org/#/enquiries/${d.enquiryId}" style="${linkStyle}">${esc(d.enquiryTitle)}</a>
                         <br />
                         <span style="color:#d32f2f;font-weight:600;">Deadline: ${d.deadlineTime} (${d.hoursRemaining} hour${d.hoursRemaining === 1 ? "" : "s"} remaining)</span>
                       </td>
@@ -286,8 +290,8 @@ function renderDigestHTML(
                   "Enquiries",
                   groups.enquiries,
                   (e) =>
-                    `Rule Enquiry #${e.enquiryNumber} — 
-                    <a href="https://rulepost.com/#/enquiries/${e.enquiryId}" style="${linkStyle}">
+                    `Rule Enquiry ${formatEnquiryNumber(e.enquiryNumber)} — 
+                    <a href="https://rulepost.acofficials.org/#/enquiries/${e.enquiryId}" style="${linkStyle}">
                       ${esc(e.enquiryTitle)}
                     </a>`,
                 )}
@@ -296,8 +300,8 @@ function renderDigestHTML(
                   "Responses",
                   groups.responses,
                   (r) =>
-                    `<a href="https://rulepost.com/#/enquiries/${r.enquiryId}/responses/${r.responseId}" style="${linkStyle}" aria-label="Response ${r.roundNumber}.${r.responseNumber}">
-                      Response ${r.roundNumber}.${r.responseNumber}</a> to Rule Enquiry #${r.enquiryNumber} — ${esc(r.enquiryTitle)}`,
+                    `<a href="https://rulepost.acofficials.org/#/enquiries/${r.enquiryId}/responses/${r.responseId}" style="${linkStyle}" aria-label="Response ${r.roundNumber}.${r.responseNumber}">
+                          Response ${r.roundNumber}.${r.responseNumber}</a> to Rule Enquiry ${formatEnquiryNumber(r.enquiryNumber)} — ${esc(r.enquiryTitle)}`,
                 )}
 
                 ${sectionTable("Comments", commentItems, (html) => html)}
@@ -307,7 +311,7 @@ function renderDigestHTML(
 
               <p style="${muted};font-size:12px;margin:0;">
                 You receive this because you opted into updates.
-                <a href="https://rulepost.com/#/user-details" style="${linkStyle};margin-left:4px;">
+                <a href="https://rulepost.acofficials.org/#/user-details" style="${linkStyle};margin-left:4px;">
                   Manage email settings
                 </a>
               </p>
