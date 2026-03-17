@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:rule_post/content/widgets/notification_tile.dart';
+import 'package:rule_post/api/notification_api.dart';
 import 'package:rule_post/core/buttons/back_button.dart';
 import 'package:rule_post/core/models/types.dart' show ClaimSpec;
 import 'package:rule_post/core/widgets/site_admin_panel.dart';
@@ -18,6 +18,8 @@ class ClaimsScreen extends ConsumerStatefulWidget {
   ConsumerState<ClaimsScreen> createState() => _ClaimsScreenState();
 }
 
+enum _NotifPref { all, enquiries, none }
+
 class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
   // ✅ Only show these claim keys if present (edit to taste)
   static const List<ClaimSpec> _shownClaimSpecs = [
@@ -27,6 +29,8 @@ class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
   ];
 
   bool _sendingReset = false;
+  bool _savingNotif = false;
+  _NotifPref? _notifOverride;
 
   Future<void> _sendPasswordReset(BuildContext context) async {
     final email = FirebaseAuth.instance.currentUser?.email;
@@ -62,6 +66,39 @@ class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
     final claimsAsync = ref.watch(allClaimsProvider);
     final isTeamAdmin = ref.watch(isTeamAdminProvider);
     final isSiteAdmin = ref.watch(isSiteAdminProvider);
+    final notifOn = ref.watch(emailNotificationsOnProvider);
+    final notifScope = ref.watch(emailNotificationsScopeProvider);
+
+    _NotifPref currentPref() {
+      if (!notifOn) return _NotifPref.none;
+      return notifScope == 'enquiries' ? _NotifPref.enquiries : _NotifPref.all;
+    }
+
+    final displayPref = _notifOverride ?? currentPref();
+
+    Future<void> onPrefChanged(_NotifPref? next) async {
+      if (next == null || next == displayPref) return;
+      setState(() {
+        _savingNotif = true;
+        _notifOverride = next;
+      });
+      try {
+        if (next == _NotifPref.none) {
+          await toggleEmailNotifications(false);
+        } else {
+          await toggleEmailNotifications(true);
+          await setEmailNotificationScope(
+            next == _NotifPref.enquiries ? 'enquiries' : 'all',
+          );
+        }
+        await forceRefreshClaims();
+        ref.invalidate(allClaimsProvider);
+      } catch (_) {
+        if (mounted) setState(() => _notifOverride = null);
+      } finally {
+        if (mounted) setState(() => _savingNotif = false);
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -115,6 +152,51 @@ class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       ...infoTiles,
+                      ListTile(
+                        leading: _savingNotif
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.notifications),
+                        title: Row(
+                          children: [
+                            const Text('Email notifications: '),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<_NotifPref>(
+                                  value: displayPref,
+                                  isDense: true,
+                                  isExpanded: true,
+                                  onChanged: _savingNotif
+                                      ? null
+                                      : onPrefChanged,
+                                  items: const [
+                                    DropdownMenuItem(
+                                      value: _NotifPref.all,
+                                      child: Text('All activity'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: _NotifPref.enquiries,
+                                      child: Text('New enquiries only'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: _NotifPref.none,
+                                      child: Text('None'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        dense: true,
+                        visualDensity: VisualDensity.compact,
+                      ),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                         child: Align(
@@ -132,12 +214,6 @@ class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
                   ),
                 ),
 
-              const SizedBox(height: 24),
-
-              // ===== Settings =====
-              Text('Settings', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              const Card(child: EmailNotificationsTile()),
               const SizedBox(height: 24),
 
               // ===== Site Admin panel (super admin only) =====
